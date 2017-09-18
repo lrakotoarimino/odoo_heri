@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+		<!-- Budget Expense Report form -->
+		<record model="ir.ui.view" id="view_picking_bex_form">
+			<field name="name">stock.picking.form</field>
+			<field name="model">stock.picking</field>
+			<field name="inherit_id" ref="stock.view_picking_form"/>
+			<field name="arch" type="xml">
+				<xpath expr="//field[@name='location_id']" position="after">
+					<field name="department_id" />
+					<field name="objet" />
+					<field name="section" />
+					<field name="nature" />
+					<field name="budgetise" />
+					<field name="cumul" />
+				</xpath>
+				<xpath expr="//field[@name='pack_operation_product_ids']/tree/field[@name='qty_done']" position="after">
+		    		<field name="prix_unitaire" />
+		    		<field name="montant_br" />
+		    		<field name="taxes_id" widget="many2many_tags"/>
+		    		<field name="montant_realise" />
+			    </xpath>
+			    <xpath expr="//field[@name='pack_operation_product_ids']/tree/field[@name='product_qty']" position="replace">
+		    		<field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="Qté BReq"/>
+			    </xpath>
+			    <xpath expr="//field[@name='pack_operation_product_ids']/tree/field[@name='qty_done']" position="replace">
+		    		<field name="qty_done" attrs="{'readonly': [('lots_visible', '=', True)]}" string="Qté Reçue"/>
+			    </xpath>
+			</field>
+		</record>	
+	</data>
+</odoo>

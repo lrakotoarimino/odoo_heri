@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<odoo>
+  <data>
+   
+    <record model="res.diplome" id="type_diplome_bepc">
+        <field name="name">Brevet d'Etude du Premier Cycle</field>
+        <field name="type">bepc</field>
+    </record>
+    <record model="res.diplome" id="type_diplome_bac">
+        <field name="name">Baccalaureat</field>
+        <field name="type">bac</field>
+    </record>
+    <record model="res.diplome" id="type_diplome_licence">
+        <field name="name">Licence</field>
+        <field name="type">licence</field>
+    </record>
+    <record model="res.diplome" id="type_diplome_master">
+        <field name="name">Master</field>
+        <field name="type">master</field>
+    </record>
+    <record model="res.diplome" id="type_diplome_doctorat">
+        <field name="name">Doctorat</field>
+        <field name="type">doctorat</field>
+    </record>
+    
+  </data>
+</odoo>

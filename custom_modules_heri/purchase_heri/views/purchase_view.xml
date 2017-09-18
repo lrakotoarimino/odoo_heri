@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+		<!-- Budget request form -->
+		<record model="ir.ui.view" id="budget_request_form_view">
+			<field name="name">Budget Request</field>
+			<field name="model">purchase.order</field>
+			<field name="inherit_id" ref="purchase.purchase_order_form"/>
+			<field name="arch" type="xml">
+				<xpath expr="//field[@name='state']" position="replace">
+					<field 
+					    name="state" 
+					    widget="statusbar" 
+					    statusbar_visible="nouveau,a_approuver,non_prevue,attente_validation,purchase"/>
+				</xpath>
+				
+				<field name="date_order" position="after">
+					<field name="budgetise"/>
+					<field name="cumul"/>
+				</field>
+				<field name="partner_id" position="after">
+				    <field name="department_id"/>
+				    <field name="objet" placeholder="Veuillez saisir ici l'objet de la demande."/>
+				    <field name="section"/>
+				    <field name="nature"/>
+					<field name="employee_id" />
+					<field name="manager_id" invisible="1"/>
+					<field name="region_id" invisible="1"/>
+					<field name="description" invisible="1"/>
+					<field name="is_manager" invisible="1"/>
+				</field>
+				<xpath expr="//field[@name='state']" position="before">
+					<button 
+			      	    string="A approuver" 
+			      	    name="action_a_approuver"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('nouveau'))]}"
+			      	 />
+					<button 
+			      	    string="Prévue" 
+			      	    name="action_prevue"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), ('is_manager', '=', False)]}"
+			      	 />
+					<button 
+			      	    string="Non prévue" 
+			      	    name="action_non_prevue"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), ('is_manager', '=', False)]}"
+			      	 />
+					<button 
+			      	    string="Valider" 
+			      	    name="validation_finance"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('non_prevue'))]}"
+			      	 />
+					<button 
+			      	    string="Refuser par la finance" 
+			      	    name="refus_finance"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('non_prevue'))]}"
+			      	 />
+					<button 
+			      	    string="Confirmer" 
+			      	    name="validation_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_validation'))]}"
+			      	 />
+					<button 
+			      	    string="Refuser par la direction générale" 
+			      	    name="refus_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_validation'))]}"
+			      	 />
+				</xpath>
+				
+				<!-- Masquer le bouton button_confirm en dehors de l'etat puchase -->
+				<button name="button_confirm" position="replace">
+			      	<button 
+			      	    string="Confirm Order" 
+			      	    name="button_confirm" 
+			      	    class="oe_highlight" 
+			      	    invisible="1"
+			      	 />
+		      	</button>
+				
+			</field>
+		</record>	
+		<!-- End Budget request form -->
+		
+		<!-- Budget request Tree View -->
+	    <record model="ir.ui.view" id="budget_request_tree">
+	        <field name="name">Budget Request</field>
+	        <field name="model">purchase.order</field>
+	        <field name="arch" type="xml">
+	            <tree string="Budget Request" decoration-bf="message_unread==True" decoration-muted="state=='cancel'">
+	            	<field name="message_unread" invisible="1"/>
+                    <field name="name" string="Reference"/>
+                    <field name="employee_id"/>
+                    <field name="department_id"/>
+                    <field name="region_id"/>
+	                <field name="partner_id"/>
+                    <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                    <field name="date_planned" invisible="context.get('quotation_only', False)"/>
+                    <field name="origin"/>
+                    <field name="amount_untaxed" sum="Total Untaxed amount" string="Untaxed" widget="monetary"/>
+                    <field name="amount_total" sum="Total amount" widget="monetary"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="state"/>
+                    <field name="invoice_status" invisible="not context.get('show_purchase', False)"/>
+	            </tree>
+	        </field>
+	    </record>
+		<!-- End Budget request Tree View -->
+		
+		<!-- Budget request region Tree View -->
+	    <record model="ir.ui.view" id="br_region_tree">
+	        <field name="name">br.region</field>
+	        <field name="model">br.region</field>
+	        <field name="arch" type="xml">
+	            <tree string="Branche" decoration-bf="message_unread==True">
+	            	<field name="region"/>
+	            </tree>
+	        </field>
+	    </record>
+		<!-- End budget requiest region Tree View-->
+	    
+		<!-- Budget request menu action -->
+	    <record model="ir.actions.act_window" id="action_budget_request">
+	       <field name="name">Budget Request</field>
+	       <field name="res_model">purchase.order</field>
+<!-- 	       <field name="domain">[('state','in',('br','br_sent','approve','visa'))]</field> -->
+	       <field name="view_type">form</field>
+	       <field name="view_mode">tree,form</field>
+	       <field name="help" type="html">
+	         <p class="oe_view_nocontent_create">
+	             Click here to create a new Budget Request.
+	         </p>
+	       </field>
+	   	</record>
+   		<!-- End budget request menu action -->
+   		
+   		<!-- Budget request region menu action -->
+	    <record model="ir.actions.act_window" id="action_br_region">
+	       <field name="name">Région</field>
+	       <field name="res_model">br.region</field>
+	       <field name="view_type">form</field>
+	       <field name="view_mode">tree,form</field>
+	       <field name="help" type="html">
+	         <p class="oe_view_nocontent_create">
+	             Click here to create a new Region.
+	         </p>
+	       </field>
+	   	</record>
+   		<!-- End budget request region menu action -->
+		
+		<menuitem id="menu_budget_request" parent="purchase.menu_procurement_management" action="action_budget_request" name="Budget Request" sequence="2"/>
+		<menuitem id="menu_br_region" parent="purchase.menu_purchase_config" action="action_br_region" name="Code Budgetaire Région" sequence="2"/>
+	</data>
+</odoo>

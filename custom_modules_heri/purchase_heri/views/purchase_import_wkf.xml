@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+		<!-- workflow -->
+		<record id="purchase_import_heri_wkf" model="workflow">
+			<field name="name">workflow.purchase.import.heri</field>
+			<field name="osv">purchase.order</field>
+			<field name="on_create">True</field>
+		</record>
+		
+		<!-- activity -->
+		<record id="act_br_import" model="workflow.activity">
+			<field name="wkf_id" ref="purchase_import_heri_wkf"/>
+			<field name="flow_start">True</field>
+			<field name="name">Elaboration du BR import</field>
+			<field name="kind">dummy</field>
+		</record>
+		
+		<record id="act_aviser_finance" model="workflow.activity">
+			<field name="wkf_id" ref="purchase_import_heri_wkf"/>
+			<field name="name">Finance avisé</field>
+			<field name="kind">function</field>
+			<field name="action">action_aviser_finance()</field>
+		</record>
+		
+		<record id="act_send_ov_to_bank" model="workflow.activity">
+			<field name="wkf_id" ref="purchase_import_heri_wkf"/>
+			<field name="name">OV envoyé à la banque</field>
+			<field name="kind">function</field>
+			<field name="action">action_send_to_bank()</field>
+		</record>
+		
+		<record id="act_br_transit" model="workflow.activity">
+			<field name="wkf_id" ref="purchase_import_heri_wkf"/>
+			<field name="name">BReq transitaire</field>
+			<field name="kind">function</field>
+			<field name="action">action_br_transit()</field>
+		</record>
+		
+		<record id="act_br_transport" model="workflow.activity">
+			<field name="wkf_id" ref="purchase_import_heri_wkf"/>
+			<field name="name">BReq transporteur</field>
+			<field name="kind">function</field>
+			<field name="action">action_br_transport()</field>
+		</record>
+		
+		<record id="act_purchase" model="workflow.activity">
+			<field name="wkf_id" ref="purchase_import_heri_wkf"/>
+			<field name="name">Achats locaux stockés ou non stockés</field>
+			<field name="kind">function</field>
+			<field name="action">action_purchas_transit()</field>
+		</record>
+		
+		<!-- transition -->
+		<record id="act_br_to_finance" model="workflow.transition">
+            <field name="act_from" ref="act_br_import"/>
+            <field name="act_to" ref="act_aviser_finance"/>
+            <field name="signal">action_aviser_finance</field>
+        </record>
+		
+		<record id="act_ov_to_bank" model="workflow.transition">
+            <field name="act_from" ref="act_aviser_finance"/>
+            <field name="act_to" ref="act_send_ov_to_bank"/>
+            <field name="signal">action_send_to_bank</field>
+        </record>
+        
+        <record id="act_bank_to_transit" model="workflow.transition">
+            <field name="act_from" ref="act_send_ov_to_bank"/>
+            <field name="act_to" ref="act_br_transit"/>
+            <field name="signal">action_br_transit</field>
+        </record>
+        
+        <record id="act_bank_to_transport" model="workflow.transition">
+            <field name="act_from" ref="act_send_ov_to_bank"/>
+            <field name="act_to" ref="act_br_transport"/>
+            <field name="signal">action_br_transport</field>
+        </record>
+        
+        <record id="act_transit_to_purchase" model="workflow.transition">
+            <field name="act_from" ref="act_br_transit"/>
+            <field name="act_to" ref="act_purchase"/>
+            <field name="signal">action_purchase_transit</field>
+        </record>
+        
+        <record id="act_transport_to_purchase" model="workflow.transition">
+            <field name="act_from" ref="act_br_transport"/>
+            <field name="act_to" ref="act_purchase"/>
+            <field name="signal">action_purchase</field>
+        </record>
+        
+    </data>
+</odoo>
