@@ -8,7 +8,16 @@
             <field name="name">Direction générale HERi</field>
         </record>
         <record id="group_personne_heri" model="res.groups">
-            <field name="name">Personne</field>
+            <field name="name">Personne HERi</field>
+        </record>
+        <record id="group_magasinier_heri" model="res.groups">
+            <field name="name">Magasinier HERi</field>
+        </record>
+        <record id="group_achat_heri" model="res.groups">
+            <field name="name">Achat HERi</field>
+        </record>
+        <record id="group_logistique_heri" model="res.groups">
+            <field name="name">Logistique HERi</field>
         </record>
     </data>
 </odoo>

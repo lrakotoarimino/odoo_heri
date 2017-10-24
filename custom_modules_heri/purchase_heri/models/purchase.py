@@ -3,6 +3,10 @@
 from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.tools import float_compare, float_round
+from collections import namedtuple
+import pymsgbox
+from odoo.api import onchange
+
 
 class CodeBudgetaireRegion(models.Model):
     _name = "br.region"
@@ -11,53 +15,85 @@ class CodeBudgetaireRegion(models.Model):
 
 class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
+    _description = "Budget Request"
     
+    @api.model
+    def create(self, values):
+        order = super(PurchaseHeri,self).create(values)
+        
+        #A executer dans un breq stock uniquement
+        if order.is_breq_stock:
+            order._create_picking2()
+        return order 
+        
+    #creation bon de sortie (budget request stock)
     @api.multi
-    def _create_picking(self):
+    def _create_picking2(self):
         StockPickingHeri = self.env['stock.picking']
         for order in self:
             vals = {
-                    'picking_type_id': 5,
-                    'partner_id': self.partner_id.id,
-                    'date': self.date_order,
-                    'origin': self.name,
-                    'location_dest_id': 18,
-                    'location_id': 15,
-                    'company_id': self.company_id.id,
+
+                    'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                    'partner_id': order.partner_id.id,
+                    'date': order.date_order,
+                    'origin': order.name,
+                    'location_dest_id': order.env.ref('purchase_heri.stock_location_virtual_heri').id,
+                    'location_id': order.location_id.id,
+                    'company_id': order.company_id.id,
                     'move_type': 'direct',
+                    'employee_id': order.employee_id.id,
+                    'breq_id' : order.id,
+                    'section' : order.section,
+                    'amount_untaxed' : order.amount_untaxed,
+                    'is_bs': True,
+                    'mouvement_type' : order.mouvement_type,
                     }
+            picking_type_id = order.env.ref('purchase_heri.type_preparation_heri').id
             move = StockPickingHeri.create(vals)
             move_lines = order.order_line._create_stock_moves(move)
-            
+            move_lines = move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
+            move_lines.action_assign()
+         
+        picking_type = self.env['stock.picking.type'].search([('id','=',picking_type_id)])
+        picking_type.default_location_src_id = self.location_id.id
         return True
     
+    def action_cancel(self):
+        picking_obj = self.env['stock.picking']
+        picking_id = picking_obj.search([('breq_id','=',self.id)],limit=1)
+        picking_id.mapped('move_lines').action_cancel()
+    
+                
+    #creation budget expense report (budget request achat)
     @api.multi
     def _create_bex(self):
-        bex_obj = self.env['stock.picking.heri']
+        bex_obj = self.env['budget.expense.report']
         for order in self:
             vals = {
-                    'partner_id': order.partner_id.id,
+#                     'partner_id': order.partner_id.id,
                     'origin': order.name,
-                    'department_id': order.department_id.id,
-                    'objet': order.objet,
-                    'section': order.section,
-                    'nature': order.nature,
+#                     'department_id': order.department_id.id,
+#                     'objet': order.objet,
+#                     'section': order.section,
+#                     'nature': order.nature,
                     'budgetise': order.budgetise,
                     'cumul': order.cumul,
                     'solde_rembourser': order.solde,
-                    'currency_id': order.currency_id.id,
-                    'employee_id': order.employee_id.id,
-                    'manager_id': order.manager_id.id,
+#                     'currency_id': order.currency_id.id,
+#                     'employee_id': order.employee_id.id,
+#                     'manager_id': order.manager_id.id,
                     'journal_id':order.journal_id.id,
                     'amount_untaxed_breq': order.amount_untaxed,
                     'amount_tax_breq': order.amount_tax,
                     'amount_total_breq': order.amount_total,
                     'breq_id': order.id,
-                    'purchase_type': order.purchase_type,
+#                     'purchase_type': order.purchase_type,
                     
+                    'company_id': order.company_id.id,
                     'location_id': order.partner_id.property_stock_supplier.id,
                     'location_dest_id': order._get_destination_location(),
-                    'picking_type_id': order.picking_type_id.id, 
+                    'picking_type_id': order.picking_type_id.id,
+                    'group_id': order.group_id.id, 
                     'move_type': 'direct',
                     }
             bex = bex_obj.create(vals)
@@ -81,7 +117,7 @@ class PurchaseHeri(models.Model):
         if employee_id:
             return employee_id[0].id
         return False
-    
+        
     def get_manager_id(self):
         employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)])
         if employee_id:
@@ -95,11 +131,12 @@ class PurchaseHeri(models.Model):
             bx=""
             if res.statut_bex:
                 etat_bex = res.statut_bex
-                bx += dict(res.env['stock.picking.heri'].fields_get(allfields=['state'])['state']['selection'])[etat_bex]
+                bx += dict(res.env['budget.expense.report'].fields_get(allfields=['state'])['state']['selection'])[etat_bex]
             br = dict(res.env['purchase.order'].fields_get(allfields=['state'])['state']['selection'])[res.state]
             
             res.statut_breq_bex = br + " / " + bx
             
+    is_breq_stock = fields.Boolean('Est un budget request stock', default=False)
     statut_breq_bex = fields.Char(compute="_concate_state", string='Etat BReq/BEX')
     
     justificatif = fields.Text("Justificatif Non prévu/Dépassement")
@@ -116,16 +153,15 @@ class PurchaseHeri(models.Model):
         ('purchase', 'BEX'),
         ('refuse', 'Refusé'),
         ('done', 'Terminé'),
-        ('cancel', 'Annulé'),
         ('bs', 'Bon de sortie'),
+        ('cancel', 'Annulé'),
         ], string='Etat BReq', readonly=True, default='nouveau', track_visibility='onchange')
     
     purchase_type = fields.Selection([
         ('purchase_stored', 'Achats locaux stockés'),
         ('purchase_not_stored', 'Achats locaux non stockés'),
         ('purchase_import', 'Achats à l\'importation'),
-        ('breq_stock', 'Budget request stock'),
-    ], string='Type d\'achat',required=True)
+    ], string='Type d\'achat')
     
     purchase_import_type = fields.Selection([
         ('purchase_import_stored', 'Achats à l\'import stockés'),
@@ -147,38 +183,101 @@ class PurchaseHeri(models.Model):
     parents_ids = fields.Many2one('purchase.order',readonly=True, string='BReq d\'origine')
     date_prevu = fields.Datetime(string="Date prévue")
     modalite_paiement = fields.Float(string='Modalité de paiement')
-    
+    location_id = fields.Many2one('stock.location', string='Zone d\'emplacement source') 
+     
     section = fields.Char("Section analytique d’imputation")
     nature = fields.Char("Nature analytique")
     budgetise = fields.Float("Budgetisé")
-    cumul = fields.Float("Cumul Real. + ENgag.")
+    cumul = fields.Float("Cumul Real. + Engag.")
     solde = fields.Float("Solde de budget")
     statut_budget = fields.Selection(compute="_get_statut_budget", string="Statut", 
-                         selection=[('prevu','Prévu'),
-                                    ('non_prevu','Non prévu'),
-                                    ('depasse','Dépassement')], store=True, default='prevu')
+                         selection=[('prevu','PREVU'),
+                                    ('non_prevu','NON PREVU'),
+                                    ('depasse','DEPASSEMENT')], store=True, default='prevu')
     
     journal_id = fields.Many2one('account.journal', string='Mode de paiement', domain=[('type', 'in', ('bank', 'cash'))])
     is_creator = fields.Boolean(compute="_get_is_creator", string='Est le demandeur')
     
     statut_bex = fields.Selection(compute="_get_statut_bex", string='Etat BEX',
-                      selection=[('draft', 'Draft'), 
-                                 ('cancel', 'Cancelled'),
-                                 ('waiting', 'Waiting Another Operation'),
-                                 ('confirmed', 'Waiting Availability'),
-                                 ('partially_available', 'Partially Available'),
-                                 ('assigned', 'Nouveau'),
-                                 ('done', 'Done'),
-                                 ('attente_hierarchie','Avis supérieur hierarchique'),
-                                 ('hierarchie_ok','Validation supérieur hierarchique'), 
-                                 ('comptabilise','Comptabilisé')])
+                      selection=[
+                             ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
+                             ('attente_hierarchie','Avis supérieur hierarchique'),
+                             ('hierarchie_ok','Validation supérieur hierarchique'), 
+                             ('comptabilise','Comptabilisé')])
+    mouvement_type = fields.Selection([
+        ('bs', 'bon de sortie'),
+        ('be', u'bon d entrée'),
+        ('bci', 'Bon de cession Interne'),
+        ('br', 'Bon de Retour'),
+        ], string='Type de Mouvement', readonly=True, track_visibility='onchange')
     
     bex_lie_count = fields.Integer(compute='_compute_bex_lie')
-    bex_id = fields.One2many('stock.picking.heri', string="bex_ids", compute='_compute_bex_lie')
+    bex_id = fields.One2many('budget.expense.report', string="bex_ids", compute='_compute_bex_lie')
+
+    picking_ids_bs = fields.One2many('stock.picking', string="purchase_ids", compute='_compute_bs_lie')
+    bs_lie_count = fields.Integer(compute='_compute_bs_lie')
+    all_bex_validated = fields.Boolean('Tout bex est Comptabilisé',compute='_compute_all_validated')   
+
+    @api.depends('purchase_ids', 'state','statut_bex')
+    def _compute_all_validated(self):
+        for order in self:
+            if order.purchase_ids and all([x.statut_bex == 'comptabilise' for x in order.purchase_ids]):
+                order.all_bex_validated = True
+            else :
+                order.all_bex_validated = False
+                
+        
+    @api.onchange('location_id')
+    def onchange_location_id(self):
+        if not self.is_breq_stock:
+            return
+        for line in self.order_line:
+            line.unlink()
+    
+    @api.onchange('budgetise', 'cumul')
+    def onchange_budget_cumul(self):
+        self.solde = self.budgetise-self.cumul       
+    
+    @api.onchange('partner_id', 'company_id')
+    def onchange_partner_id(self):
+        if not self.partner_id:
+            self.fiscal_position_id = False
+            self.payment_term_id = False
+            
+            #Redefintion
+            if self.purchase_type == 'purchase_import':
+                self.currency_id = self.env.ref('base.EUR').id
+            else: 
+                self.currency_id = self.env.ref('base.MGA').id
+            #Fin redefinition
+        else:
+            self.fiscal_position_id = self.env['account.fiscal.position'].with_context(company_id=self.company_id.id).get_fiscal_position(self.partner_id.id)
+            self.payment_term_id = self.partner_id.property_supplier_payment_term_id.id
+            
+            #Redefintion
+            if self.partner_id.property_purchase_currency_id:
+                self.currency_id =  self.partner_id.property_purchase_currency_id.id
+            #Fin redefinition
+        return {}
+      
+    @api.multi
+    def action_bs_lie(self):
+        action = self.env.ref('stock_heri.action_bon_de_sortie_lie')
+        result = action.read()[0]
+        return result
+    
+    @api.multi
+    def _compute_bs_lie(self):
+        for bs in self:
+            bs_child_purchase = self.env['stock.picking'].search(['&', ('breq_id','=',bs.id),('mouvement_type','=','bs')])
+            if bs_child_purchase:
+                bs.picking_ids_bs = bs_child_purchase
+                bs.bs_lie_count = len(bs_child_purchase)
+                
     @api.multi
     def _compute_bex_lie(self):
         for bx in self:
-            bex_child_purchase = self.env['stock.picking.heri'].search([('breq_id','=',bx.id)])
+            bex_child_purchase = self.env['budget.expense.report'].search([('breq_id','=',bx.id)])
             if bex_child_purchase:
                 bx.bex_id = bex_child_purchase
                 bx.bex_lie_count = len(bex_child_purchase)
@@ -188,10 +287,10 @@ class PurchaseHeri(models.Model):
         action = self.env.ref('purchase_heri.action_bex_lie_tree')
         result = action.read()[0]
         return result
-    
+        
     @api.one
     def _get_statut_bex(self):
-        bex_lie = self.env['stock.picking.heri'].search([('breq_id','=',self.id)], limit=1)
+        bex_lie = self.env['budget.expense.report'].search([('breq_id','=',self.id)], limit=1)
         if bex_lie:
             self.statut_bex = bex_lie.state
             
@@ -202,7 +301,7 @@ class PurchaseHeri(models.Model):
         employee_id = self.employee_id.id
         if current_employee_id == employee_id:
             self.is_creator = True
-                
+              
     @api.multi
     def _compute_br_lie(self):
         for br in self:
@@ -217,20 +316,22 @@ class PurchaseHeri(models.Model):
         result = action.read()[0]
         return result
     
-    @api.depends('solde','budgetise')
+    @api.depends('solde','budgetise','order_line')
     def _get_statut_budget(self):
         for breq in self:
             if self.purchase_type != 'purchase_import':
-                if breq.solde > 0.0 and breq.budgetise > 0.0:
-                    breq.statut_budget = 'prevu'
-                if breq.solde == 0.0 and breq.budgetise==0.0:
+                if breq.budgetise > 0.0 and breq.solde > 0.0:
+                    if breq.amount_total > breq.solde:
+                        breq.statut_budget = 'depasse'
+                    else:
+                        breq.statut_budget = 'prevu'
+                if breq.budgetise == 0.0 and breq.solde < 0.0:
                     breq.statut_budget = 'non_prevu'
-                if breq.solde < 0.0 and breq.budgetise > 0.0:
+                if breq.budgetise > 0.0 and breq.solde <= 0.0 :
                     breq.statut_budget = 'depasse'
             else:
                 breq.statut_budget = 'prevu'
             
-    
     @api.one
     def _get_is_manager(self):
         self.is_manager = False
@@ -242,7 +343,8 @@ class PurchaseHeri(models.Model):
     def action_a_approuver(self):
         self.write({'state':'a_approuver', 'change_state_date': fields.Datetime.now()})
     def action_refus_superieur(self):
-        self.write({'state':'refuse', 'change_state_date': fields.Datetime.now()})
+        self.write({'state':'nouveau', 'change_state_date': fields.Datetime.now()})
+        self.action_cancel()
     def action_non_prevu(self):
         self.write({'state':'non_prevue', 'change_state_date': fields.Datetime.now()})
     def action_refus_finance(self):
@@ -256,6 +358,43 @@ class PurchaseHeri(models.Model):
     def action_confirmed(self):
         self.write({'state': 'purchase', 'change_state_date': fields.Datetime.now()})
         self._create_bex()
+    def action_annuler(self):
+        self.write({'state': 'cancel', 'change_state_date': fields.Datetime.now()})
+    
+    def choisir_mode_paiement(self):
+                #Generation popup mode de paiement
+        ir_model_data = self.env['ir.model.data']        
+        try:            
+            template_id = ir_model_data.get_object_reference('purchase_heri', 'action_mode_paiement')[1]        
+        except ValueError:            
+            template_id = False
+        
+        try:            
+            compose_form_id = ir_model_data.get_object_reference('purchase_heri', 'view_mode_paiement_form')[1]        
+        except ValueError:            
+            compose_form_id = False        
+            
+        ctx = dict()        
+        ctx.update({         
+            'default_mode_paiement': self.journal_id.id,   
+            'default_model': 'mode.paiement',
+            'default_use_template': bool(template_id),            
+            'default_template_id': template_id,      
+            'default_breq_id': self.id,
+        })
+        
+        return {
+        'name': 'Paiement',
+        'domain': [],
+        'res_model': 'mode.paiement',
+        'type': 'ir.actions.act_window',
+        'view_mode': 'form',
+        'view_type': 'form',
+        'views': [(compose_form_id, 'form')],
+        'view_id': compose_form_id,
+        'context': ctx,
+        'target': 'new',
+        }
     
     #Achat import state
     def action_aviser_finance(self):
@@ -268,13 +407,13 @@ class PurchaseHeri(models.Model):
     #Breq stock
     def creer_bs(self):
         self.write({'state':'bs', 'change_state_date': fields.Datetime.now()})
-        self._create_picking()
+
     def envoyer_a_approuver(self):
         self.write({'state':'a_approuver', 'change_state_date': fields.Datetime.now()})
-        self.verification_stock()
+        #self._create_picking2()
     
     def verification_stock(self):
-        if self.purchase_type!='breq_stock':
+        if not self.is_breq_stock:
             return
         location_id = self.env.ref('stock.stock_location_stock')
         dict = {}
@@ -292,17 +431,71 @@ class PurchaseHeri(models.Model):
                 total_qty += quant.qty
             if total_qty < dict[product]:
                 raise UserError(u'La quantité en stock de l\'article '+ product.name +' est insuffisante pour cette demande.')
+   
+#     def _security_seuil(self):
+#         if self.product_id.virtual_available < self.product_id.security_seuil:
+# #             raise UserError('quantité')
+#             self.write({'state':'a_approuver', 'change_state_date': fields.Datetime.now()})
+#             print 'Il faut faire un achat pour le produit '+ self.product_id.name +''    
+            
+#     @api.onchange('product_id')
+#     def onchange_prod_id(self):
+#         for line in self:
+#             line.picking_type_id = line.product_id.location_src_id
         
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
+
+    qte_prevu = fields.Float(compute="onchange_prod_id", string='Quantité disponible')
+    designation_frns = fields.Text(string='Description Fournisseur', readonly=True)
+    location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True) 
+
+    
+    @api.model
+    def create(self, values):
+        designation_frns = self.env['product.product'].browse(values['product_id']).name
+        values['designation_frns'] = designation_frns
+        line = super(PurchaseOrderLine, self).create(values)
+        return line
+    
+    @api.onchange('product_id')
+    def onchange_prod_id(self):
+        for line in self:
+            if line.order_id.is_breq_stock and not line.location_id:
+                raise UserError("La zone d'emplacement source ne doit pas être vide dans un Budget Request Stock")
+            #line.qte_prevu = line.product_id.virtual_available
+            
+            location_src_id = line.location_id.id
+            total_qty = 0.0
+            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=',location_src_id)])
+            for quant in stock_quant_ids:
+                total_qty += quant.qty
+            line.qte_prevu = total_qty
     
     @api.onchange('product_id')
     def onchange_product_id(self):
         res = super(PurchaseOrderLine, self).onchange_product_id()
         if self.product_id:
             self.price_unit = self.product_id.standard_price
+            self.designation_frns = self.product_id.name
         return res
     
+    @api.onchange('product_qty')
+    def onchange_product_qty(self):
+#         res = super(PurchaseOrderLine, self)._onchange_product_qty()
+        if self.order_id.is_breq_stock: 
+            if self.qte_prevu < self.product_qty:
+#                 self.product_qty = self.qte_prevu
+                return {
+                        'warning': {
+                                    'title': 'Avertissement!', 'message': 'La quantité demandé va changé en quantité disponible'
+                                },
+                        'value': {
+                                'product_qty': self.qte_prevu,
+                                }
+                        }
+        return
+
     @api.multi
     def _create_bex_lines(self, bex):
         bex_line = self.env['bex.line']
@@ -327,23 +520,31 @@ class PurchaseOrderLine(models.Model):
     @api.multi
     def _create_stock_moves(self, picking):
         moves = self.env['stock.move']
+        done = self.env['stock.move'].browse()
         for line in self:
-            vals = {
+            if line.product_id.type not in ['product', 'consu', 'service']:
+                continue
+            qty = 0.0
+            price_unit = line._get_stock_move_price_unit()
+            for move in line.move_ids.filtered(lambda x: x.state != 'cancel'):
+                qty += move.product_qty
+            template = {
                 'name': line.name or '',
                 'product_id': line.product_id.id,
                 'product_uom': line.product_uom.id,
                 'product_uom_qty': line.product_qty,
                 'date': line.order_id.date_order,
                 'date_expected': line.date_planned,
-                'location_id': 15,
-                'location_dest_id': 18,
+                'location_dest_id': line.env.ref('purchase_heri.stock_location_virtual_heri').id,
+                'location_id': line.order_id.location_id.id,
                 'picking_id': picking.id,
                 'partner_id': line.order_id.dest_address_id.id,
                 'move_dest_id': False,
                 'state': 'draft',
                 'purchase_line_id': line.id,
                 'company_id': line.order_id.company_id.id,
-                'picking_type_id': 5,
+                'price_unit': price_unit,
+                'picking_type_id': line.env.ref('purchase_heri.type_preparation_heri').id,
                 'group_id': line.order_id.group_id.id,
                 'procurement_id': False,
                 'origin': line.order_id.name,
@@ -351,12 +552,28 @@ class PurchaseOrderLine(models.Model):
                 'warehouse_id':line.order_id.picking_type_id.warehouse_id.id,
             }
             
-            moves_lines = moves.create(vals)
-        return True
+            diff_quantity = line.product_qty - qty
+            for procurement in line.procurement_ids:
+                # If the procurement has some moves already, we should deduct their quantity
+                sum_existing_moves = sum(x.product_qty for x in procurement.move_ids if x.state != 'cancel')
+                existing_proc_qty = procurement.product_id.uom_id._compute_quantity(sum_existing_moves, procurement.product_uom)
+                procurement_qty = procurement.product_uom._compute_quantity(procurement.product_qty, line.product_uom) - existing_proc_qty
+                if float_compare(procurement_qty, 0.0, precision_rounding=procurement.product_uom.rounding) > 0 and float_compare(diff_quantity, 0.0, precision_rounding=line.product_uom.rounding) > 0:
+                    tmp = template.copy()
+                    tmp.update({
+                        'product_uom_qty': min(procurement_qty, diff_quantity),
+                        'move_dest_id': procurement.move_dest_id.id,  #move destination is same as procurement destination
+                        'procurement_id': procurement.id,
+                        'propagate': procurement.rule_id.propagate,
+                    })
+                    done += moves.create(tmp)
+                    diff_quantity -= min(procurement_qty, diff_quantity)
+            if float_compare(diff_quantity, 0.0, precision_rounding=line.product_uom.rounding) > 0:
+                template['product_uom_qty'] = diff_quantity
+                done += moves.create(template)
+        return done
     
 class PurchaseImportType(models.Model):
     _name = 'purchase.import.type'
     
     name = fields.Char(string="Type",required=True)
-        
-    

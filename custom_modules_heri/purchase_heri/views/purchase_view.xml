@@ -6,14 +6,17 @@
 			<field name="name">Budget Request</field>
 			<field name="model">purchase.order</field>
 			<field name="inherit_id" ref="purchase.purchase_order_form"/>
-			<field name="arch" type="xml"> 
-			    <xpath expr="//field[@name='picking_count']" position="replace">
-			    	<field name="picking_count" widget="statinfo" string="Shipment" help="Incoming Shipments"/>
-		    	</xpath>
-
-                <xpath expr="//button[@name='action_view_picking']" position="replace">
+			<field name="arch" type="xml">
+			    <xpath expr="//button[@name='action_view_picking'][2]" position="replace">
                     <button name="action_view_picking" invisible="1"/>
-                </xpath>
+                </xpath> 
+			    <!-- <xpath expr="//field[@name='picking_count']" position="replace">
+			    	<field name="picking_count" widget="statinfo" string="Shipment" help="Incoming Shipments"/>
+		    	</xpath> -->
+
+                <button name="action_view_invoice" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
                 
                 <xpath expr="//button[@name='button_done']" position="replace">
                     <button name="button_done" invisible="1"/>
@@ -30,33 +33,73 @@
 					    statusbar_visible="nouveau,a_approuver,non_prevue,attente_validation,wait_mode,purchase"/>
 				</xpath>
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_picking']" position="after">
-				 <button type="object"
-                            name="action_view_bex"
-                            class="oe_stat_button"
-                            icon="fa-truck"
-                            attrs="{'invisible':[('state', 'not in', ('purchase'))]}">
-                            <field name="bex_lie_count" widget="statinfo" string="Budget Expense Report" help="Incoming Bex"/>
-                            <field name="bex_id" invisible="1"/>
-                        </button>
+				 	<button type="object"
+	                            name="action_view_bex"
+	                            class="oe_stat_button"
+	                            icon="fa-truck"
+	                            attrs="{'invisible':[('state', 'not in', ('purchase'))]}">
+	                            <field name="bex_lie_count" widget="statinfo" string="Budget Expense Report" help="Incoming Bex"/>
+	                            <field name="bex_id" invisible="1"/>
+	                            <field name="picking_count" invisible="1"/>
+	                </button>
                 </xpath>
+                <button name="action_view_picking" position="replace">
+                    <button name="action_view_picking" invisible="1"/>
+                </button>
+            <!--     <button name="button_cancel" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button> -->
 				<xpath expr="//field[@name='date_order']" position="after">
 					<field name="date_prevu"/>
 				    <field name="change_state_date"/>
-				    <field name="budgetise"/>
-					<field name="cumul"/>
-					<field name="solde"/>
-					<field name="statut_budget"/>
+				    <field 
+				        name="budgetise" 
+				        string="BUDGETISE" 
+				        widget="monetary" 
+				        options="{'currency_field': 'currency_id'}"
+				        style="color:blue;"/>
+					<field 
+					    name="cumul" 
+					    string="CUMULE REAL + ENGAG." 
+					    widget="monetary" 
+					    options="{'currency_field': 'currency_id'}"
+					    style="color:blue;"/>
+					<field 
+					    name="solde" 
+					    string="SOLDE DE BUDGET" 
+					    widget="monetary" 
+					    options="{'currency_field': 'currency_id'}"
+					    style="color:blue;"/>
+					<!-- <field name="statut_budget" string="STATUT DU BUDGET" /> -->
 					<field name="journal_id" widget="selection"/>
 					<field name="modalite_paiement"/>
 					<field name="statut_bex"/>
-				</xpath>
+				</xpath>                    
 				
+				<xpath expr="//div[@class='oe_title']" position="after">
+					<div>
+		                <!-- <label string="Statut du budget" /> -->
+		                <h1>
+		                    <field name="statut_budget" style="color:blue;font-weight:bold;" nolabel="1"/>
+		                </h1>
+	                </div>
+                </xpath>
+				
+				<field name="date_order" position="attributes">
+			    	<attribute name="readonly">1</attribute>
+			    </field>
+			    
 				<xpath expr="//field[@name='product_id']" position="attributes">
 					<attribute name="string">Désignation HERi</attribute>
+					<attribute name="domain">[('type', 'in', ('product','consu'))]</attribute>
+				</xpath>
+				
+				<xpath expr="//field[@name='product_id']" position="after">
+					<field name="designation_frns" />
 				</xpath>
 				
 				<xpath expr="//field[@name='order_line']//field[@name='name']" position="attributes">
-					<attribute name="string">Désignation fournisseur</attribute>
+					<attribute name="invisible">1</attribute>
 				</xpath>
 								
 				<xpath expr="//field[@name='order_line']//field[@name='date_planned']" position="replace">
@@ -64,20 +107,22 @@
 				</xpath>
 				
 				<field name="partner_id" position="after">
-					<field name="purchase_type" attrs="{'invisible': [('parents_ids','=', False)]}"/>
+				    <field name="is_breq_stock" invisible="1"/>
+					<field name="purchase_type" attrs="{'invisible': [('parents_ids','=', False)], 'required': [('is_breq_stock', '=', False)]}"/>
 					<field name="parents_ids" attrs="{'invisible': [('parents_ids','=', False)]}"/>
                     <field name="import_type" attrs="{'invisible': [('parents_ids','=', False)]}"/>
                     <field name="purchase_import_type" invisible="1"/>
 				    <field name="employee_id" />
 				    <field name="department_id"/>
 				    <field name="objet" placeholder="Veuillez saisir ici l'objet de la demande."/>
-				    <field name="section" invisible="1"/>
-				    <field name="nature" invisible="1"/>
+				    <field name="section"/>
+				    <field name="nature"/>
 					<field name="manager_id" invisible="1"/>
 					<field name="region_id" invisible="1"/>
 					<field name="description" invisible="1"/>
 					<field name="is_manager" invisible="1"/>
 				</field>
+				
 				<xpath expr="//field[@name='state']" position="before">
 					<button 
 			      	    string="Avis supérieur hierarchique" 
@@ -126,11 +171,12 @@
 			      	    groups="purchase_heri.group_dg_heri"
 			      	 />
 					<button 
-			      	    string="Validation finance" 
-			      	    name="valider_mode"
+			      	    string="Choisir le mode de paiement" 
+			      	    name="choisir_mode_paiement"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('wait_mode'))]}"
 			      	    groups="purchase_heri.group_finance_heri"
+			      	    type="object"
 			      	 />
 			      	 <!-- bouton pour le workflow achat import -->
 			      	 
@@ -150,6 +196,28 @@
 			</field>
 		</record>	
 		<!-- End Budget request form -->
+		
+		<!-- Budget request form service-->
+		<record model="ir.ui.view" id="budget_request_form_view_inherit1">
+			<field name="name">Budget Request</field>
+			<field name="model">purchase.order</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="purchase_heri.budget_request_form_view"/>
+			<field name="arch" type="xml">
+		    	<!-- <field name="product_id" positiion="replace">
+		    	    <field 
+                         name="product_id" 
+                         attrs="{'readonly': [('state', 'in', ('purchase', 'to approve','done', 'cancel'))]}" 
+                         context="{'partner_id':parent.partner_id, 'quantity':product_qty,'uom':product_uom, 'company_id': parent.company_id}"
+                         string="Désignation HERi" 
+                         domain="[('type', 'in', ('service'))]"/>
+		    	</field> -->
+				<xpath expr="//field[@name='product_id']" position="attributes">
+					<attribute name="domain">[('type','=','service')]</attribute>
+				</xpath>
+		    </field>
+	    </record>
+		<!-- End Budget request form service-->
 		
 		<!-- Budget request Tree View achats locaux -->
 	    <record model="ir.ui.view" id="budget_request_tree">
@@ -187,7 +255,7 @@
                 <form string="Achat Import">
                 <header>
                     <button 
-                        string="Validation supérieur hierarchique" 
+                        string="Envoyer au supérieur hierarchique" 
                         name="action_a_approuver2"
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), '|',('purchase_type', 'not in', ('purchase_import')),('is_creator','=',False)]}"
@@ -196,7 +264,7 @@
                         string="Envoyer à la finance pour etablir OV" 
                         name="action_aviser_finance"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), '|',('purchase_type', 'not in', ('purchase_import')),('is_creator','=',False)]}"
+                        attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), '|',('purchase_type', 'not in', ('purchase_import')),('is_manager','=',False)]}"
                      />
                      <button 
                         string="Envoyer OV à la banque" 
@@ -209,7 +277,7 @@
                         string="Calculer prix de revient" 
                         name="action_br_lie"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('ov_to_bank')),'|',('purchase_type', 'not in', ('purchase_import')),('is_creator', '=',False)]}"
+                        attrs="{'invisible': ['|',('state', '!=', 'ov_to_bank'),'|',('all_bex_validated', '!=',True),'|',('purchase_type', '!=', 'purchase_import'),('is_creator', '=',False)]}"
                      />            
                      <button 
                         string="Créer BEX" 
@@ -220,8 +288,8 @@
                      <button type="object"
                             name="action_view_br_lie"
                             class="oe_highlight" 
-                            string ="Budget Request Lié"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            string ="Budget Request Additionnel"
+                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')),'|', ('is_creator', '=',False),('state', 'not in', ('ov_to_bank'))]}">
                             <field name='purchase_ids' invisible="1"/>
                     </button>
                     <field name="state" widget="statusbar" statusbar_visible="nouveau,a_approuver,aviser_finance,ov_to_bank,br_lie,purchase" readonly="1"/>
@@ -232,8 +300,8 @@
                             name="action_view_br_lie"
                             class="oe_stat_button"
                             icon="fa-building-o"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
-                            <field name="br_lie_count" widget="statinfo" string="Budget Request Lié" help="Sous-Breq"/>
+                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')),'|', ('is_creator', '=',False),('state', 'not in', ('ov_to_bank'))]}">
+                            <field name="br_lie_count" widget="statinfo" string="Budget Request Additionnel" help="Sous-Breq"/>
                             <field name='purchase_ids' invisible="1"/>
                         </button>
                         <button type="object"
@@ -243,13 +311,6 @@
                             attrs="{'invisible':[('state', 'not in', ('purchase'))]}">
                             <field name="bex_lie_count" widget="statinfo" string="Budget Expense Report" help="Incoming Bex"/>
                             <field name="bex_id" invisible="1"/>
-                        </button>
-                        <button type="object"
-                            name="action_view_picking"
-                            class="oe_stat_button"
-                            icon="fa-truck" attrs="{'invisible':[('state', 'not in', ('purchase')),('picking_ids','=',[])]}">
-                            <field name="picking_count" widget="statinfo" string="Shipment" help="Incoming Shipments"/>
-                            <field name="picking_ids" invisible="1"/>
                         </button>
                         <button type="object"  name="action_view_invoice"
                             class="oe_stat_button"
@@ -277,6 +338,7 @@
                             <field name="objet" placeholder="Veuillez saisir ici l'objet de la demande."/>
                             <field name="section"/>
                             <field name="nature"/>
+                            <field name="all_bex_validated" invisible="1"/>
                             <field name="manager_id" invisible="1"/>
                             <field name="region_id" invisible="1"/>
                             <field name="description" invisible="1"/>
@@ -286,7 +348,7 @@
                             <field name="is_shipped" invisible="1"/>
                         </group>
                         <group>
-                            <field name="date_order"/>
+                            <field name="date_order" readonly="1"/>
                             <field name="date_prevu"/>
                             <field name="change_state_date"/>
                             <field name="budgetise" invisible="1"/>
@@ -308,8 +370,10 @@
                                         name="product_id" 
                                         attrs="{'readonly': [('state', 'in', ('purchase', 'to approve','done', 'cancel'))]}" 
                                         context="{'partner_id':parent.partner_id, 'quantity':product_qty,'uom':product_uom, 'company_id': parent.company_id}"
-                                        string="Désignation HERi" />
-                                    <field name="name" string="Désignation fournisseur"/>
+                                        string="Désignation HERi" 
+                                        domain="[('type', 'in', ('product','consu'))]"/>
+                                    <field name="name" string="Désignation fournisseur" invisible="1" />
+                                    <field name="designation_frns" />
                                     <field name="date_planned" invisible="1"/>
                                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                                     <field name="account_analytic_id" context="{'default_partner_id':parent.partner_id}" groups="purchase.group_analytic_accounting"/>
@@ -466,7 +530,7 @@
         <record id="action_br_form_locaux_non_stocke" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="purchase_heri.budget_request_form_view"/>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view_inherit1"/>
             <field name="act_window_id" ref="purchase_heri.action_non_stoke"/>
         </record>
 	   	<!-- Fin Achats locaux non stockés menu action -->
@@ -530,7 +594,7 @@
 		<!-- Budget expenses report lié button box action -->
 		<record id="action_bex_lie_tree" model="ir.actions.act_window">
             <field name="name">Budget Expenses Lié</field>
-            <field name="res_model">stock.picking.heri</field>
+            <field name="res_model">budget.expense.report</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <field name="domain">[('breq_id','=',active_id)]</field>
@@ -564,7 +628,14 @@
 	       </field>
 	   	</record>
    		<!-- Fin budget request region menu action -->
-        
+
+		<record id="seq_budget_request" model="ir.sequence">  
+            <field name="name">Budget Request</field>  
+            <field name="code">budget.request.seq</field>  
+            <field name="prefix">BR N°</field>  
+            <field name="padding">4</field>  
+            <field eval="1" name="number_increment"/>  
+      </record>  
         <!-- Menus -->
 		<menuitem id="menu_stoke" parent="purchase.menu_procurement_management" action="action_stoke" name="Achats locaux stockés" sequence="1"/>
 		<menuitem id="menu_non_stoke" parent="purchase.menu_procurement_management" action="action_non_stoke" name="Achats locaux non stockés" sequence="2"/>

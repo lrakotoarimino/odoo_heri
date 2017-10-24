@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Purchase module for HERi',
-    'version': '1.1',
+    'version': '1.0',
     'category': 'Purchase Management',
     'sequence': 0,
     'description': """Module de gestion des achats pour Heri""",
     'website': 'https://www.ingenosya.mg',
-    'depends': ['purchase','stock', 'hr'],
+    'depends': ['base','purchase','stock', 'hr'],
     'data': [
-                'views/stock_view.xml',
+                #views
+                'views/bex_view.xml',
                 'views/purchase_view.xml',
-                'views/stock_piking_view.xml',
                 'views/purchase_wkf.xml',
+                'views/paiement.xml',
+                #data
+                'data/stock_warehouse_data.xml',
+                #security
                 'security/security.xml',
                 'security/ir.model.access.csv',
              ],

@@ -1,55 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 	<data>
-		<!-- Budget request stock form -->		
+		<!-- Debut budget request stock form -->		
 		<record id="budget_request_stock_form" model="ir.ui.view">
             <field name="name">budget.request.stock.form</field>
             <field name="model">purchase.order</field>
             <field name="arch" type="xml">
-                <form string="Achat Import">
+                <form string="Budget Request Stock">
                 <header>
                    	<button 
                        string="Envoyer au supérieur hiérarchique"
                        type="object" 
                        name="envoyer_a_approuver"
                        class="oe_highlight" 
-                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('purchase_type', 'not in', ('breq_stock')), ('is_creator', '=', False)]}"
+                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False), ('is_creator', '=', False)]}"
                     />
                	 	<button 
                        string="Accorder"
                        type="object" 
                        name="creer_bs"
                        class="oe_highlight" 
-                       attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')),'|',('purchase_type', 'not in', ('breq_stock')), ('is_manager', '=', False)]}"
+                       attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')),'|',('is_breq_stock', '=', False), ('is_manager', '=', False)]}"
                     />     
                     <button 
                        string="Refuser"
                        type="object" 
                        name="action_refus_superieur"
                        class="oe_highlight" 
-                       attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')),'|',('purchase_type', 'not in', ('breq_stock')), ('is_manager', '=', False)]}"
+                       attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')),'|',('is_breq_stock', '=', False), ('is_manager', '=', False)]}"
+                    />
+                    <button 
+                       string="Annuler"
+                       type="object" 
+                       name="action_annuler"
+                       class="oe_highlight" 
+                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau','bs','cancel')),'|',('is_breq_stock', '=', False), ('is_creator', '=', False)]}"
                     />
                     <field name="state" widget="statusbar" statusbar_visible="nouveau,a_approuver,bs" readonly="1"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button type="object"
-                            name="action_view_picking"
+                            name="action_bs_lie"
                             class="oe_stat_button"
-                            icon="fa-truck" attrs="{'invisible':[('picking_ids','=',[])]}">
-                            <field name="picking_count" widget="statinfo" string="Bons de sortie" help="Bons de sortie rattaché au BReq stock"/>
-                            <field name="picking_ids" invisible="1"/>
+                            icon="fa-truck" attrs="{'invisible':[('state','not in','bs')]}">
+                            <field name="bs_lie_count" widget="statinfo" string="Bons de sortie" help="Bons de sortie rattaché au BReq stock"/>
+                            <field name="picking_ids_bs" invisible="1"/>
                         </button>
                     </div>
                     <div class="oe_title">
                      <!--    <label string="Request for Quotation " attrs="{'invisible': [('state','not in',('draft','sent','bid'))]}"/> -->
-                        <label string="Achat Import " attrs="{'invisible': [('state','in',('draft','sent','bid'))]}"/>
+                        <label string="Budget Request Stock" />
                         <h1>
                             <field name="name" readonly="1"/>
                         </h1>
                     </div>
+   					<div>
+		                <!-- <label string="Statut du budget" /> -->
+		                <h1>
+		                    <field name="statut_budget" style="color:blue;font-weight:bold;" nolabel="1"/>
+		                </h1>
+	                </div>
                     <group>
                         <group>
+                            <field name="is_breq_stock" invisible="1"/>
                             <field name="is_manager" invisible="1"/>
                             <field name="partner_id" context="{'search_default_supplier':1, 'default_supplier':1, 'default_customer':0}" domain="[('supplier','=',True)]" invisible="1"/>
                             <field name="purchase_type" invisible="1"/>
@@ -66,17 +80,33 @@
                             <field name="description" invisible="1"/>
                             <field name="is_manager" invisible="1"/>
                             <field name="partner_ref"/>
+                            <field name="location_id" attrs="{'invisible': [('is_breq_stock', '=', False)], 'required': [('is_breq_stock', '=', True)]}"/>
                             <field name="currency_id" groups="base.group_multi_currency"/>
                             <field name="is_shipped" invisible="1"/>
                         </group>
                         <group>
-                            <field name="date_order"/>
+                            <field name="date_order" readonly="1"/>
                             <field name="date_prevu"/>
                             <field name="change_state_date"/>
-                            <field name="budgetise" />
-                            <field name="cumul" />
-                            <field name="solde" />
-                            <field name="statut_budget"/>
+                            <field 
+						        name="budgetise" 
+						        string="BUDGETISE" 
+						        widget="monetary" 
+						        options="{'currency_field': 'currency_id'}"
+						        style="color:blue;"/>
+							<field 
+							    name="cumul" 
+							    string="CUMULE REAL + ENGAG." 
+							    widget="monetary" 
+							    options="{'currency_field': 'currency_id'}"
+							    style="color:blue;"/>
+							<field 
+							    name="solde" 
+							    string="SOLDE DE BUDGET" 
+							    widget="monetary" 
+							    options="{'currency_field': 'currency_id'}"
+							    style="color:blue;"/>
+                            <!-- <field name="statut_budget"/> -->
                             <field name="journal_id" widget="selection"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
@@ -89,20 +119,23 @@
                     <notebook>
                         <page string="Products">
                             <field name="order_line" attrs="{'readonly': [('state', 'in', ('done', 'cancel'))]}">
-                                 <tree string="Purchase Order Lines" editable="bottom">
+                                 <tree string="Ligne d'articles" editable="bottom">
                                     <field name="state" invisible="1"/>
                                     <field name="sequence" widget="handle"/>
                                     <field 
                                         name="product_id" 
                                         attrs="{'readonly': [('state', 'in', ('purchase', 'to approve','done', 'cancel'))]}" 
                                         context="{'partner_id':parent.partner_id, 'quantity':product_qty,'uom':product_uom, 'company_id': parent.company_id}"
-                                        string="Désignation HERi" />
-                                    <field name="name" string="Désignation fournisseur"/>
+                                        string="Désignation HERi" 
+                                        domain="[('type', 'in', ('product','consu'))]"/>
+                                    <field name="name" invisible="1"/>
+                                    <field name="designation_frns" />
                                     <field name="date_planned" invisible="1"/>
                                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                                     <field name="account_analytic_id" context="{'default_partner_id':parent.partner_id}" groups="purchase.group_analytic_accounting"/>
                                     <field name="analytic_tag_ids" groups="purchase.group_analytic_accounting" widget="many2many_tags"/>
                                     <field name="product_qty"/>
+                                    <field name="qte_prevu"/>
                                     <field name="qty_received" invisible="not context.get('show_purchase', False)"/>
                                     <field name="qty_invoiced" invisible="not context.get('show_purchase', False)"/>
                                     <field name="product_uom" groups="product.group_uom" attrs="{'readonly': [('state', 'in', ('purchase', 'done', 'cancel'))]}"/>
@@ -110,7 +143,7 @@
                                     <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase')]" context="{'default_type_tax_use': 'purchase'}" invisible="1"/>
                                     <field name="price_subtotal" widget="monetary"/>
                                 </tree>
-                                <form string="Purchase Order Line">
+                                <form string="Ligne des articles">
                                     <sheet>
                                         <group>
                                             <group>
@@ -165,7 +198,7 @@
                                             help="This changes the scheduled date of all order lines to the given date"
                                             class="fa fa-calendar o_icon_button oe_edit_only"/>
                                     </div>
-                                    <field name="picking_type_id" domain="[('code','=','incoming')]" options="{'no_create': True}" groups="stock.group_stock_multi_locations"/>
+                                    <field name="picking_type_id" domain="[('code','=','outgoing')]" options="{'no_create': True}"/>
                                     <field name="dest_address_id" groups="stock.group_stock_multi_locations" attrs="{'invisible': [('default_location_dest_id_usage', '!=', 'customer')], 'required': [('default_location_dest_id_usage', '=', 'customer')]}"/>
                                     <field name="default_location_dest_id_usage" invisible="1"/>
                                     <field name="incoterm_id"/>
@@ -189,7 +222,7 @@
         </record>
 		<!-- Fin Budget request stock form -->	
 		
-		<!-- Budget request stock tree -->			
+		<!-- Budget request stock tree view -->			
 		<record model="ir.ui.view" id="budget_request_stock_tree">
 	        <field name="name">Budget request stock</field>
 	        <field name="model">purchase.order</field>
@@ -220,10 +253,10 @@
 	    <record model="ir.actions.act_window" id="action_budget_request_stock">
 	       	<field name="name">Budget request stock</field>
 	       	<field name="res_model">purchase.order</field>
-			<field name="domain">[('purchase_type','=','breq_stock')]</field>
+			<field name="domain">[('is_breq_stock','=',True)]</field>
 			
 			<!-- A rendre dynamique ou à corriger -->
-			<field name="context">{'default_purchase_type': 'breq_stock', 'default_partner_id':1}</field>
+			<field name="context">{'default_is_breq_stock': True, 'default_partner_id':1,'default_mouvement_type': 'bs'}</field>
 			<!--  -->
 	       	
 	       	<field name="view_type">form</field>
@@ -238,24 +271,16 @@
         <record id="action_br_stock_tree" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="purchase_heri.budget_request_stock_tree"/>
-            <field name="act_window_id" ref="purchase_heri.action_budget_request_stock"/>
+            <field name="view_id" ref="stock_heri.budget_request_stock_tree"/>
+            <field name="act_window_id" ref="stock_heri.action_budget_request_stock"/>
         </record>
 
         <record id="action_br_stock_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="purchase_heri.budget_request_stock_form"/>
-            <field name="act_window_id" ref="purchase_heri.action_budget_request_stock"/>
+            <field name="view_id" ref="stock_heri.budget_request_stock_form"/>
+            <field name="act_window_id" ref="stock_heri.action_budget_request_stock"/>
 		</record>
-		<!-- Budget Request stock menu action -->
-        
-        <!-- Menus -->
-		<menuitem id="menu_stock_picking_heri" parent="stock.menu_stock_root" sequence="-100" name="Documents stock"/>
-		<menuitem action="action_budget_request_stock" id="menu_budget_request_stock_heri" parent="purchase_heri.menu_stock_picking_heri" sequence="1" name="Budget request stock"/>
-		<menuitem  action="action_budget_request_stock" id="menu_bon_sortie_stock_heri" parent="purchase_heri.menu_stock_picking_heri" sequence="2" name="Bon de sortie des stocks"/>
-		<menuitem  action="action_budget_request_stock" id="menu_bon_entree_stock_heri" parent="purchase_heri.menu_stock_picking_heri" sequence="3" name="Bon d'entrée en stock"/>
-		<menuitem  action="action_budget_request_stock" id="menu_bon_cession_stock_heri" parent="purchase_heri.menu_stock_picking_heri" sequence="4" name="Bon de cession interne de stocks"/>
-		<!-- Fin Menus -->
+		<!-- Fin budget request stock -->
 	</data>
 </odoo>

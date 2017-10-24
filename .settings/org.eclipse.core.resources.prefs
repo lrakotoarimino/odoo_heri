@@ -1,0 +1,12 @@
+eclipse.preferences.version=1
+encoding//custom_modules_heri/purchase_heri/__manifest__.py=utf-8
+encoding//custom_modules_heri/purchase_heri/models/bex.py=utf-8
+encoding//custom_modules_heri/purchase_heri/models/paiement.py=utf-8
+encoding//custom_modules_heri/purchase_heri/models/purchase.py=utf-8
+encoding//custom_modules_heri/purchase_heri/models/stock.py=utf-8
+encoding//custom_modules_heri/referentiel_heri/__manifest__.py=utf-8
+encoding//custom_modules_heri/referentiel_heri/models/product.py=utf-8
+encoding//custom_modules_heri/referentiel_heri/models/res_partner.py=utf-8
+encoding//custom_modules_heri/stock_heri/__manifest__.py=utf-8
+encoding//custom_modules_heri/stock_heri/models/stock.py=utf-8
+encoding//custom_modules_heri/stock_heri/report/report_bon_de_sortie_heri.py=utf-8
