@@ -9,6 +9,14 @@ import re
 class StockPicking(models.Model):
     _inherit = 'stock.picking' 
      
+    @api.model
+    def create(self, vals):
+        context = (self._context or {})
+        mouvement_type = context.get('default_mouvement_type', False)
+        if mouvement_type and mouvement_type == 'bci':
+            vals['name'] = self.env['ir.sequence'].next_by_code('bon.cession.interne')
+        return super(StockPicking, self).create(vals)
+            
     breq_id = fields.Many2one('purchase.order')
     section = fields.Char("Section analytique d’imputation")
     amount_untaxed = fields.Float("Total")
@@ -50,6 +58,7 @@ class StockPicking(models.Model):
     state = fields.Selection([
         ('draft', 'Draft'), ('cancel', 'Cancelled'),
         ('attente_hierarchie','Avis supérieur hierarchique'),
+        ('attente_logistique','Vérification logistique'),
         ('attente_magasinier','Avis Magasinier'),
         ('waiting', 'Waiting Another Operation'),
         ('confirmed', 'Waiting Availability'),
@@ -70,6 +79,39 @@ class StockPicking(models.Model):
     def action_aviser(self):
         self.action_confirm()
         self.write({'state':'attente_hierarchie'})
+        
+    def action_aviser_logistique(self):
+        for pick in self:
+            dict = {}
+            product_list = []
+            location_src_id = pick.location_id.id
+            #Verifier la liste de produit dans move_lines si la quantite en stock est insuffisante lors de la demande sauf pour le bon d'entree qui n'a pas besoin de zone d'emplacement source
+            for line in pick.move_lines:
+                if line.product_id not in product_list:
+                    product_list.append(line.product_id)
+                if dict.get(line.product_id,False):
+                    dict[line.product_id] += line.product_uom_qty
+                else: dict[line.product_id] = line.product_uom_qty  
+            product_list_name = []   
+            for product in product_list:
+                total_qty = 0.0
+                stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',product.id), ('location_id','=',location_src_id)])
+                for quant in stock_quant_ids:
+                    total_qty += quant.qty
+                #recuperer tous les noms de produits qui sont insuffisants par rapport au quantite en stock disponible
+                if total_qty < dict[product]:
+                    product_list_name.append(product.name)
+            
+            if product_list_name:
+                product_name = ''
+                product_name = "\n".join(product_list_name)
+                message = "La quantité en stock de l\'emplacement  source est insuffisante pour les articles ci-après: \n"+str(product_name)
+                raise UserError(message)
+            else:
+                self.write({'state':'attente_logistique'})    
+        
+    def action_aviser_magasinier(self):
+        self.write({'state':'attente_magasinier'})    
     
     def action_cancel_magasinier(self):
         self.action_confirm()
