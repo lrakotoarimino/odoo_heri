@@ -124,7 +124,8 @@
 	       	<field name="name">Bon de cession interne</field>
 	       	<field name="res_model">stock.picking</field>
 			<field name="domain">[('mouvement_type','=','bci')]</field>  
-			<field name="context">{'default_mouvement_type': 'bci', 'default_state': 'draft'}</field>  	
+			<!-- <field name="context">{'default_mouvement_type': 'bci', 'default_state': 'draft'}</field>   -->	
+	       	<field name="context" eval="{'default_mouvement_type': 'bci', 'default_state': 'draft', 'default_picking_type_id': ref('stock.picking_type_internal')}"/>
 	       	<field name="view_type">form</field>
 	       	<field name="view_mode">tree,form</field>
 	   	</record>

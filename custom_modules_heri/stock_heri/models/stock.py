@@ -430,11 +430,7 @@ class ReturnPickingLineHeri(models.TransientModel):
     _inherit= "stock.return.picking.line"
     _rec_name = 'product_id'
 
-    quantity = fields.Float("Quantité",compute='default_qty',required=True, readonly=False)
-    
-    def default_qty(self):
-        for qt in self :
-            qt.quantity = qt.move_id.product_uom_qty
+    quantity = fields.Float("Quantité",required=True, readonly=False)
     
 class ReturnPickingHeri(models.TransientModel):
     _inherit = 'stock.return.picking'
@@ -514,8 +510,10 @@ class ReturnPickingHeri(models.TransientModel):
                     'procure_method': 'make_to_stock',
                     'move_dest_id': move_dest_id,
                 })
+            if  return_line.move_id.product_uom_qty < new_qty:
+                raise UserError(u'La quantité à retourner ne doit pas être au dessus de la quantité de l\' article dans le bon de sortie')
         if not returned_lines:
-            raise UserError("Please specify at least one non-zero quantity.")
+            raise UserError("Please specify at least one non-zero quantity.")           
         
         new_picking.action_aviser()
         return new_picking.id, picking_type_id

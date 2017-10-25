@@ -31,6 +31,7 @@
 					    name="state" 
 					    widget="statusbar" 
 					    statusbar_visible="nouveau,a_approuver,non_prevue,attente_validation,wait_mode,purchase"/>
+					    <field name="is_creator" invisible="1" />
 				</xpath>
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_picking']" position="after">
 				 	<button type="object"
@@ -128,7 +129,7 @@
 			      	    string="Avis supérieur hierarchique" 
 			      	    name="action_a_approuver"
 			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('nouveau'))]}"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), ('is_creator', '=', False)]}"
 			      	 />
 					<button 
 			      	    string="Accorder" 
@@ -137,7 +138,7 @@
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), ('is_manager', '=', False)]}"
 			      	 />
 					<button 
-			      	    string="Refuser" 
+			      	    string="A revoir" 
 			      	    name="refus_superieur"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), ('is_manager', '=', False)]}"
@@ -150,7 +151,7 @@
 			      	    groups="purchase_heri.group_finance_heri"
 			      	 />
 					<button 
-			      	    string="Refuser" 
+			      	    string="A revoir" 
 			      	    name="refus_finance"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('non_prevue'))]}"
@@ -164,7 +165,7 @@
 			      	    groups="purchase_heri.group_dg_heri"
 			      	 />
 					<button 
-			      	    string="Refuser" 
+			      	    string="A revoir" 
 			      	    name="refus_dg"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_validation'))]}"
@@ -255,21 +256,36 @@
                 <form string="Achat Import">
                 <header>
                     <button 
-                        string="Envoyer au supérieur hierarchique" 
+                        string="Envoyer à la direction générale" 
                         name="action_a_approuver2"
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), '|',('purchase_type', 'not in', ('purchase_import')),('is_creator','=',False)]}"
                      />
                     <button 
-                        string="Envoyer à la finance pour etablir OV" 
+                        string="Valider" 
+                        groups="purchase_heri.group_dg_heri"
                         name="action_aviser_finance"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), '|',('purchase_type', 'not in', ('purchase_import')),('is_manager','=',False)]}"
+                        attrs="{'invisible': ['|',('state', 'not in', ('confirmation_dg')),('purchase_type', 'not in', ('purchase_import'))]}"
+                     />
+                    <button 
+                        string="A revoir" 
+                        groups="purchase_heri.group_dg_heri"
+                        name="action_refus_import_dg"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', 'not in', ('confirmation_dg')), ('purchase_type', 'not in', ('purchase_import'))]}"
                      />
                      <button 
                         string="Envoyer OV à la banque" 
                         groups="purchase_heri.group_finance_heri"
                         name="action_send_to_bank"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', 'not in', ('aviser_finance')), ('purchase_type', 'not in', ('purchase_import'))]}"
+                     />
+ 					<button 
+                        string="A revoir" 
+                        groups="purchase_heri.group_finance_heri"
+                        name="action_cancel_finance"
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', 'not in', ('aviser_finance')), ('purchase_type', 'not in', ('purchase_import'))]}"
                      />
@@ -292,7 +308,7 @@
                             attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')),'|', ('is_creator', '=',False),('state', 'not in', ('ov_to_bank'))]}">
                             <field name='purchase_ids' invisible="1"/>
                     </button>
-                    <field name="state" widget="statusbar" statusbar_visible="nouveau,a_approuver,aviser_finance,ov_to_bank,br_lie,purchase" readonly="1"/>
+                    <field name="state" widget="statusbar" statusbar_visible="nouveau,confirmation_dg,aviser_finance,ov_to_bank,br_lie,purchase" readonly="1"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -312,12 +328,6 @@
                             <field name="bex_lie_count" widget="statinfo" string="Budget Expense Report" help="Incoming Bex"/>
                             <field name="bex_id" invisible="1"/>
                         </button>
-                        <button type="object"  name="action_view_invoice"
-                            class="oe_stat_button"
-                            icon="fa-pencil-square-o" attrs="{'invisible':[('state', 'in', ('draft','sent','to approve')),('invoice_ids','=',[])]}">
-                            <field name="invoice_count" widget="statinfo" string="Factures Fournisseurs"/>
-                            <field name='invoice_ids' invisible="1"/>
-                        </button> 
                     </div>
                     <div class="oe_title">
                      <!--    <label string="Request for Quotation " attrs="{'invisible': [('state','not in',('draft','sent','bid'))]}"/> -->

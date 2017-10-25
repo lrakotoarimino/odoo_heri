@@ -24,15 +24,16 @@
 				    	.td_footer {padding:1%;border:1px solid;}
                     </style>
                     
-                    
+                   <div class="text-center">
+                   		<b><h1>BON DE SORTIE</h1></b>
+                   </div> 
                    <t t-if="o.is_duplicata">
                       	<div class="duplicata">
                       		<h1>DUPLICATA</h1>
                    		</div>
                    </t>
                     
-                    
-                    <div class="text-left">
+                	<div class="text-left">
                			<h1><span t-field="o.name"/></h1> 
                     </div>
                     <span><strong>N° Budget Request :</strong>  <span t-field="o.origin"/><strong> Du : </strong><span t-field="o.min_date"/> </span><br/> 

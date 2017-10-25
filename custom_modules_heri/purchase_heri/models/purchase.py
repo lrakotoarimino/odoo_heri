@@ -142,6 +142,7 @@ class PurchaseHeri(models.Model):
     justificatif = fields.Text("Justificatif Non prévu/Dépassement")
     state = fields.Selection([
         ('nouveau', 'Nouveau'),
+        ('confirmation_dg', 'En attente validation DG'),
         ('a_approuver', 'Avis supérieur hiérarchique'),
         ('aviser_finance', 'Etablissement OV'),
         ('ov_to_bank', 'OV envoyé à la banque'),
@@ -217,7 +218,8 @@ class PurchaseHeri(models.Model):
     picking_ids_bs = fields.One2many('stock.picking', string="purchase_ids", compute='_compute_bs_lie')
     bs_lie_count = fields.Integer(compute='_compute_bs_lie')
     all_bex_validated = fields.Boolean('Tout bex est Comptabilisé',compute='_compute_all_validated')   
-
+    bs_id = fields.Many2one('stock.picking', string="Bon de sortie lié", compute='_compute_bs_lie')
+    
     @api.depends('purchase_ids', 'state','statut_bex')
     def _compute_all_validated(self):
         for order in self:
@@ -268,11 +270,12 @@ class PurchaseHeri(models.Model):
     
     @api.multi
     def _compute_bs_lie(self):
-        for bs in self:
-            bs_child_purchase = self.env['stock.picking'].search(['&', ('breq_id','=',bs.id),('mouvement_type','=','bs')])
+        for order in self:
+            bs_child_purchase = self.env['stock.picking'].search([('breq_id','=',order.id),('mouvement_type','=','bs')],limit=1)
             if bs_child_purchase:
-                bs.picking_ids_bs = bs_child_purchase
-                bs.bs_lie_count = len(bs_child_purchase)
+                order.picking_ids_bs = bs_child_purchase
+                order.bs_lie_count = len(bs_child_purchase)
+                order.bs_id = bs_child_purchase.id
                 
     @api.multi
     def _compute_bex_lie(self):
@@ -345,12 +348,16 @@ class PurchaseHeri(models.Model):
     def action_refus_superieur(self):
         self.write({'state':'nouveau', 'change_state_date': fields.Datetime.now()})
         self.action_cancel()
+    def action_refus_dg_import(self):
+        self.write({'state':'nouveau', 'change_state_date': fields.Datetime.now()})
     def action_non_prevu(self):
         self.write({'state':'non_prevue', 'change_state_date': fields.Datetime.now()})
     def action_refus_finance(self):
         self.write({'state':'refuse', 'change_state_date': fields.Datetime.now()})
     def action_attente_validation(self):
         self.write({'state':'attente_validation', 'change_state_date': fields.Datetime.now()})
+    def action_attente_validation_import(self):
+        self.write({'state':'confirmation_dg', 'change_state_date': fields.Datetime.now()})
     def action_refus_dg(self):
         self.write({'state':'refuse', 'change_state_date': fields.Datetime.now()})
     def action_wait_mode(self):
@@ -465,12 +472,21 @@ class PurchaseOrderLine(models.Model):
                 raise UserError("La zone d'emplacement source ne doit pas être vide dans un Budget Request Stock")
             #line.qte_prevu = line.product_id.virtual_available
             
-            location_src_id = line.location_id.id
-            total_qty = 0.0
-            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=',location_src_id)])
+            location_src_id = line.location_id
+            total_qty_available = 0.0
+            total_reserved = 0.0
+            liste_picking_ids = []
+            
+            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+            line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
+                                                               ('order_id.bs_id.state','not in', ('done','cancel')), \
+                                                               ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
+                                                               ])
+                                                               
+            total_reserved = sum(x.product_qty for x in line_ids)
             for quant in stock_quant_ids:
-                total_qty += quant.qty
-            line.qte_prevu = total_qty
+                total_qty_available += quant.qty
+            line.qte_prevu = total_qty_available - total_reserved
     
     @api.onchange('product_id')
     def onchange_product_id(self):
