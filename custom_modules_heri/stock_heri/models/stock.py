@@ -15,6 +15,8 @@ class StockPicking(models.Model):
         mouvement_type = context.get('default_mouvement_type', False)
         if mouvement_type and mouvement_type == 'bci':
             vals['name'] = self.env['ir.sequence'].next_by_code('bon.cession.interne')
+            if not vals['move_lines']:
+                raise UserError('Veuillez insérer les articles à transférer.')
         return super(StockPicking, self).create(vals)
             
     breq_id = fields.Many2one('purchase.order')
@@ -58,7 +60,7 @@ class StockPicking(models.Model):
     state = fields.Selection([
         ('draft', 'Draft'), ('cancel', 'Cancelled'),
         ('attente_hierarchie','Avis supérieur hierarchique'),
-        ('attente_logistique','Vérification logistique'),
+        ('attente_logistique','Avis logistique'),
         ('attente_magasinier','Avis Magasinier'),
         ('waiting', 'Waiting Another Operation'),
         ('confirmed', 'Waiting Availability'),
@@ -95,9 +97,24 @@ class StockPicking(models.Model):
             product_list_name = []   
             for product in product_list:
                 total_qty = 0.0
+                total_reserved = 0.0
+                liste_picking_ids = []
+                p = product.id
+                bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+                                                                   ('picking_id.state','not in', ('done','cancel')), \
+                                                                   ('product_id','=', product.id)
+                                                                   ])  
+                line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
+                                                               ('order_id.bs_id.state','not in', ('done','cancel')), \
+                                                               ('product_id','=', product.id), ('location_id','=', location_src_id)
+                                                               ])       
+                a = line_ids
+                total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
+                total_breq_reserved = sum(x.product_qty for x in line_ids)
                 stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',product.id), ('location_id','=',location_src_id)])
                 for quant in stock_quant_ids:
                     total_qty += quant.qty
+                total_qty = total_qty - total_bci_reserved - total_breq_reserved
                 #recuperer tous les noms de produits qui sont insuffisants par rapport au quantite en stock disponible
                 if total_qty < dict[product]:
                     product_list_name.append(product.name)
@@ -107,6 +124,8 @@ class StockPicking(models.Model):
                 product_name = "\n".join(product_list_name)
                 message = "La quantité en stock de l\'emplacement  source est insuffisante pour les articles ci-après: \n"+str(product_name)
                 raise UserError(message)
+            elif not pick.move_lines:
+                raise UserError('Veuillez insérer les articles à transférer.')
             else:
                 self.write({'state':'attente_logistique'})    
         

@@ -482,11 +482,16 @@ class PurchaseOrderLine(models.Model):
                                                                ('order_id.bs_id.state','not in', ('done','cancel')), \
                                                                ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
                                                                ])
-                                                               
+            #recuperer tous les articles reserves dans bci
+            bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+                                                                   ('picking_id.state','not in', ('done','cancel')), \
+                                                                   ('product_id','=', line.product_id.id)
+                                                                   ])  
+            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
             total_reserved = sum(x.product_qty for x in line_ids)
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
-            line.qte_prevu = total_qty_available - total_reserved
+            line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
     
     @api.onchange('product_id')
     def onchange_product_id(self):

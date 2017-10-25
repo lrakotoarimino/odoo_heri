@@ -94,7 +94,7 @@ class Bex(models.Model):
         self.change_state_date = fields.Datetime.now()
             
     def comptabiliser(self):
-        if self.breq_id and self.breq_id.purchase_type!='purchase_not_stored':
+        if self.breq_id and self.breq_id.purchase_type in ('purchase_stored','purchase_import'):
             self.create_be() 
         self.state = 'comptabilise'
             
