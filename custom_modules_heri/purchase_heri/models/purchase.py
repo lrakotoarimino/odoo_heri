@@ -521,7 +521,9 @@ class PurchaseOrderLine(models.Model):
     
     @api.model
     def create(self, values):
-        designation_frns = self.env['product.product'].browse(values['product_id']).name
+        ref = self.env['product.product'].browse(values['product_id']).ref_fournisseur
+        desc = self.env['product.product'].browse(values['product_id']).desc_fournisseur
+        designation_frns = '['+ref+'] '+desc
         values['designation_frns'] = designation_frns
         line = super(PurchaseOrderLine, self).create(values)
         return line
@@ -564,7 +566,9 @@ class PurchaseOrderLine(models.Model):
         res = super(PurchaseOrderLine, self).onchange_product_id()
         if self.product_id:
             self.price_unit = self.product_id.standard_price
-            self.designation_frns = self.product_id.name
+            ref = self.product_id.ref_fournisseur
+            desc = self.product_id.desc_fournisseur
+            self.designation_frns = '['+ref+'] '+desc
         return res
     
     @api.onchange('product_qty')

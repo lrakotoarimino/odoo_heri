@@ -9,11 +9,13 @@
 			<field name="inherit_id" ref="product.product_normal_form_view"/>
 			<field name="arch" type="xml">
 				<field name="type" position="after">
-					<!-- <field name="product_family_id"/> -->
+					<field name="ref_fournisseur"/>
+					<field name="desc_fournisseur"/>
 					<field name="family"/>
 					<field name="nature_analytique"/>
 					<field name="stock"/>
 					<field name="security_seuil" attrs="{'invisible': [('type', '!=', ('product'))]}" />
+					<field name="taxe_douane"/>
 				</field>
 			</field>
 		</record>	

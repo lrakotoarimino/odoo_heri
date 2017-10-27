@@ -17,3 +17,6 @@ class ProductHeri(models.Model):
     nature_analytique = fields.Char("Nature analytique", size=250)
     stock = fields.Char("Stock HERi")
     security_seuil = fields.Float(string=u'Seuil de securité')
+    ref_fournisseur = fields.Char("Référence fournisseur", size=50)
+    desc_fournisseur = fields.Char("Description fournisseur", size=100)
+    taxe_douane = fields.Float(string=u'Taxe de douane(%)')
