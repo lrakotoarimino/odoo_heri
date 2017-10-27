@@ -7,7 +7,7 @@
             <field name="model">budget.expense.report</field>
             <field eval="12" name="priority"/>
             <field name="arch" type="xml">
-                <form string="Budget Expense Report">
+                <form string="Budget Expensive Report Achat">
                 <header>
                     <button name="attente_hierarchie" string="Envoyer au supérieur hiérarchique" type="object" class="oe_highlight"
 			    	    attrs="{'invisible': ['|',('state', 'not in', ('draft')), ('is_creator', '=', False)]}"/>
@@ -34,15 +34,16 @@
                             <field name="be_ids" invisible="1"/>
                         </button>
                    	</div>
+                   	<label string="Budget Expensive Report Achat"/>
                     <h1 class="hidden-xs">
                         <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>
                     </h1>
                     <group class="hidden-xs">
                         <group>
                             <field name="breq_id" context="{'form_view_ref':'purchase.purchase_order_form'}"/>
-                            <field name="partner_id" />
-                            <field name="location_id" />
-                            <field name="location_dest_id" />
+                            <field name="partner_id" string="Fournisseur"/>
+                            <field name="location_id" invisible="1"/>
+                            <field name="location_dest_id" invisible="1"/>
 							
 							<field name="purchase_type" invisible="1"/>
 							<field name="employee_id" />

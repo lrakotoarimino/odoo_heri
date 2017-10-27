@@ -47,7 +47,6 @@
 				<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,partially_available,assigned,done" />
 				</field>
-
             </field>
    		</record>
 		<!-- Fin form de base stock.picking-->
@@ -67,7 +66,7 @@
 				</xpath>
             </field>
         </record>
-	
+		
 		<!-- Debut bon de cession interne form view -->
 		<record id="view_bci_form_advanced_inherit" model="ir.ui.view">
             <field name="name">stock.cession.interne.form</field>
@@ -81,6 +80,9 @@
 				<xpath expr="//field[@name='picking_type_id']" position="attributes">
 				    <attribute name="domain">[('code','=','internal')]</attribute>
 				</xpath>
+				<!-- <xpath expr="//field[@name='move_lines']" position="inside">
+				    <field name="location_id" readonly="1"/>
+				</xpath> -->
 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
 					<attribute name="attrs">{'invisible': [('state','not in',('attente_magasinier'))]}</attribute>
@@ -193,6 +195,21 @@
 	  	<!-- Fin bon de sortie -->
 	  	
 	   	<!-- Debut action bon d' entree -->
+	   	<record id="view_be_picking_form_advanced" model="ir.ui.view">
+            <field name="name">stock.be.picking.advanced.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="arch" type="xml">            
+				<field name="location_dest_id" position="replace">
+				    <field name="location_dest_id" string="Magasin d'emplacement destination" attrs="{'readonly': [('mouvement_type','not in',('be'))]}"/>
+				</field>
+				<field name="location_id" position="replace">
+				    <field name="location_id" invisible="1"/>
+				</field>
+			</field>
+		</record>
+		
 	   	<record model="ir.actions.act_window" id="action_bon_d_entree">
 	       	<field name="name">Bon d'entrée en stock</field>
 	       	<field name="res_model">stock.picking</field>
@@ -211,7 +228,7 @@
         <record id="action_bon_d_entree_form_view" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="view_id" ref="stock_heri.view_be_picking_form_advanced"/>
             <field name="act_window_id" ref="stock_heri.action_bon_d_entree"/>
 		</record>
 	   	<!-- Fin bon d'entree -->
@@ -226,6 +243,7 @@
                     <field name="is_creator" invisible="1"/>
                     <field name="is_manager" invisible="1"/>
                     <field name="employee_id"/>
+                    <field name="section"/>
                     <field name="is_bs" invisible="1"/>
                     <field name="is_returned" invisible="1"/>
                     
@@ -413,21 +431,6 @@
 				<field name="origin" position="after">
 				    <field name="bs_id" attrs="{'invisible': [('mouvement_type','!=','br')]}" context="{'form_view_ref':'stock.view_picking_form'}"/>
 				</field>
-			</field>
-		</record>
-		
-	   	<!-- Popup avertissement quand la quantite de chaque article dans l'emplacement source est insuffisant lors du transfert -->
-		<record model="ir.ui.view" id="stock_heri_view_immediate_transfer">
-			<field name="name">information.stock.form</field>
-			<field name="model">stock.immediate.transfer.heri</field>
-			<field name="inherit_id" ref="stock.view_immediate_transfer"/>
-			<field name="arch" type="xml"> 
-				<xpath expr="//form" position="attributes">
-			    		<attribute name="string">Avertissement</attribute>
-		    	</xpath>
-		    	<xpath expr="//p" position="replace">
-		    		<field name="current_product" readonly="1" nolabel="1"/>
-		    	</xpath>
 			</field>
 		</record>
 		

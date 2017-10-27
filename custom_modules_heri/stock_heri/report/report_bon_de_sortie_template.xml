@@ -24,18 +24,16 @@
 				    	.td_footer {padding:1%;border:1px solid;}
                     </style>
                     
-                   <div class="text-center">
-                   		<b><h1>BON DE SORTIE</h1></b>
-                   </div> 
+					<div class="text-center">
+                    	<h1>Bon de Sortie N° <span t-field="o.name"/></h1> 
+                    </div>
+                    
                    <t t-if="o.is_duplicata">
                       	<div class="duplicata">
                       		<h1>DUPLICATA</h1>
                    		</div>
                    </t>
-                    
-                	<div class="text-left">
-               			<h1><span t-field="o.name"/></h1> 
-                    </div>
+
                     <span><strong>N° Budget Request :</strong>  <span t-field="o.origin"/><strong> Du : </strong><span t-field="o.min_date"/> </span><br/> 
                     <span><strong>Section Analytique d'Imputation :</strong>  <span t-field="o.section"/></span><br/> 
                     <span><strong>Magasin d'origine :</strong>  <span t-field="o.location_id"/></span><br/> 
@@ -104,7 +102,8 @@
             				<strong>Visa et Nom Magasinier</strong>
             			</td>
             			<td class="td_footer text-center">
-            				<strong>Visa et Nom Demandeur</strong>
+            				<strong>Visa et Nom Demandeur</strong><br/><br/>
+            				<span t-field="o.employee_id"/>
             			</td>
             		</tr>
             	</table>

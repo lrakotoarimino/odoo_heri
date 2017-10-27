@@ -19,4 +19,5 @@ class ModePaiement(models.Model):
         mode_paiement = self.mode_paiement.id
         breq = self.env['purchase.order'].browse(self.breq_id.id)
         breq.write({'journal_id': mode_paiement})
-        breq.signal_workflow('valider_mode')
+        if self.breq_id.purchase_type != "purchase_import":
+            breq.signal_workflow('valider_mode')

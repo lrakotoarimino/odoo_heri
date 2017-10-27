@@ -13,6 +13,7 @@
                 'views/purchase_view.xml',
                 'views/purchase_wkf.xml',
                 'views/paiement.xml',
+                'views/res_config_views.xml',
                 #data
                 'data/stock_warehouse_data.xml',
                 #security

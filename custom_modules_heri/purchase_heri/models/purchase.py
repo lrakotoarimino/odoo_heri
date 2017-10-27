@@ -164,6 +164,13 @@ class PurchaseHeri(models.Model):
         ('purchase_import', 'Achats à l\'importation'),
     ], string='Type d\'achat')
     
+    service_type = fields.Selection([
+        ('transport', 'Transport'),
+        ('assurance', 'Assurance'),
+        ('douane', 'Droit de douane'),
+        ('additionel','Additionel'),
+    ], string='Type de service')
+    
     purchase_import_type = fields.Selection([
         ('purchase_import_stored', 'Achats à l\'import stockés'),
         ('purchase_import_not_stored', 'Achats à l\'import non stockés')
@@ -171,7 +178,7 @@ class PurchaseHeri(models.Model):
     
     import_type = fields.Many2one('purchase.import.type',string="Type Import")
         
-    department_id = fields.Many2one('hr.department', string='Département émetteur/Section analytique', default=get_department_id, readonly=True)
+    department_id = fields.Many2one('hr.department', string='Département émetteur', default=get_department_id, readonly=True)
     objet = fields.Text("Objet de la demande")
     employee_id = fields.Many2one('hr.employee', string='Demandeur', default=get_employee_id, readonly=True)
     manager_id = fields.Many2one('hr.employee', string='Responsable d\'approbation',default=get_manager_id, readonly=True)
@@ -181,10 +188,19 @@ class PurchaseHeri(models.Model):
     change_state_date = fields.Datetime(string="Date changement d\'état", readonly=True, help="Date du dernier changement d\'état.") 
     purchase_ids = fields.One2many('purchase.order', string="purchase_ids", compute='_compute_br_lie')
     br_lie_count = fields.Integer(compute='_compute_br_lie')
+    purchase_ids_transport = fields.One2many('purchase.order', string="purchase_ids_transport", compute='_compute_br_transport_lie')
+    br_transport_lie_count = fields.Integer(compute='_compute_br_transport_lie')
+    
+    purchase_ids_douane = fields.One2many('purchase.order', string="purchase_ids_douane", compute='_compute_br_douane_lie')
+    br_douane_lie_count = fields.Integer(compute='_compute_br_douane_lie')
+    
+    purchase_ids_assurance = fields.One2many('purchase.order', string="purchase_ids_assurance", compute='_compute_br_assurance_lie')
+    br_assurance_lie_count = fields.Integer(compute='_compute_br_assurance_lie')
+    
     parents_ids = fields.Many2one('purchase.order',readonly=True, string='BReq d\'origine')
-    date_prevu = fields.Datetime(string="Date prévue")
+    date_prevu = fields.Datetime(string="Date prévue livraison")
     modalite_paiement = fields.Float(string='Modalité de paiement')
-    location_id = fields.Many2one('stock.location', string='Zone d\'emplacement source') 
+    location_id = fields.Many2one('stock.location', string='Magasin Origine') 
      
     section = fields.Char("Section analytique d’imputation")
     nature = fields.Char("Nature analytique")
@@ -220,10 +236,11 @@ class PurchaseHeri(models.Model):
     all_bex_validated = fields.Boolean('Tout bex est Comptabilisé',compute='_compute_all_validated')   
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie lié", compute='_compute_bs_lie')
     
-    @api.depends('purchase_ids', 'state','statut_bex')
+    @api.depends('statut_bex')
     def _compute_all_validated(self):
         for order in self:
-            if order.purchase_ids and all([x.statut_bex == 'comptabilise' for x in order.purchase_ids]):
+            current_brq_id = self.env['purchase.order'].search([('parents_ids','=',order.id)])
+            if current_brq_id and all([x.statut_bex == 'comptabilise' for x in current_brq_id]):
                 order.all_bex_validated = True
             else :
                 order.all_bex_validated = False
@@ -308,14 +325,56 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_br_lie(self):
         for br in self:
-            purchase_child = self.env['purchase.order'].search([('parents_ids','=',br.id)])
+            purchase_child = self.env['purchase.order'].search([('parents_ids','=',br.id),('service_type','=','additionel')])
             if purchase_child:
                 br.purchase_ids = purchase_child
                 br.br_lie_count = len(purchase_child)
-         
+                
+    @api.multi
+    def _compute_br_transport_lie(self):
+        for br_transport in self:
+            purchase_child_transport = self.env['purchase.order'].search([('parents_ids','=',br_transport.id),('service_type','=','transport')])
+            if purchase_child_transport:
+                br_transport.purchase_ids_transport = purchase_child_transport
+                br_transport.br_transport_lie_count = len(purchase_child_transport)
+    
+    @api.multi
+    def _compute_br_douane_lie(self):
+        for br_transport in self:
+            purchase_child_douane = self.env['purchase.order'].search([('parents_ids','=',br_transport.id),('service_type','=','douane')])
+            if purchase_child_douane:
+                br_transport.purchase_ids_douane = purchase_child_douane
+                br_transport.br_douane_lie_count = len(purchase_child_douane)
+    
+    @api.multi
+    def _compute_br_assurance_lie(self):
+        for br_transport in self:
+            purchase_child_assurance = self.env['purchase.order'].search([('parents_ids','=',br_transport.id),('service_type','=','assurance')])
+            if purchase_child_assurance:
+                br_transport.purchase_ids_assurance = purchase_child_assurance
+                br_transport.br_assurance_lie_count = len(purchase_child_assurance)
+                
     @api.multi
     def action_view_br_lie(self):
         action = self.env.ref('purchase_heri.action_br_lie_tree')
+        result = action.read()[0]
+        return result
+    
+    @api.multi
+    def action_view_br_transport(self):
+        action = self.env.ref('purchase_heri.action_br_achat_import_transport')
+        result = action.read()[0]
+        return result
+    
+    @api.multi
+    def action_view_br_douane(self):
+        action = self.env.ref('purchase_heri.action_br_achat_import_douane')
+        result = action.read()[0]
+        return result
+    
+    @api.multi
+    def action_view_br_assurance(self):
+        action = self.env.ref('purchase_heri.action_br_achat_import_assurance')
         result = action.read()[0]
         return result
     
@@ -332,6 +391,8 @@ class PurchaseHeri(models.Model):
                     breq.statut_budget = 'non_prevu'
                 if breq.budgetise > 0.0 and breq.solde <= 0.0 :
                     breq.statut_budget = 'depasse'
+                if breq.budgetise == 0.0 and breq.solde == 0.0:
+                    breq.statut_budget = 'non_prevu'
             else:
                 breq.statut_budget = 'prevu'
             
@@ -465,6 +526,11 @@ class PurchaseOrderLine(models.Model):
         line = super(PurchaseOrderLine, self).create(values)
         return line
     
+    def _suggest_quantity(self):
+        res = super(PurchaseOrderLine, self)._suggest_quantity()
+        self.product_qty = 0.0
+        return res
+    
     @api.onchange('product_id')
     def onchange_prod_id(self):
         for line in self:
@@ -503,16 +569,28 @@ class PurchaseOrderLine(models.Model):
     
     @api.onchange('product_qty')
     def onchange_product_qty(self):
-#         res = super(PurchaseOrderLine, self)._onchange_product_qty()
         if self.order_id.is_breq_stock: 
+            product_seuil_id = self.env['product.product'].search([('id','=',self.product_id.id)])
+            product_seuil = product_seuil_id.security_seuil
+            qte_restant = self.qte_prevu - self.product_qty
+
             if self.qte_prevu < self.product_qty:
 #                 self.product_qty = self.qte_prevu
                 return {
                         'warning': {
-                                    'title': 'Avertissement!', 'message': 'La quantité demandé va changé en quantité disponible'
+                                    'title': 'Avertissement!', 'message': 'La quantité demandée réduite au disponible dans le magasin: '+str(self.qte_prevu)
                                 },
                         'value': {
                                 'product_qty': self.qte_prevu,
+                                }
+                        }
+            elif self.qte_prevu > self.product_qty and qte_restant < product_seuil:
+                return {
+                        'warning': {
+                                    'title': 'Avertissement - Seuil de sécurité!', 'message': 'Le seuil de securité pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantité restante serait "'+str(qte_restant)+'" qui est en-dessous de seuil de sécurité.'
+                                },
+                        'value': {
+                                'product_qty': self.product_qty,
                                 }
                         }
         return
@@ -524,6 +602,7 @@ class PurchaseOrderLine(models.Model):
             vals = {
                 'name': line.name or '',
                 'product_id': line.product_id.id,
+                'qty_done': line.product_qty,
                 'product_uom': line.product_uom.id,
                 'breq_id': line.order_id.id,
                 'purchase_line_id': line.id,

@@ -94,7 +94,7 @@ class Bex(models.Model):
         self.change_state_date = fields.Datetime.now()
             
     def comptabiliser(self):
-        if self.breq_id and self.breq_id.purchase_type in ('purchase_stored','purchase_import'):
+        if self.breq_id and self.breq_id.purchase_type != 'purchase_not_stored':
             self.create_be() 
         self.state = 'comptabilise'
             
@@ -218,10 +218,10 @@ class BexLine(models.Model):
     product_id = fields.Many2one('product.product', 'Article')
     product_qty = fields.Float('Quantité BReq',readonly=True)
     qty_done = fields.Float('Quantité reçue')
-    prix_unitaire = fields.Float('PU')
-    montant_br = fields.Float('Montant BReq',readonly=True)
-    montant_realise = fields.Float(compute='_compute_amount', string='Montant Réalisé', readonly=True, store=True)
-    montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant Réalisé taxé', readonly=True, store=True)
+    prix_unitaire = fields.Float('PUMP')
+    montant_br = fields.Float('Montant BReq HT',readonly=True)
+    montant_realise = fields.Float(compute='_compute_amount', string='Montant HT', readonly=True, store=True)
+    montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant TTC', readonly=True, store=True)
     taxes_id = fields.Many2many('account.tax', string='Taxes', domain=['|', ('active', '=', False), ('active', '=', True)])
     
     purchase_type = fields.Selection([

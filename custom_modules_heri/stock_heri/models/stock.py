@@ -99,7 +99,6 @@ class StockPicking(models.Model):
                 total_qty = 0.0
                 total_reserved = 0.0
                 liste_picking_ids = []
-                p = product.id
                 bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
                                                                    ('picking_id.state','not in', ('done','cancel')), \
                                                                    ('product_id','=', product.id)
@@ -107,8 +106,7 @@ class StockPicking(models.Model):
                 line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
                                                                ('order_id.bs_id.state','not in', ('done','cancel')), \
                                                                ('product_id','=', product.id), ('location_id','=', location_src_id)
-                                                               ])       
-                a = line_ids
+                                                               ])      
                 total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
                 total_breq_reserved = sum(x.product_qty for x in line_ids)
                 stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',product.id), ('location_id','=',location_src_id)])
@@ -127,7 +125,11 @@ class StockPicking(models.Model):
             elif not pick.move_lines:
                 raise UserError('Veuillez insérer les articles à transférer.')
             else:
-                self.write({'state':'attente_logistique'})    
+                for line in pick.move_lines:
+                    if line.product_uom_qty <= 0.0:
+                         raise UserError('La quantité à transférer ne devrait pas être inférieure ou égale à 0.0.')
+                    else:
+                        self.write({'state':'attente_logistique'})    
         
     def action_aviser_magasinier(self):
         self.write({'state':'attente_magasinier'})    
@@ -427,11 +429,75 @@ class StockPicking(models.Model):
             if float_compare(move.remaining_qty, 0, precision_rounding=move.product_id.uom_id.rounding) != 0:
                 return True
         return False
-# class MoveLine(models.Model):
-#     _inherit = 'stock.move'
-#     
-#     bex_id = fields.Many2one('bex.line') 
-#     bex_lines_qty_done = fields.Many2one(related='bex_id.qty_done')    
+    
+class StockMove(models.Model):
+    _inherit = 'stock.move'
+     
+    qte_prevu = fields.Float(compute="onchange_product_id", string='Quantité disponible', readonly=True)
+    product_uom_qty = fields.Float('Quantity', default=0.0, required=True, states={'done': [('readonly', True)]})
+   
+    @api.onchange('product_id')
+    def onchange_product_id(self):
+        product = self.product_id.with_context(lang=self.partner_id.lang or self.env.user.lang)
+        self.name = product.partner_ref
+        self.product_uom = product.uom_id.id
+        for line in self:
+            if line.picking_id.mouvement_type == 'bci':
+                if not line.location_id:
+                    raise UserError("La zone d'emplacement source ne doit pas être vide")
+                #line.qte_prevu = line.product_id.virtual_available
+                
+                location_src_id = line.location_id
+                total_qty_available = 0.0
+                total_reserved = 0.0
+                liste_picking_ids = []
+                
+                stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+                line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
+                                                                   ('order_id.bs_id.state','not in', ('done','cancel')), \
+                                                                   ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
+                                                                   ])
+                #recuperer tous les articles reserves dans bci
+                bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+                                                                       ('picking_id.state','not in', ('done','cancel')), \
+                                                                       ('product_id','=', line.product_id.id)
+                                                                       ])  
+                total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
+                total_reserved = sum(x.product_qty for x in line_ids)
+                for quant in stock_quant_ids:
+                    total_qty_available += quant.qty
+                line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
+        return {'domain': {'product_uom': [('category_id', '=', product.uom_id.category_id.id)]}}
+
+    @api.onchange('product_uom_qty')
+    def onchange_product_uom_qty(self):
+        for line in self:
+            if line.picking_id.mouvement_type == 'bci': 
+                product_seuil_id = self.env['product.product'].search([('id','=',line.product_id.id)])
+                product_seuil = product_seuil_id.security_seuil
+                qte_restant = line.qte_prevu - line.product_uom_qty
+                uom_qty = line.product_uom_qty
+                prevu = line.qte_prevu
+                if line.qte_prevu < line.product_uom_qty:
+    #                 self.product_qty = self.qte_prevu
+                    return {
+                            'warning': {
+                                        'title': 'Avertissement!', 'message': 'La quantité demandée réduite au disponible dans le magasin: '+str(self.qte_prevu)
+                                    },
+                            'value': {
+                                    'product_uom_qty': self.qte_prevu,
+                                    }
+                            }
+                elif line.qte_prevu >= line.product_uom_qty and qte_restant < product_seuil:
+                    return {
+                            'warning': {
+                                        'title': 'Avertissement - Seuil de sécurité!', 'message': 'Le seuil de securité pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantité restante serait "'+str(qte_restant)+'" qui est en-dessous de seuil de sécurité.'
+                                    },
+                            'value': {
+                                    'product_uom_qty': line.product_uom_qty,
+                                    }
+                            }
+        return
     
 class PackOperationLine(models.Model):
     _inherit = 'stock.pack.operation'

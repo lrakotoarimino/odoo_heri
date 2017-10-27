@@ -3,6 +3,7 @@ encoding//custom_modules_heri/purchase_heri/__manifest__.py=utf-8
 encoding//custom_modules_heri/purchase_heri/models/bex.py=utf-8
 encoding//custom_modules_heri/purchase_heri/models/paiement.py=utf-8
 encoding//custom_modules_heri/purchase_heri/models/purchase.py=utf-8
+encoding//custom_modules_heri/purchase_heri/models/res_config.py=utf-8
 encoding//custom_modules_heri/purchase_heri/models/stock.py=utf-8
 encoding//custom_modules_heri/referentiel_heri/__manifest__.py=utf-8
 encoding//custom_modules_heri/referentiel_heri/models/product.py=utf-8

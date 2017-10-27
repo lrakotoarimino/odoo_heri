@@ -87,19 +87,19 @@
                         <group>
                             <field name="date_order" readonly="1"/>
                             <field name="date_prevu"/>
-                            <field name="change_state_date"/>
+                            <field name="change_state_date" invisible="1"/>
                             <field 
 						        name="budgetise" 
 						        string="BUDGETISE" 
 						        widget="monetary" 
 						        options="{'currency_field': 'currency_id'}"
-						        style="color:blue;"/>
+						        style="color:blue;"/><br/><br/>
 							<field 
 							    name="cumul" 
 							    string="CUMULE REAL + ENGAG." 
 							    widget="monetary" 
 							    options="{'currency_field': 'currency_id'}"
-							    style="color:blue;"/>
+							    style="color:blue;"/><br/><br/>
 							<field 
 							    name="solde" 
 							    string="SOLDE DE BUDGET" 
@@ -107,7 +107,7 @@
 							    options="{'currency_field': 'currency_id'}"
 							    style="color:blue;"/>
                             <!-- <field name="statut_budget"/> -->
-                            <field name="journal_id" widget="selection"/>
+                            <field name="journal_id" widget="selection" invisible="1"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                             <field 
@@ -129,7 +129,7 @@
                                         string="Désignation HERi" 
                                         domain="[('type', 'in', ('product','consu'))]"/>
                                     <field name="name" invisible="1"/>
-                                    <field name="designation_frns" />
+                                    <field name="designation_frns" invisible="1"/>
                                     <field name="date_planned" invisible="1"/>
                                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                                     <field name="account_analytic_id" context="{'default_partner_id':parent.partner_id}" groups="purchase.group_analytic_accounting"/>
