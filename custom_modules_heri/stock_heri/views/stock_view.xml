@@ -50,6 +50,7 @@
 				<button name="button_scrap" position="attributes">
 				    <attribute name="invisible">1</attribute>
 				</button>
+				
 				<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,partially_available,assigned,done" />
 				</field>
@@ -428,7 +429,7 @@
 			    	    groups="purchase_heri.group_magasinier_heri"/>
 			    	<button 
 			    	    type="object"  
-			    	    name="do_print_BS" 
+			    	    name="do_print" 
 			    	    string="Imprimer" 
 			    	    attrs="{'invisible': ['|',('state','not in',('done')),('mouvement_type','!=','bs')]}"/>
 		    	</xpath>
@@ -457,11 +458,11 @@
 		
         <!-- Menus -->
 		<menuitem id="menu_stock_picking_heri" parent="stock.menu_stock_root" sequence="-100" name="Stock"/>
-		<menuitem  action="action_budget_request_stock" id="menu_budget_request_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="1" name="Budget request stock"/>
-		<menuitem  action="action_bon_de_sortie" id="menu_bon_sortie_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="2" name="Bon de sortie des stocks"/>
-		<menuitem  action="action_bon_d_entree" id="menu_bon_entree_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="3" name="Bon d'entrée en stock"/>
-		<menuitem  action="action_bon_de_cession_interne" id="menu_bon_cession_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="4" name="Bon de cession interne de stocks"/>
-		<menuitem  action="action_bon_de_retour" id="menu_bon_retour_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="5" name="Bon de retour de stocks"/>
+		<menuitem  action="action_budget_request_stock" id="menu_budget_request_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="1" name="Budget Request Stock"/>
+		<menuitem  action="action_bon_de_sortie" id="menu_bon_sortie_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="2" name="Bon de Sortie"/>
+		<menuitem  action="action_bon_d_entree" id="menu_bon_entree_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="3" name="Bon d'Entrée"/>
+		<menuitem  action="action_bon_de_cession_interne" id="menu_bon_cession_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="4" name="Bon de Cession Interne"/>
+		<menuitem  action="action_bon_de_retour" id="menu_bon_retour_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="5" name="Bon de Retour"/>
 		<!-- Fin Menus -->
 	</data>
 </odoo>

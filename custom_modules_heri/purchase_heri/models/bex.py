@@ -121,7 +121,8 @@ class Bex(models.Model):
             self.is_creator = True
             
     def _currency_en_ar(self):
-        self.currency_en_ar = self.env.ref('base.MGA').id      
+        for bex in self :
+            bex.currency_en_ar = bex.env.ref('base.MGA').id      
         
     name = fields.Char(compute="_name_change", readonly=True)
     breq_id = fields.Many2one('purchase.order', string=u"Budget Request lié", readonly=True)
@@ -145,7 +146,7 @@ class Bex(models.Model):
     manager_id = fields.Many2one('hr.employee', related='breq_id.manager_id', readonly=True)
     is_manager = fields.Boolean(compute="_get_is_manager", string='Est un manager')
     currency_id = fields.Many2one('res.currency', related='breq_id.currency_id', string='Devise', readonly=True)
-    currency_en_ar = fields.Char('res.currency',compute="_currency_en_ar", readonly=True)
+    currency_en_ar = fields.Many2one('res.currency',compute="_currency_en_ar", readonly=True)
     is_creator = fields.Boolean(compute="_get_is_creator", string='Est le demandeur')
     date = fields.Datetime('Date', default=fields.Datetime.now, readonly=True)
     origin = fields.Char('Document d\'origine', readonly=True)
@@ -233,7 +234,7 @@ class BexLine(models.Model):
     product_id = fields.Many2one('product.product', 'Article')
     product_qty = fields.Float('Quantité BReq',readonly=True)
     qty_done = fields.Float('Quantité reçue')
-    prix_unitaire = fields.Float('PUMP')
+    prix_unitaire = fields.Float('PUMP', readonly=True)
     montant_br = fields.Float('Montant BReq HT',readonly=True)
     montant_realise = fields.Float(compute='_compute_amount', string='Montant HT', readonly=True, store=True)
     montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant TTC', readonly=True, store=True)

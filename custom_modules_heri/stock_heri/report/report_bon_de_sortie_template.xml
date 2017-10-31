@@ -99,7 +99,8 @@
             				<strong style="text-decoration: underline;">Observations : </strong>
             			</td>
             			<td class="td_footer text-center">
-            				<strong>Visa et Nom Magasinier</strong>
+            				<strong>Visa et Nom Magasinier</strong><br/><br/>
+            				<span t-field="o.magasinier_id"/>
             			</td>
             			<td class="td_footer text-center">
             				<strong>Visa et Nom Demandeur</strong><br/><br/>

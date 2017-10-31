@@ -18,6 +18,7 @@ class StockPicking(models.Model):
             if not vals['move_lines']:
                 raise UserError('Veuillez insérer les articles à transférer.')
         return super(StockPicking, self).create(vals)
+        
             
     breq_id = fields.Many2one('purchase.order')
     section = fields.Char("Section analytique d’imputation")
@@ -30,6 +31,7 @@ class StockPicking(models.Model):
     is_duplicata = fields.Boolean('Est un duplicata')
     is_returned = fields.Boolean('dejà retourner')
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie d\'origine")
+    magasinier_id = fields.Many2one('hr.employee')
 
 
     picking_ids_bret = fields.One2many('stock.picking', string="stock_ids_bret", compute='_compute_bret_lie')
@@ -127,7 +129,7 @@ class StockPicking(models.Model):
             else:
                 for line in pick.move_lines:
                     if line.product_uom_qty <= 0.0:
-                         raise UserError('La quantité à transférer ne devrait pas être inférieure ou égale à 0.0.')
+                        raise UserError('La quantité à transférer ne devrait pas être inférieure ou égale à 0.0.')
                     else:
                         self.write({'state':'attente_logistique'})    
         
@@ -146,8 +148,15 @@ class StockPicking(models.Model):
         
     @api.multi
     def do_print_BS(self):
+        employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)])
+        if employee_id:
+            self.magasinier_id = employee_id[0].id
         self.do_new_transfer()
-        return self.env["report"].get_action(self, 'stock_heri.report_bon_de_sortie_template')        
+        return self.do_print()   
+    
+    @api.multi
+    def do_print(self):
+        return self.env["report"].get_action(self, 'stock_heri.report_bon_de_sortie_template')   
     
     def _prepare_pack_ops(self, quants, forced_qties):
         """ Prepare pack_operations, returns a list of dict to give at create """
@@ -260,7 +269,8 @@ class StockPicking(models.Model):
         manager_id = self.employee_id.coach_id.id
         if current_employee_id == manager_id:
             self.is_manager = True
-                
+    
+     
     @api.multi
     def do_new_transfer(self):
         for pick in self:

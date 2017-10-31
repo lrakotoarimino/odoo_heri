@@ -237,6 +237,12 @@ class PurchaseHeri(models.Model):
     all_bex_validated = fields.Boolean('Tout bex est Comptabilisé',compute='_compute_all_validated')   
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie lié", compute='_compute_bs_lie')
     
+    def _currency_en_ar(self):
+        for breq in self:
+            breq.currency_en_ar = breq.env.ref('base.MGA').id
+          
+    currency_en_ar = fields.Many2one('res.currency',compute="_currency_en_ar", readonly=True)
+    
     @api.depends('statut_bex')
     def _compute_all_validated(self):
         for order in self:
@@ -254,6 +260,18 @@ class PurchaseHeri(models.Model):
         for line in self.order_line:
             line.unlink()
     
+    @api.onchange('purchase_type')
+    def onchange_purchase_type(self):
+        if self.parents_ids and self.purchase_type == 'purchase_import':
+            return {
+                    'warning': {
+                                'title': 'Avertissement!', 'message': 'Vous ne pouvez pas choisir l\'Achat à l\'importation pour un Budget Request Additionnel.'
+                            },
+                    'value': {
+                              'purchase_type': False,
+                            }
+                    }
+            
     @api.onchange('budgetise', 'cumul')
     def onchange_budget_cumul(self):
         self.solde = self.budgetise-self.cumul       
@@ -463,12 +481,18 @@ class PurchaseHeri(models.Model):
             
             total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
             cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
-            fob_total = 0.0
-            for line in self.order_line:
-                fob_total += line.product_id.fob
+            fob_total = self.amount_untaxed
             caf_total = (fob_total+total_assurance_fret)*(self.taux_change)
+            if self.taux_change == 0.0:
+                raise UserError(u'Le taux de change ne peut être égal à zéro')
             for line in self.order_line:
-                line.cout_revient = ((caf_total+cLocTotal)*((line.product_id.fob)/fob_total)+((line.product_id.taxe_douane)*(line.price_subtotal)))/(line.product_qty)
+                if fob_total == 0.0:
+                    raise UserError(u'FOB total ne devrait pas être vide')
+                elif line.product_qty == 0.0:
+                    raise UserError(u'La quantité l\'article ne devrait pas être vide')
+                else:
+                    line.cout_revient = ((caf_total+cLocTotal)*((line.price_subtotal)/fob_total)+((line.product_id.taxe_douane)*(line.price_subtotal)))/(line.product_qty)
+                    
                         
     def choisir_mode_paiement(self):
                 #Generation popup mode de paiement
@@ -644,6 +668,8 @@ class PurchaseOrderLine(models.Model):
                 'montant_br' : line.price_subtotal,
                 'purchase_type': line.order_id.purchase_type,
             }
+            if line.order_id.purchase_type == 'purchase_import':
+                vals['prix_unitaire'] = line.cout_revient
             
             bex_lines = bex_line.create(vals)
         return True

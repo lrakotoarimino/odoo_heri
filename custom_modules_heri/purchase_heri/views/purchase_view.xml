@@ -106,7 +106,7 @@
 					<field name="purchase_type" attrs="{'invisible': [('parents_ids','=', False)], 'required': [('is_breq_stock', '=', False)],'readonly':[('service_type','!=','additionel')]}"/>
 					<field name="service_type" invisible="1"/>
 					<field name="parents_ids" attrs="{'invisible': [('parents_ids','=', False)]}"/>
-                    <field name="import_type" attrs="{'invisible': [('parents_ids','=', False)]}"/>
+                    <field name="import_type" invisible="1"/>
                     <field name="purchase_import_type" invisible="1"/>
 				    <field name="employee_id" />
 				    <field name="department_id"/>
@@ -300,17 +300,30 @@
                      	type="object"
                      />   
                      <button 
+                        string="A revoir" 
+                        groups="purchase_heri.group_finance_heri"
+                        name="action_cancel_bank"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', 'not in', ('ov_to_bank')), ('purchase_type', 'not in', ('purchase_import'))]}"
+                     /> 
+                     <button 
                         string="Valider prix de revient" 
                         name="action_br_lie"
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', '!=', 'ov_to_bank'),'|',('all_bex_validated', '!=',True),'|',('purchase_type', '!=', 'purchase_import'),('is_creator', '=',False)]}"
-                     />            
+                     />
                      <button 
                         string="Créer BEX" 
                         name="action_br_mere_ok"
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', 'not in', ('br_lie')),'|',('purchase_type', 'not in', ('purchase_import')),('is_creator', '=',False)]}"
                      />      
+                     <button 
+                        string="A revoir" 
+                        name="action_cancel_pr"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', 'not in', ('br_lie')),'|', ('purchase_type', 'not in', ('purchase_import')),('is_creator','=',False)]}"
+                     /> 
                      <button type="object"
                             name="action_view_br_lie"
                             class="oe_highlight" 
@@ -389,7 +402,11 @@
                             <field name="is_manager" invisible="1"/>
                             <field name="partner_ref"/>
                             <field name="currency_id" groups="base.group_multi_currency"/>
-                            <field name="taux_change" attrs="{'required': [('purchase_type','=','purchase_import')]}"/>
+                            <field name="currency_en_ar" invisible="1"/>
+                            <field 
+                                name="taux_change" 
+                                attrs="{'required': [('purchase_type','=','purchase_import')]}"
+                                widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
                             <field name="is_shipped" invisible="1"/>
                         </group>
                         <group>

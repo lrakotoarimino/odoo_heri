@@ -20,7 +20,7 @@
 			    	    groups="purchase_heri.group_finance_heri"/>
 			    	<button name="comptabiliser" attrs="{'invisible': [('state', 'not in', ('hierarchie_ok'))]}" string="Validation finance" type="object" class="oe_highlight"
 			    	    groups="purchase_heri.group_finance_heri"/>
-			    	<button name="annuler_comptabiliser" attrs="{'invisible': [('state', 'not in', ('comptabilise'))]}" string="Annuler" type="object" class="oe_highlight"
+			    	<button name="annuler_comptabiliser" invisible ="1" string="Annuler" type="object" class="oe_highlight"
 			    	    groups="purchase_heri.group_finance_heri"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,attente_hierarchie,hierarchie_ok,comptabilise" />
                 </header>
@@ -79,8 +79,7 @@
 		                    	    <field name="product_id"/>
 		                    	    <field name="product_qty"/>
 		                    	    <field name="qty_done" string="Qté Reçue"/>
-		                    	    <field name="prix_unitaire" 
-		                    	     		attrs="{'readonly': [('purchase_type', 'in', ('purchase_stored','purchase_not_stored'))]}"/>
+		                    	    <field name="prix_unitaire" readonly="1"/>
 						    		<field name="montant_br" />
 						    		<field 
 						    		    name="taxes_id" 

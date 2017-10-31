@@ -145,7 +145,19 @@
             <field name="act_to" ref="act_send_ov_to_bank"/>
             <field name="signal">action_send_to_bank</field>
         </record>
-		
+        
+        <record id="act_cancel_bank_to_finance" model="workflow.transition">
+            <field name="act_from" ref="act_send_ov_to_bank"/>
+            <field name="act_to" ref="act_aviser_finance"/>
+            <field name="signal">action_cancel_bank</field>
+        </record>
+        
+        <record id="act_cancel_transit_to_bank" model="workflow.transition">
+            <field name="act_from" ref="act_br_lie"/>
+            <field name="act_to" ref="act_send_ov_to_bank"/>
+            <field name="signal">action_cancel_pr</field>
+        </record>
+        
 		<record id="act_bank_to_transit" model="workflow.transition">
             <field name="act_from" ref="act_send_ov_to_bank"/>
             <field name="act_to" ref="act_br_lie"/>
@@ -218,13 +230,13 @@
         <record id="act_prevu_to_act_attente_validation" model="workflow.transition">
             <field name="act_from" ref="act_prevu"/>
             <field name="act_to" ref="act_attente_validation"/>
-            <field name="condition">amount_untaxed &gt; 200000</field>
+            <field name="condition">amount_untaxed &gt; 2000000</field>
         </record>
         
         <record id="act_prevu_to_act_wait_mode" model="workflow.transition">
             <field name="act_from" ref="act_prevu"/>
             <field name="act_to" ref="act_wait_mode"/>
-            <field name="condition">amount_untaxed &lt;= 200000</field>
+            <field name="condition">amount_untaxed &lt;= 2000000</field>
         </record>
         
         <record id="act_wait_mode_to_act_confirmed" model="workflow.transition">

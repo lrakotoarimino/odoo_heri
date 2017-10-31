@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from odoo import fields, models
+from odoo import fields, models, api
 
 
 class PurchaseConfigSettings(models.TransientModel):
     _inherit = 'purchase.config.settings'
     
-    seuil_prevu = fields.Float("Seuil d'un budget request achat prévu", default=2000000.0)
-    seuil_non_prevu = fields.Float("Seuil d'un budget request achat non prévu", default=200000.0)
+    @api.model
+    def _default_seuil_prevu(self):
+        waiting = self.env.ref('purchase_heri.act_prevu_to_act_attente_validation')
+        seuil_prevu = float(waiting.condition.split('>')[1])
+        return seuil_prevu
     
-#     @api.multi
-#     def set_default_seuil_prevu(self):
-#         #check = self.env.user.has_group('base.group_system')
-#         #Values = check and self.env['ir.values'].sudo() or self.env['ir.values']
-#         Values = self.env['ir.values']
-#         for config in self:
-#             Values.set_default('purchase.config.settings', 'seuil_prevu', config.seuil_prevu)
+    seuil_prevu = fields.Float("Seuil d'un budget request achat prévu", default=lambda self: self._default_seuil_prevu())
+    seuil_non_prevu = fields.Float("Seuil d'un budget request achat non prévu", default=200000.0)
     
     def set_seuil_prevu(self):
         waiting = self.env.ref('purchase_heri.act_prevu_to_act_attente_validation')
