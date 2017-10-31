@@ -68,6 +68,7 @@
 							<field name="journal_id" widget="selection" />
 							<field name="remise" />
 							<field name="observation" />
+							<field name="currency_en_ar" invisible="1"/>
                         </group>
                     </group>
                     <notebook>
@@ -102,9 +103,17 @@
                         </page>
                     </notebook>
 					<group>
+						 <group class="oe_subtotal_footer oe_right" string="Montant En Ar" attrs="{'invisible': [('purchase_type', 'not in', ('purchase_import'))],'readonly': [('state', 'in', ('comptabilise'))]}">	        	    	
+		                   <field name="amount_untaxed_en_ar" widget="monetary" options="{'currency_field': 'currency_en_ar'}" attrs="{'readonly': [('state', 'in', ('comptabilise'))]}"/>
+		                   <field name="amount_tax_en_ar" widget="monetary" options="{'currency_field': 'currency_en_ar'}" readonly="1"/>
+		                   <div class="oe_subtotal_footer_separator oe_inline">
+		                       <label for="amount_total_en_ar"/>
+		                   </div>
+		                   <field name="amount_total_en_ar" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
+		                </group>
 				        <group class="oe_subtotal_footer oe_right" string="BEX">	        	    	
 		                   <field name="amount_untaxed_bex" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-		                   <field name="amount_tax_bex" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+		                   <field name="amount_tax_bex" widget="monetary" options="{'currency_field': 'currency_id'}" />
 		                   <div class="oe_subtotal_footer_separator oe_inline">
 		                       <label for="amount_total_bex"/>
 		                   </div>

@@ -15,6 +15,7 @@
 					<field name="nature_analytique"/>
 					<field name="stock"/>
 					<field name="security_seuil" attrs="{'invisible': [('type', '!=', ('product'))]}" />
+					<field name="fob"/>
 					<field name="taxe_douane"/>
 				</field>
 			</field>

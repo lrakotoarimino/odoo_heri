@@ -4,7 +4,7 @@ from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.tools import float_compare, float_round
 from collections import namedtuple
-import pymsgbox
+# import pymsgbox
 from odoo.api import onchange
 
 
@@ -190,6 +190,7 @@ class PurchaseHeri(models.Model):
     br_lie_count = fields.Integer(compute='_compute_br_lie')
     purchase_ids_transport = fields.One2many('purchase.order', string="purchase_ids_transport", compute='_compute_br_transport_lie')
     br_transport_lie_count = fields.Integer(compute='_compute_br_transport_lie')
+    taux_change = fields.Float(string='Taux de change')
     
     purchase_ids_douane = fields.One2many('purchase.order', string="purchase_ids_douane", compute='_compute_br_douane_lie')
     br_douane_lie_count = fields.Integer(compute='_compute_br_douane_lie')
@@ -428,7 +429,47 @@ class PurchaseHeri(models.Model):
         self._create_bex()
     def action_annuler(self):
         self.write({'state': 'cancel', 'change_state_date': fields.Datetime.now()})
-    
+        
+    def action_compute_prix_revient(self):
+        if self.purchase_type == 'purchase_import':
+#             total_caf = 0.0
+#             total_cdtd = 0.0
+#             total_breq_additionnel = 0.0
+#             current_amount_untaxed = self.amount_untaxed
+#             for order in self:
+#                 breq_transport = self.env['purchase.order'].search(['&', ('parents_ids','=',order.id), ('service_type','=','transport')])
+#                 breq_assurance = self.env['purchase.order'].search(['&', ('parents_ids','=',order.id), ('service_type','=','assurance')])
+#                 breq_additionnel = self.env['purchase.order'].search(['&', ('parents_ids','=',order.id), ('service_type','=','additionel')])
+#                 total_breq_transport = sum(transport.amount_untaxed for transport in breq_transport)
+#                 total_breq_assurance = sum(assurance.amount_untaxed for assurance in breq_assurance)
+#                 total_breq_additionnel = sum(additionnel.amount_untaxed for additionnel in breq_additionnel)
+#             #Calcul CAF pour chaque article, Cout droit et taxe de douane pour chaque article, total CAF pour un achat(total des articles), total Cout droit et taxe de douane
+#             for line in self.order_line:
+#                 taxe_douane = line.product_id.taxe_douane
+#                 line.caf = line.price_subtotal+((line.price_subtotal*(total_breq_transport+total_breq_assurance))/current_amount_untaxed)
+#                 line.cdtd = line.caf+(((line.caf)*taxe_douane)/100)
+#                 total_caf += line.caf
+#                 total_cdtd += line.cdtd
+#             #Calcul cout de revient pour chaque article
+#             for line in self.order_line:
+#                 line.cout_revient = line.cdtd+(line.cdtd*(total_breq_additionnel)/total_cdtd)
+            breq_transport = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
+            breq_assurance = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
+            breq_additionnel = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
+            
+            bex_transport = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
+            bex_assurance = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
+            bex_additionnel = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
+            
+            total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
+            cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
+            fob_total = 0.0
+            for line in self.order_line:
+                fob_total += line.product_id.fob
+            caf_total = (fob_total+total_assurance_fret)*(self.taux_change)
+            for line in self.order_line:
+                line.cout_revient = ((caf_total+cLocTotal)*((line.product_id.fob)/fob_total)+((line.product_id.taxe_douane)*(line.price_subtotal)))/(line.product_qty)
+                        
     def choisir_mode_paiement(self):
                 #Generation popup mode de paiement
         ir_model_data = self.env['ir.model.data']        
@@ -499,35 +540,17 @@ class PurchaseHeri(models.Model):
                 total_qty += quant.qty
             if total_qty < dict[product]:
                 raise UserError(u'La quantité en stock de l\'article '+ product.name +' est insuffisante pour cette demande.')
-   
-#     def _security_seuil(self):
-#         if self.product_id.virtual_available < self.product_id.security_seuil:
-# #             raise UserError('quantité')
-#             self.write({'state':'a_approuver', 'change_state_date': fields.Datetime.now()})
-#             print 'Il faut faire un achat pour le produit '+ self.product_id.name +''    
-            
-#     @api.onchange('product_id')
-#     def onchange_prod_id(self):
-#         for line in self:
-#             line.picking_type_id = line.product_id.location_src_id
-        
+ 
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
 
     qte_prevu = fields.Float(compute="onchange_prod_id", string='Quantité disponible')
     designation_frns = fields.Text(string='Description Fournisseur', readonly=True)
-    location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True) 
+    location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
+    caf = fields.Float(string='CAF')
+    cdtd = fields.Float(string='Cout avec droit et taxe de douane')
+    cout_revient = fields.Float(string='Cout de revient')
 
-    
-    @api.model
-    def create(self, values):
-        ref = self.env['product.product'].browse(values['product_id']).ref_fournisseur
-        desc = self.env['product.product'].browse(values['product_id']).desc_fournisseur
-        designation_frns = '['+ref+'] '+desc
-        values['designation_frns'] = designation_frns
-        line = super(PurchaseOrderLine, self).create(values)
-        return line
-    
     def _suggest_quantity(self):
         res = super(PurchaseOrderLine, self)._suggest_quantity()
         self.product_qty = 0.0
@@ -566,9 +589,13 @@ class PurchaseOrderLine(models.Model):
         res = super(PurchaseOrderLine, self).onchange_product_id()
         if self.product_id:
             self.price_unit = self.product_id.standard_price
-            ref = self.product_id.ref_fournisseur
-            desc = self.product_id.desc_fournisseur
-            self.designation_frns = '['+ref+'] '+desc
+            ref = ""
+            desc = ""
+            if self.product_id.ref_fournisseur not in ('', False) :
+                ref = "["+self.product_id.ref_fournisseur+"]"
+            if self.product_id.desc_fournisseur not in ('', False) :
+                desc = self.product_id.desc_fournisseur
+            self.designation_frns = ref+" "+ str(desc)
         return res
     
     @api.onchange('product_qty')

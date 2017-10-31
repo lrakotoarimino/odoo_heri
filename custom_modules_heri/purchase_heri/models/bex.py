@@ -50,7 +50,7 @@ class Bex(models.Model):
         if len(pick_ids) > 1:
             result['domain'] = "[('id','in',[" + ','.join(map(str, pick_ids)) + "])]"
         elif len(pick_ids) == 1:
-            res = self.env.ref('stock_heri.view_picking_form_advanced', False)
+            res = self.env.ref('stock_heri.view_be_picking_form_advanced', False)
             result['views'] = [(res and res.id or False, 'form')]
             result['res_id'] = pick_ids and pick_ids[0] or False
         return result
@@ -77,6 +77,11 @@ class Bex(models.Model):
                 'amount_total_bex': amount_taxed_bex,
                 })
             
+    @api.depends('amount_total_en_ar')
+    def _amount_en_ar(self):
+        for res in self :
+            res.amount_total_en_ar = res.amount_untaxed_en_ar - res.amount_tax_en_ar      
+    
     def attente_hierarchie(self):
         self.state = 'attente_hierarchie'
         self.change_state_date = fields.Datetime.now()
@@ -94,10 +99,11 @@ class Bex(models.Model):
         self.change_state_date = fields.Datetime.now()
             
     def comptabiliser(self):
+        if self.breq_id and self.breq_id.purchase_type == 'purchase_import' and self.state == 'hierarchie_ok' and self.amount_untaxed_en_ar == 0.0:
+            raise UserError("Merci de remplir le Montant Hors Taxes en Ar!")
         if self.breq_id and self.breq_id.purchase_type != 'purchase_not_stored':
             self.create_be() 
         self.state = 'comptabilise'
-            
     @api.one
     def _get_is_manager(self):
         self.is_manager = False
@@ -113,7 +119,10 @@ class Bex(models.Model):
         employee_id = self.employee_id.id
         if current_employee_id == employee_id:
             self.is_creator = True
-          
+            
+    def _currency_en_ar(self):
+        self.currency_en_ar = self.env.ref('base.MGA').id      
+        
     name = fields.Char(compute="_name_change", readonly=True)
     breq_id = fields.Many2one('purchase.order', string=u"Budget Request lié", readonly=True)
     state = fields.Selection([
@@ -136,6 +145,7 @@ class Bex(models.Model):
     manager_id = fields.Many2one('hr.employee', related='breq_id.manager_id', readonly=True)
     is_manager = fields.Boolean(compute="_get_is_manager", string='Est un manager')
     currency_id = fields.Many2one('res.currency', related='breq_id.currency_id', string='Devise', readonly=True)
+    currency_en_ar = fields.Char('res.currency',compute="_currency_en_ar", readonly=True)
     is_creator = fields.Boolean(compute="_get_is_creator", string='Est le demandeur')
     date = fields.Datetime('Date', default=fields.Datetime.now, readonly=True)
     origin = fields.Char('Document d\'origine', readonly=True)
@@ -155,6 +165,11 @@ class Bex(models.Model):
     amount_untaxed_breq = fields.Float('Montant HT', readonly=True)
     amount_tax_breq = fields.Float('Taxes', readonly=True)
     amount_total_breq = fields.Float('Total', readonly=True)
+    
+    #Budget expenses Montant en Ariary
+    amount_untaxed_en_ar = fields.Float('Montant HT')
+    amount_tax_en_ar = fields.Float('Taxes')
+    amount_total_en_ar = fields.Float(compute='_amount_en_ar',string='Total')
     
     observation = fields.Text("Obsevations")
     solde_rembourser = fields.Monetary('Solde à rembourser/payer')

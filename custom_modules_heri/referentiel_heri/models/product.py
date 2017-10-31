@@ -20,3 +20,4 @@ class ProductHeri(models.Model):
     ref_fournisseur = fields.Char("Référence fournisseur", size=50)
     desc_fournisseur = fields.Char("Description fournisseur", size=100)
     taxe_douane = fields.Float(string=u'Taxe de douane(%)')
+    fob = fields.Float(string=u'Montant FOB')

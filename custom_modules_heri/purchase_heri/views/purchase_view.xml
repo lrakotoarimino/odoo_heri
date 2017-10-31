@@ -40,7 +40,7 @@
 				 	<button type="object"
 	                            name="action_view_bex"
 	                            class="oe_stat_button"
-	                            icon="fa-truck"
+	                            icon="fa-folder"
 	                            attrs="{'invisible':[('state', 'not in', ('purchase'))]}">
 	                            <field name="bex_lie_count" widget="statinfo" string="Budget Expense Report" help="Incoming Bex"/>
 	                            <field name="bex_id" invisible="1"/>
@@ -73,21 +73,12 @@
 					    string="SOLDE DE BUDGET" 
 					    widget="monetary" 
 					    options="{'currency_field': 'currency_id'}"
-					    style="color:blue;"/>
-					<!-- <field name="statut_budget" string="STATUT DU BUDGET" /> -->
+					    style="color:blue;"/><br/><br/>
+					<field name="statut_budget" string="STATUT DU BUDGET" />
 					<field name="journal_id" widget="selection"/>
 					<field name="modalite_paiement" invisible="1"/>
 					<field name="statut_bex"/>
 				</xpath>                    
-				
-				<xpath expr="//div[@class='oe_title']" position="after">
-					<div>
-		                <!-- <label string="Statut du budget" /> -->
-		                <h1>
-		                    <field name="statut_budget" style="color:blue;font-weight:bold;" nolabel="1"/>
-		                </h1>
-	                </div>
-                </xpath>
 				
 				<field name="date_order" position="attributes">
 			    	<attribute name="readonly">1</attribute>
@@ -303,6 +294,13 @@
                      />
                      <button 
                         string="Calculer prix de revient" 
+                        name="action_compute_prix_revient"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', '!=', 'ov_to_bank'),'|',('all_bex_validated', '!=',True),'|',('purchase_type', '!=', 'purchase_import'),('is_creator', '=',False)]}"
+                     	type="object"
+                     />   
+                     <button 
+                        string="Valider prix de revient" 
                         name="action_br_lie"
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', '!=', 'ov_to_bank'),'|',('all_bex_validated', '!=',True),'|',('purchase_type', '!=', 'purchase_import'),('is_creator', '=',False)]}"
@@ -317,7 +315,7 @@
                             name="action_view_br_lie"
                             class="oe_highlight" 
                             string ="Budget Request Additionnel"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            invisible="1">
                             <field name='purchase_ids' invisible="1"/>
                     </button>
                     <field name="state" widget="statusbar" statusbar_visible="nouveau,confirmation_dg,aviser_finance,ov_to_bank,br_lie,purchase" readonly="1"/>
@@ -327,9 +325,9 @@
                         <button type="object"
                             name="action_view_br_lie"
                             class="oe_stat_button"
-                            icon="fa-building-o"
+                            icon="fa-plus-square"
                             attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
-                            <field name="br_lie_count" widget="statinfo" string="Additionnel" help="Sous-Breq Additionnel"/>
+                            <field name="br_lie_count" widget="statinfo" string="Autres" help="Sous-Breq Additionnel"/>
                             <field name='purchase_ids' invisible="1"/>
                         </button>
                         <button type="object"
@@ -343,7 +341,7 @@
                     	<button type="object"
                             name="action_view_br_douane"
                             class="oe_stat_button"
-                            icon="fa-truck"
+                            icon="fa-anchor"
                             attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
                             <field name="br_douane_lie_count" widget="statinfo" string="Douane" help="Sous-Breq Douane"/>
                             <field name='purchase_ids_douane' invisible="1"/>
@@ -351,7 +349,7 @@
                     	<button type="object"
                             name="action_view_br_assurance"
                             class="oe_stat_button"
-                            icon="fa-truck"
+                            icon="fa-font"
                             attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
                             <field name="br_assurance_lie_count" widget="statinfo" string="Assurance" help="Sous-Breq Assurance"/>
                             <field name='purchase_ids_assurance' invisible="1"/>
@@ -359,9 +357,9 @@
                         <button type="object"
                             name="action_view_bex"
                             class="oe_stat_button"
-                            icon="fa-truck"
+                            icon="fa-folder"
                             attrs="{'invisible':[('state', 'not in', ('purchase'))]}">
-                            <field name="bex_lie_count" widget="statinfo" string="Budget Expense Report" help="Incoming Bex"/>
+                            <field name="bex_lie_count" widget="statinfo" string="BEX" help="Incoming Bex"/>
                             <field name="bex_id" invisible="1"/>
                         </button>
                     </div>
@@ -381,7 +379,7 @@
                             <field name="purchase_import_type" attrs="{'invisible': [('purchase_import_type','=', False)]}"/>
                             <field name="employee_id" />
                             <field name="department_id"/>
-                             <field name="section"/>
+                            <field name="section"/>
                             <field name="objet" placeholder="Veuillez saisir ici l'objet de la demande."/>
                             <field name="nature"/>
                             <field name="all_bex_validated" invisible="1"/>
@@ -391,6 +389,7 @@
                             <field name="is_manager" invisible="1"/>
                             <field name="partner_ref"/>
                             <field name="currency_id" groups="base.group_multi_currency"/>
+                            <field name="taux_change" attrs="{'required': [('purchase_type','=','purchase_import')]}"/>
                             <field name="is_shipped" invisible="1"/>
                         </group>
                         <group>
@@ -400,7 +399,7 @@
                             <field name="budgetise" invisible="1"/>
                             <field name="cumul" invisible="1"/>
                             <field name="solde" invisible="1"/>
-                            <field name="statut_budget"/>
+                            <field name="statut_budget" string="STATUT BUDGET"/>
                             <field name="journal_id" widget="selection"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
@@ -429,6 +428,7 @@
                                     <field name="qty_invoiced" invisible="not context.get('show_purchase', False)"/>
                                     <field name="product_uom" groups="product.group_uom" attrs="{'readonly': [('state', 'in', ('purchase', 'done', 'cancel'))]}"/>
                                     <field name="price_unit"/>
+                                    <field name="cout_revient"/>
                                     <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase')]" context="{'default_type_tax_use': 'purchase'}"/>
                                     <field name="price_subtotal" widget="monetary"/>
                                 </tree>

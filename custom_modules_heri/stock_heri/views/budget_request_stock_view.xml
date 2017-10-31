@@ -55,12 +55,6 @@
                             <field name="name" readonly="1"/>
                         </h1>
                     </div>
-   					<div>
-		                <!-- <label string="Statut du budget" /> -->
-		                <h1>
-		                    <field name="statut_budget" style="color:blue;font-weight:bold;" nolabel="1"/>
-		                </h1>
-	                </div>
                     <group>
                         <group>
                             <field name="is_breq_stock" invisible="1"/>
@@ -105,8 +99,8 @@
 							    string="SOLDE DE BUDGET" 
 							    widget="monetary" 
 							    options="{'currency_field': 'currency_id'}"
-							    style="color:blue;"/>
-                            <!-- <field name="statut_budget"/> -->
+							    style="color:blue;"/><br/><br/>
+                             <field name="statut_budget" string="STATUT BUDGET"/>
                             <field name="journal_id" widget="selection" invisible="1"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
