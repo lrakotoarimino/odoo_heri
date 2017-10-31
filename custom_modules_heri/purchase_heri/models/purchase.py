@@ -484,7 +484,7 @@ class PurchaseHeri(models.Model):
             fob_total = self.amount_untaxed
             caf_total = (fob_total+total_assurance_fret)*(self.taux_change)
             if self.taux_change == 0.0:
-                raise UserError(u'Le taux de change ne peut être égal à zéro')
+                raise UserError(u'Le taux de change doit être non nul')
             for line in self.order_line:
                 if fob_total == 0.0:
                     raise UserError(u'FOB total ne devrait pas être vide')
@@ -493,7 +493,6 @@ class PurchaseHeri(models.Model):
                 else:
                     line.cout_revient = ((caf_total+cLocTotal)*((line.price_subtotal)/fob_total)+((line.product_id.taxe_douane)*(line.price_subtotal)))/(line.product_qty)
                     
-                        
     def choisir_mode_paiement(self):
                 #Generation popup mode de paiement
         ir_model_data = self.env['ir.model.data']        
