@@ -7,7 +7,7 @@ from collections import namedtuple
 # import pymsgbox
 from odoo.api import onchange
 
-
+#Region
 class CodeBudgetaireRegion(models.Model):
     _name = "br.region"
     
