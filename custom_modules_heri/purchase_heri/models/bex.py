@@ -6,6 +6,7 @@ from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare
 import re
 
+#Bugget Expense Report
 class Bex(models.Model):
     _name = 'budget.expense.report' 
     _inherit = ['mail.thread']
