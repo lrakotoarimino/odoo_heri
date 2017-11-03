@@ -11,7 +11,7 @@ class ModePaiement(models.Model):
     
     mode_paiement = fields.Many2one('account.journal', string="Mode de paiement", domain=[('type','in',('cash','bank'))])
     breq_id = fields.Many2one('purchase.order')
-    
+    #mode de paiement
     def valider_mode_paiement(self):
         #self._compute_pump()
         if not self.mode_paiement:
