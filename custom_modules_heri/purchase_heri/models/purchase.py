@@ -59,6 +59,7 @@ class PurchaseHeri(models.Model):
         picking_type.default_location_src_id = self.location_id.id
         return True
     
+    #creation annulation reservation
     def action_cancel(self):
         picking_obj = self.env['stock.picking']
         picking_id = picking_obj.search([('breq_id','=',self.id)],limit=1)
