@@ -13,6 +13,7 @@ class CodeBudgetaireRegion(models.Model):
     
     region = fields.Char("Région")
 
+#Budget Request Achat
 class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
     _description = "Budget Request"
