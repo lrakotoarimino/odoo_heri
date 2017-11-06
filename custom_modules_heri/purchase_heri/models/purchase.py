@@ -30,7 +30,7 @@ class PurchaseHeri(models.Model):
     #fonction tsisy dikany
     @api.multi
     def fonction_ab(self):
-        a = 8
+        a = 2
         b = 16
         return a + b
         
