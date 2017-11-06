@@ -20,12 +20,12 @@ class PurchaseHeri(models.Model):
     
     @api.model
     def create(self, values):
-        tes = super(PurchaseHeri,self).create(values)
+        order = super(PurchaseHeri,self).create(values)
         
         #A executer dans un breq stock uniquement
-        if tes.is_breq_stock:
-            tes._create_picking2()
-        return tes 
+        if order.is_breq_stock:
+            order._create_picking2()
+        return order 
     
     #fonction tsisy dikany
     @api.multi
