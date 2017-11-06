@@ -26,6 +26,13 @@ class PurchaseHeri(models.Model):
         if order.is_breq_stock:
             order._create_picking2()
         return order 
+    
+    #fonction tsisy dikany
+    @api.multi
+    def fonction_ab(self):
+        a = 12
+        b = 16
+        return a + b
         
     #creation bon de sortie (budget request stock)
     @api.multi
