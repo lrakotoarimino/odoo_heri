@@ -96,9 +96,13 @@
 				<xpath expr="//field[@name='order_line']//field[@name='name']" position="attributes">
 					<attribute name="invisible">1</attribute>
 				</xpath>
-								
-				<xpath expr="//field[@name='order_line']//field[@name='date_planned']" position="replace">
+				
+				<xpath expr="//field[@name='date_planned'][3]" position="replace">
 					<field name="date_planned" invisible="1"/>
+				</xpath>
+								
+				<xpath expr="//label[5]" position="attributes">
+					<attribute name="for">none</attribute>
 				</xpath>
 				
 				<field name="partner_id" position="after">
@@ -465,7 +469,7 @@
                                             </group>
                                             <group>
                                                 <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use', '=', 'purchase')]"/>
-                                                <field name="date_planned" widget="date"/>
+                                                <field name="date_planned" widget="date" invisible="1"/>
                                                 <field name="account_analytic_id" colspan="2" groups="purchase.group_analytic_accounting"/>
                                                 <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                                             </group>
@@ -495,9 +499,8 @@
                         <page string="Deliveries &amp; Invoices">
                             <group>
                                 <group>
-                                    <label for="date_planned"/>
                                     <div>
-                                        <field name="date_planned" required="1" attrs="{'readonly': [('state', 'not in', ('draft', 'sent'))]}"/>
+                                        <field name="date_planned" required="1" attrs="{'readonly': [('state', 'not in', ('draft', 'sent'))]}" invisible="1"/>
                                         <button name="action_set_date_planned" type="object"
                                             states="draft,sent"
                                             string="Set date to all order lines"

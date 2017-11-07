@@ -20,19 +20,13 @@ class PurchaseHeri(models.Model):
     @api.model
     def create(self, values):
         order = super(PurchaseHeri,self).create(values)
-        
+        if not values['order_line']:
+                raise UserError('Veuillez renseigner les lignes de la commande.')
         #A executer dans un breq stock uniquement
         if order.is_breq_stock:
             order._create_picking2()
         return order 
     
-    #fonction tsisy dikany
-    @api.multi
-    def fonction_ab(self):
-        a = 13
-        b = 16
-        return a + b
-        
     #creation bon de sortie (budget request stock)
     @api.multi
     def _create_picking2(self):
@@ -206,7 +200,7 @@ class PurchaseHeri(models.Model):
     br_assurance_lie_count = fields.Integer(compute='_compute_br_assurance_lie')
     
     parents_ids = fields.Many2one('purchase.order',readonly=True, string='BReq d\'origine')
-    date_prevu = fields.Datetime(string="Date prévue livraison")
+    date_prevu = fields.Datetime(string="Date prévue livraison", default=fields.Datetime.now())
     modalite_paiement = fields.Float(string='Modalité de paiement')
     location_id = fields.Many2one('stock.location', string='Magasin Origine') 
      
@@ -570,6 +564,11 @@ class PurchaseHeri(models.Model):
                 total_qty += quant.qty
             if total_qty < dict[product]:
                 raise UserError(u'La quantité en stock de l\'article '+ product.name +' est insuffisante pour cette demande.')
+ 
+    @api.depends('date_prevu')
+    def _compute_date_planned(self):
+        for order in self:
+            order.date_planned = order.date_prevu
  
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
