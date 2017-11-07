@@ -4,7 +4,6 @@ from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.tools import float_compare, float_round
 from collections import namedtuple
-# import pymsgbox
 from odoo.api import onchange
 
 #Region
@@ -28,13 +27,6 @@ class PurchaseHeri(models.Model):
             order._create_picking2()
         return order 
     
-    #fonction tsisy dikany
-    @api.multi
-    def fonction_ab(self):
-        a = 17
-        b = 16
-        return a + b
-        
     #creation bon de sortie (budget request stock)
     @api.multi
     def _create_picking2(self):
