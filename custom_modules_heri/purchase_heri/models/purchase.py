@@ -20,6 +20,7 @@ class PurchaseHeri(models.Model):
     @api.model
     def create(self, values):
         order = super(PurchaseHeri,self).create(values)
+        #Si les lignes de la commande sont vides
         if not values['order_line']:
                 raise UserError('Veuillez renseigner les lignes de la commande.')
         #A executer dans un breq stock uniquement
@@ -33,7 +34,6 @@ class PurchaseHeri(models.Model):
         StockPickingHeri = self.env['stock.picking']
         for order in self:
             vals = {
-
                     'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
                     'partner_id': order.partner_id.id,
                     'date': order.date_order,
