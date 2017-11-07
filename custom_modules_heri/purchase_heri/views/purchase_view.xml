@@ -105,6 +105,10 @@
 					<attribute name="for">none</attribute>
 				</xpath>
 				
+				<xpath expr="//field[@name='order_line']//field[@name='date_planned']" position="replace">
+					<field name="date_planned" invisible="1"/>
+				</xpath>
+				
 				<field name="partner_id" position="after">
 				    <field name="is_breq_stock" invisible="1"/>
 					<field name="purchase_type" attrs="{'invisible': [('parents_ids','=', False)], 'required': [('is_breq_stock', '=', False)],'readonly':[('service_type','!=','additionel')]}"/>
