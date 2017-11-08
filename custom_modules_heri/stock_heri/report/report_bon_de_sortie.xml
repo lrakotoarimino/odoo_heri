@@ -8,6 +8,7 @@
 	            report_type="qweb-pdf"
 	            name="stock_heri.report_bon_de_sortie_template"
 	            file="stock_heri.report_bon_de_sortie_template"
+	            menu="False"
 	        />
 	</data>
 </odoo> 
