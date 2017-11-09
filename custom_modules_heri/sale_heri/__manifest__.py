@@ -8,9 +8,7 @@
     'website': 'https://www.beheri.com',
     'depends': ['sale'],
     'data': [
-#                 'views/product_view.xml',
-#                 'views/res_partner_view.xml',
-             ],
+            ],
     'demo': [],
     'test': [],
     'installable': True,
