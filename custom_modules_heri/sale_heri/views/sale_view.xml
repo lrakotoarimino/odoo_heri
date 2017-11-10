@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+		<!-- Facturation redevance mensuelle form -->
+		<record model="ir.ui.view" id="facturation_redevance_form_view">
+			<field name="name">sale.facturation.redevance</field>
+			<field name="model">sale.order</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="sale.view_order_form"/>
+			<field name="arch" type="xml">
+			    <xpath expr="//field[@name='partner_id']" position="before">
+					<field name="kiosque_id"/>
+				</xpath>
+			</field>
+		</record>	
+		<!-- End Facturation redevance mensuelle form -->
+	</data>
+</odoo>
