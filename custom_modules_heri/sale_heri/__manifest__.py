@@ -8,6 +8,8 @@
     'website': 'https://www.beheri.com',
     'depends': ['sale'],
     'data': [
+                #views
+                'views/sale_view.xml',
             ],
     'demo': [],
     'test': [],
