@@ -8,7 +8,7 @@
     'website': 'https://www.beheri.com',
     'depends': ['sale'],
     'data': [
-                #views
+                'views/sale_wkf.xml',
                 'views/sale_view.xml',
             ],
     'demo': [],
