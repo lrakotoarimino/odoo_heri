@@ -2,17 +2,189 @@
 <odoo>
 	<data>
 		<!-- Facturation redevance mensuelle form -->
+		<record model="ir.ui.view" id="facturation_redevance_form_view_base">
+			<field name="name">sale.facturation.redevance.base</field>
+			<field name="model">sale.order</field>
+			<field name="inherit_id" ref="sale.view_order_form"/>
+			<field name="arch" type="xml">
+				<button name="action_done" position="replace">
+					<button name="action_done" invisible="1"/>
+				</button>
+			</field>
+		</record>
+		<!-- Facturation redevance mensuelle form -->
+		<record model="ir.ui.view" id="facturation_redevance_form_view_advanced">
+			<field name="name">sale.facturation.redevance.advanced</field>
+			<field name="model">sale.order</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="sale_heri.facturation_redevance_form_view_base"/>
+			<field name="arch" type="xml">
+				<field name="state" position="replace">
+				    <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale" />
+				</field>
+			</field>
+		</record>
+		<!-- Facturation redevance mensuelle form -->
 		<record model="ir.ui.view" id="facturation_redevance_form_view">
 			<field name="name">sale.facturation.redevance</field>
 			<field name="model">sale.order</field>
-			<field name="mode">primary</field>
-			<field name="inherit_id" ref="sale.view_order_form"/>
+			<field name="mode">extension</field>
+			<field name="inherit_id" ref="sale_heri.facturation_redevance_form_view_advanced"/>
 			<field name="arch" type="xml">
 			    <xpath expr="//field[@name='partner_id']" position="before">
 					<field name="kiosque_id"/>
 				</xpath>
+				<xpath expr="//field[@name='state']" position="replace">
+					<field 	name="state"
+							widget="statusbar" 
+					    	statusbar_visible="nouveau,correction_et_motif,correction_et_motif_finance,observation_dg,verif_pec,sale"/>
+				</xpath>
+				 <!--bouton pour le workflow facturation redevance -->
+				<xpath expr="//field[@name='state']" position="before">
+					<button 
+			      	    string="A Faire Corriger" 
+			      	    name="action_correction_motif_call"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('nouveau'))]}"
+			      	 />
+					<button 
+			      	    string="Valider" 
+			      	    name="action_correction_motif_finance"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"
+			      	 />
+			      	 <button 
+			      	    string="A Revoir" 
+			      	    name="action_annul_correction_motif"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"
+			      	 />
+			      	<button 
+			      	    string="Valider" 
+			      	    name="action_generation_facture_finance"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+			      	 <button 
+			      	    string="A revoir" 
+			      	    name="action_annul_correction_motif_finance"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+					<button 
+			      	    string="Envoyer au DG" 
+			      	    name="action_observation_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+					<button 
+			      	    string="Accorder" 
+			      	    name="action_verification_pec"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
+			      	    groups="purchase_heri.group_dg_heri"
+			      	 />
+			      	 <button 
+			      	    string="A revoir" 
+			      	    name="action_refus_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
+			      	    groups="purchase_heri.group_dg_heri"
+			      	 />
+					<button 
+			      	    string="Generer la facture" 
+			      	    name="action_generation_facture_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('verif_pec'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+			      	 <button 
+			      	    string="A revoir" 
+			      	    name="action_annul_verif_pec"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('verif_pec'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+			      	 <!--End bouton pour le workflow facturation redevance -->
+			      	 
+				</xpath>
+				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d'][1]" position="attributes">
+					<attributes name="string">Generer Facture</attributes>
+					<attributes name="attrs">{'invisible': ['|',('state', 'not in', ('verif_pec','correction_et_motif_finance'))]}</attributes>
+                </xpath>
+				<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
+				 	<button type="object"
+				 				string="Facture d'Avoir"
+	                            class="oe_stat_button"
+	                            icon="fa-pencil-square-o"
+	                            attrs="{'invisible':[('state', 'not in', ('verif_pec'))]}">
+
+	                </button>
+	                <button type="object"
+	                			string="Echeanciers"
+	                            class="oe_stat_button"
+	                            icon="fa-pencil-square-o"
+	                            attrs="{'invisible':[('state', 'not in', ('verif_pec'))]}">
+	                </button>
+	                <button type="object"
+	                			string="Impayées"
+	                            class="oe_stat_button"
+	                            icon="fa-pencil-square-o"
+	                            attrs="{'invisible':[('state', 'not in', ('verif_pec'))]}">
+	                </button>
+                </xpath>
+				
 			</field>
 		</record>	
+		
+		<record model="ir.ui.view" id="facturation_redevance_tree">
+         <field name="name">Facturation redevance</field>
+         <field name="model">sale.order</field>
+         <field name="arch" type="xml">
+             <tree string="Sales Orders" decoration-bf="message_needaction==True" decoration-muted="state=='cancel'">
+                    <field name="message_needaction" invisible="1"/>
+                    <field name="name" string="Order Number"/>
+                    <field name="date_order"/>
+                    <field name="partner_id"/>
+                    <field name="user_id"/>
+                    <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="invoice_status"/>
+                    <field name="state" invisible="1"/>
+                </tree>
+         </field>
+     	</record>
+		<record model="ir.actions.act_window" id="action_facture_redevance">
+        <field name="name">Facturation redevance mensuelle</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+              Cliquer ici pour créer une facturation redevance mensuelle.
+          </p>
+        </field>
+     	</record>
+     
+     	<record id="action_facturation_redevance_tree" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="sale_heri.facturation_redevance_tree"/>
+            <field name="act_window_id" ref="sale_heri.action_facture_redevance"/>
+        </record>
+
+        <record id="action_facturation_redevance_form_view" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="sale_heri.facturation_redevance_form_view"/>
+            <field name="act_window_id" ref="sale_heri.action_facture_redevance"/>
+        </record>
+  
+  		<!-- End Facturation redevance mensuelle form -->
+  		<menuitem id="menu_facture_redevance" name="Facturation redevance mensuelle" parent="sales_team.menu_sales" action="action_facture_redevance" sequence="2"/>
 		<!-- End Facturation redevance mensuelle form -->
 	</data>
 </odoo>
