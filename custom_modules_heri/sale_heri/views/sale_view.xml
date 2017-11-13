@@ -10,6 +10,19 @@
 				<button name="action_done" position="replace">
 					<button name="action_done" invisible="1"/>
 				</button>
+				<button name="action_cancel" position="replace">
+					<button name="action_cancel" invisible="1"/>
+				</button>
+				<xpath expr="//button[@name='action_quotation_send'][1]" position="replace">
+					<button name="action_quotation_send" invisible="1"/>
+				</xpath>
+				<button name="print_quotation" position="replace">
+					<button name="print_quotation" invisible="1"/>
+				</button>	
+				<xpath expr="//button[@name='action_confirm'][2]" position="replace">
+					<button name="action_confirm" invisible="1"/>
+				</xpath>
+				
 			</field>
 		</record>
 		<!-- Facturation redevance mensuelle form -->
@@ -28,16 +41,19 @@
 		<record model="ir.ui.view" id="facturation_redevance_form_view">
 			<field name="name">sale.facturation.redevance</field>
 			<field name="model">sale.order</field>
-			<field name="mode">extension</field>
+			<field name="mode">primary</field>
 			<field name="inherit_id" ref="sale_heri.facturation_redevance_form_view_advanced"/>
 			<field name="arch" type="xml">
 			    <xpath expr="//field[@name='partner_id']" position="before">
 					<field name="kiosque_id"/>
 				</xpath>
+				<xpath expr="//field[@name='partner_id']" position="after">
+					<field name="correction_et_motif" attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"/>
+				</xpath>
 				<xpath expr="//field[@name='state']" position="replace">
 					<field 	name="state"
 							widget="statusbar" 
-					    	statusbar_visible="nouveau,correction_et_motif,correction_et_motif_finance,observation_dg,verif_pec,sale"/>
+					    	statusbar_visible="draft,correction_et_motif,correction_et_motif_finance,observation_dg,verif_pec,sale"/>
 				</xpath>
 				 <!--bouton pour le workflow facturation redevance -->
 				<xpath expr="//field[@name='state']" position="before">
@@ -45,7 +61,7 @@
 			      	    string="A Faire Corriger" 
 			      	    name="action_correction_motif_call"
 			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('nouveau'))]}"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft'))]}"
 			      	 />
 					<button 
 			      	    string="Valider" 
@@ -160,8 +176,8 @@
 		<record model="ir.actions.act_window" id="action_facture_redevance">
         <field name="name">Facturation redevance mensuelle</field>
         <field name="res_model">sale.order</field>
-        <field name="view_type">form</field>
-        <field name="view_mode">tree,form</field>
+        <field name="domain">[('facturation_type','=','facturation_redevance')]</field>  	
+		<field name="context">{'default_facturation_type': 'facturation_redevance'}</field> 
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
               Cliquer ici pour créer une facturation redevance mensuelle.
@@ -182,8 +198,9 @@
             <field name="view_id" ref="sale_heri.facturation_redevance_form_view"/>
             <field name="act_window_id" ref="sale_heri.action_facture_redevance"/>
         </record>
-  
+  				
   		<!-- End Facturation redevance mensuelle form -->
+  		
   		<menuitem id="menu_facture_redevance" name="Facturation redevance mensuelle" parent="sales_team.menu_sales" action="action_facture_redevance" sequence="2"/>
 		<!-- End Facturation redevance mensuelle form -->
 	</data>

@@ -10,6 +10,9 @@
     'data': [
                 'views/sale_wkf.xml',
                 'views/sale_view.xml',
+                'views/sale_fact_materiel_tiers_view.xml',
+                'views/sale_fact_materiel_tiers_wkf.xml',
+#             'views/breq_stock_view.xml',
             ],
     'demo': [],
     'test': [],

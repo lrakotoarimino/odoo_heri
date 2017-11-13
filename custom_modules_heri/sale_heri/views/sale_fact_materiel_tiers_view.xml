@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+
+		<!-- Facturation tiers form -->
+		<record model="ir.ui.view" id="facturation_tiers_form_view">
+			<field name="name">sale.facturation.tiers</field>
+			<field name="model">sale.order</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="sale_heri.facturation_redevance_form_view_advanced"/>
+			<field name="arch" type="xml">
+				<xpath expr="//field[@name='partner_id']" position="after">
+					<field 	name="facturation_type" invisible="1"/>
+				</xpath>
+				<xpath expr="//field[@name='state']" position="replace">
+					<field 	name="state"
+							widget="statusbar" 
+					    	statusbar_visible="draft,breq_stock"/>
+				</xpath>
+				 <!--bouton pour le workflow facturation tiers -->
+				<xpath expr="//field[@name='state']" position="before">
+					<button 
+			      	    string="Genener BreqStock" 
+			      	    name="action_generer_breq_stock"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft')),('facturation_type', 'not in', ('facturation_tiers'))]}"
+			      	 />
+				<!--End bouton pour le workflow facturation tiers -->
+		      	 
+				</xpath>
+
+			</field>
+		</record>
+		
+		<record model="ir.actions.act_window" id="action_facturation_tiers">
+	       	<field name="name">Facturation aux tiers</field>
+	       	<field name="res_model">sale.order</field>
+			<field name="domain">[('facturation_type','=','facturation_tiers')]</field>  	
+			<field name="context">{'default_facturation_type': 'facturation_tiers'}</field> 
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	       	<field name="help" type="html">
+          	<p class="oe_view_nocontent_create">
+              Cliquer ici pour créer une facturation tiers.
+          	</p>
+        </field>
+	   	</record>
+	   	<record id="action_facturation_tiers_tree_view" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="sale_heri.facturation_redevance_tree"/>
+            <field name="act_window_id" ref="sale_heri.action_facturation_tiers"/>
+        </record>
+
+        <record id="action_facturation_tiers_form_view" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="sale_heri.facturation_tiers_form_view"/>
+            <field name="act_window_id" ref="sale_heri.action_facturation_tiers"/>
+		</record>
+		<menuitem id="menu_facture_tiers" name="Facturation materiel aux tiers" parent="sales_team.menu_sales" action="action_facturation_tiers" sequence="2"/>
+	</data>
+</odoo>

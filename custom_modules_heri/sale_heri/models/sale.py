@@ -6,6 +6,7 @@ from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare
 import re
 import time
+from docutils.nodes import Invisible
 
 class SaleHeri(models.Model):
     _inherit = "sale.order"
@@ -15,23 +16,30 @@ class SaleHeri(models.Model):
     
 #     @api.onchange('kiosque_id')
 #     def onchange_ki
+    facturation_type = fields.Selection([
+            ('facturation_redevance','Redevance mensuel'),
+            ('materiel_loue', 'Materiel Loué'),
+            ('facturation_tiers', 'Tiers'),
+            ('facturation_entrepreneurs', 'Entrepreneurs'),
+        ], string='Type de Facturation')
     partner_id = fields.Many2one('res.partner', string='Customer', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)],'nouveau': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
+    correction_et_motif = fields.Text(string="Correction et Motif")
     state = fields.Selection([
-        ('draft', 'Quotation'),
-        ('nouveau', 'Generation liste'),
+        ('draft', 'Nouveau'),
         ('correction_et_motif', 'Correction et Motif'),
         ('correction_et_motif_finance', 'Correction et Motif'),
         ('observation_dg', 'Observation du DG'),
         ('verif_pec', 'Verification des PEC'),
         ('facture_generer', 'Facture Generee'),
+        ('breq_stock', 'Breq Stock Generee'),  
         ('sent', 'Quotation Sent'),
         ('sale', 'Facture Generee'),
         ('done', 'Locked'),
         ('cancel', 'Cancelled'),
-        ], string='Status', readonly=True, copy=False, index=True, track_visibility='onchange',default='nouveau')
-    
+        ], string='Status', readonly=True, copy=False, index=True, track_visibility='onchange',default='draft')
+    #facturation redevance
     def generation_list(self):
-        self.write({'state':'nouveau'})
+        self.write({'state':'draft'})
     def correction_motif_call(self):
         self.write({'state':'correction_et_motif'}) 
     def correction_motif_finance(self):
@@ -50,7 +58,11 @@ class SaleHeri(models.Model):
         if self.env['ir.values'].get_default('sale.config.settings', 'auto_done_setting'):
             self.action_done()
         return True
-        
+    
+    #facturation aux tiers   
+    def generation_breq_stock(self):
+        self.write({'state':'breq_stock'}) 
+     
 class AccountInvoiceHeri(models.Model):
     _inherit = "account.invoice"
     
@@ -112,5 +124,4 @@ class SaleAdvancePaymentInvHeri(models.TransientModel):
                 self._create_invoice(order, so_line, amount)
         if self._context.get('open_invoices', False):
             return sale_orders.action_view_invoice()
-        sale_orders.generation_facture_sms()
         return {'type': 'ir.actions.act_window_close'}
