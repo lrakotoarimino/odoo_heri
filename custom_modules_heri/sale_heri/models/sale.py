@@ -24,6 +24,7 @@ class SaleHeri(models.Model):
         ], string='Type de Facturation')
     partner_id = fields.Many2one('res.partner', string='Customer', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)],'nouveau': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
     correction_et_motif = fields.Text(string="Correction et Motif")
+    purchase_id= fields.Many2one('purchase.order')
     state = fields.Selection([
         ('draft', 'Nouveau'),
         ('correction_et_motif', 'Correction et Motif'),
@@ -58,10 +59,72 @@ class SaleHeri(models.Model):
         if self.env['ir.values'].get_default('sale.config.settings', 'auto_done_setting'):
             self.action_done()
         return True
+    breq_stock_ids = fields.One2many('purchase.order', string="Breq stock ids", compute='_compute_breq_stock_lie')
+    breq_stock_count = fields.Integer(compute='_compute_breq_stock_lie') 
+    
+    @api.multi
+    def _compute_breq_stock_lie(self):
+        for order in self:
+            breq_stock_child= order.env['purchase.order'].search([('breq_id_sale','=',order.id),('is_breq_stock','=',True)],limit=1)
+            if breq_stock_child:
+                order.breq_stock_ids = breq_stock_child
+                order.breq_stock_count = len(breq_stock_child)
+    
+    @api.multi
+    def action_breq_stock_lie(self):
+        action = self.env.ref('sale_heri.action_budget_request_stock_heri_lie')
+        result = action.read()[0]
+        return result
+    
+                
+    @api.multi
+    def _create_breq_stock(self):
+        breq_stock_obj = self.env['purchase.order']
+        for order in self:
+            vals = {
+                    'partner_id': order.partner_id.id,
+                    'origin': order.name,
+                    'breq_id_sale': order.id,                     
+                    'company_id': order.company_id.id,
+                    'is_breq_stock' : True,
+                    'move_type': 'direct',
+                    'location_id':15, #order.partner_id.property_stock_supplier.id,
+                    'company_id': order.company_id.id,
+                    'amount_untaxed': order.amount_total,
+                    'date_planned':fields.Datetime.now(),
+                    }
+            breq_id = breq_stock_obj.create(vals)     
+            breq_lines = order.order_line._create_breq_lines(breq_id)         
+        return True
     
     #facturation aux tiers   
     def generation_breq_stock(self):
-        self.write({'state':'breq_stock'}) 
+        self._create_breq_stock()
+        self.write({'state':'breq_stock'})
+
+class SaleOrderLineHeri(models.Model):
+    _inherit ="sale.order.line"
+    
+    @api.multi
+    def _create_breq_lines(self, breq_id):
+        breq_line = self.env['purchase.order.line']
+        for line in self:
+            vals = {
+                'name': line.name or '',
+                'product_id': line.product_id.id,
+                'product_uom': line.product_uom.id,
+                'sale_line_id': line.id,
+                'product_qty' : line.product_uom_qty,
+                'price_unit': line.price_unit,
+                'price_subtotal' : line.price_subtotal,
+                'date_planned':fields.Datetime.now(),
+                'purchase_line_id':line.order_id.id,
+                'order_id': breq_id.id,
+                
+#                 'purchase_type': line.order_id.purchase_type,
+            }     
+            breq_lines = breq_line.create(vals)
+        return True
      
 class AccountInvoiceHeri(models.Model):
     _inherit = "account.invoice"

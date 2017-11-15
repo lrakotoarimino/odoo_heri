@@ -28,6 +28,17 @@
 				<!--End bouton pour le workflow facturation tiers -->
 		      	 
 				</xpath>
+				
+				<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
+				 	<button type="object"
+	                            name="action_breq_stock_lie"
+	                            attrs="{'invisible': ['|',('state', 'not in', ('breq_stock'))]}"
+	                            class="oe_stat_button"
+	                            icon="fa-folder">
+	                            <field name="breq_stock_count"  widget="statinfo" string="Budget Report Stock" help="Breq stock lie"/>
+	                            <field name="breq_stock_ids" invisible="1"/>
+	                </button>
+                </xpath>
 
 			</field>
 		</record>
@@ -59,5 +70,6 @@
             <field name="act_window_id" ref="sale_heri.action_facturation_tiers"/>
 		</record>
 		<menuitem id="menu_facture_tiers" name="Facturation materiel aux tiers" parent="sales_team.menu_sales" action="action_facturation_tiers" sequence="2"/>
+			
 	</data>
 </odoo>
