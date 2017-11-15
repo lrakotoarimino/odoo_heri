@@ -6,5 +6,5 @@ from odoo.exceptions import ValidationError
 class CustomerSupplierHeri(models.Model):
     _inherit = "res.partner"
     
-    num = fields.Char("Ancien numéro")
-    
+    num = fields.Char("Ancien numÃ©ro")
+    kiosque_id = fields.Many2one('stock.location', string='Kiosque') 

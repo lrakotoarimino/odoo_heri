@@ -7,7 +7,7 @@
 			<field name="name">sale.facturation.tiers</field>
 			<field name="model">sale.order</field>
 			<field name="mode">primary</field>
-			<field name="inherit_id" ref="sale_heri.facturation_redevance_form_view_advanced"/>
+			<field name="inherit_id" ref="sale_heri.sale_order_form_view_advanced"/>
 			<field name="arch" type="xml">
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 	name="facturation_type" invisible="1"/>
