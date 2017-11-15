@@ -2,8 +2,8 @@
 <odoo>
 	<data>
 		<!-- Facturation redevance mensuelle form -->
-		<record model="ir.ui.view" id="facturation_redevance_form_view_base">
-			<field name="name">sale.facturation.redevance.base</field>
+		<record model="ir.ui.view" id="sale_order_form_base">
+			<field name="name">sale.order.form.base</field>
 			<field name="model">sale.order</field>
 			<field name="inherit_id" ref="sale.view_order_form"/>
 			<field name="arch" type="xml">
@@ -30,7 +30,7 @@
 			<field name="name">sale.facturation.redevance.advanced</field>
 			<field name="model">sale.order</field>
 			<field name="mode">primary</field>
-			<field name="inherit_id" ref="sale_heri.facturation_redevance_form_view_base"/>
+			<field name="inherit_id" ref="sale_heri.sale_order_form_base"/>
 			<field name="arch" type="xml">
 				<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale" />
