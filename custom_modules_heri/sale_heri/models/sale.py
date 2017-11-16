@@ -107,7 +107,8 @@ class SaleHeri(models.Model):
                             'date_arrivee': date,
                             'nbre_jour_arrive': duree,
                         }
-                        order.order_line.create(vals)
+                        order.order_line.create(vals)   
+                            
     
     #facturation redevance
     def generation_list(self):
@@ -159,11 +160,14 @@ class SaleHeri(models.Model):
                     'breq_id_sale': order.id,                     
                     'company_id': order.company_id.id,
                     'is_breq_stock' : True,
+                    'is_breq_id_sale' :True,
                     'move_type': 'direct',
-                    'location_id':15, #order.partner_id.property_stock_supplier.id,
+                    'location_id':order.partner_id.kiosque_id.id,
                     'company_id': order.company_id.id,
                     'amount_untaxed': order.amount_total,
                     'date_planned':fields.Datetime.now(),
+                    'mouvement_type':'bs',
+                    'justificatif': 'c est un justificatif',
                     }
             breq_id = breq_stock_obj.create(vals)     
             breq_lines = order.order_line._create_breq_lines(breq_id)         
@@ -184,6 +188,7 @@ class SaleHeri(models.Model):
     
     #facturation aux tiers   
     def generation_breq_stock(self):
+        self._create_breq_stock()
         self.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
@@ -221,6 +226,8 @@ class AccountInvoiceHeri(models.Model):
             ('proforma', 'Pro-forma'),
             ('proforma2', 'Pro-forma'),
             ('attente_envoi_sms', 'Attente d\'envoi SMS'),
+            ('pour_visa','Visa'),
+            ('pour_edition','Edition'),
             ('open', 'SMS envoyé'),
             ('paid', 'Paid'),
             ('cancel', 'Cancelled'),
