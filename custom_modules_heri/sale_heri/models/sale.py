@@ -19,7 +19,7 @@ class SaleHeri(models.Model):
         vals['is_create'] = True
         return res
     
-    kiosque_id = fields.Many2one('stock.location', string='Kiosque') 
+    kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
     
     facturation_type = fields.Selection([
             ('facturation_redevance','Redevance mensuelle'),
@@ -27,7 +27,7 @@ class SaleHeri(models.Model):
             ('facturation_tiers', 'Tiers'),
             ('facturation_entrepreneurs', 'Entrepreneurs'),
         ], string='Type de Facturation')
-    partner_id = fields.Many2one('res.partner', string='Customer', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)],'nouveau': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
+    #partner_id = fields.Many2one('res.partner', string='Customer', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)],'nouveau': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
     correction_et_motif = fields.Text(string="Correction et Motif")
     purchase_id= fields.Many2one('purchase.order')
     state = fields.Selection([
@@ -63,9 +63,15 @@ class SaleHeri(models.Model):
     
     @api.onchange('kiosque_id')
     def onchange_kiosque_id(self):
-        for order in self:
-            client_id = order.env['res.partner'].search([('kiosque_id','=',order.kiosque_id.id)], limit=1)
-            order.partner_id = client_id.id
+        if not self.kiosque_id:
+            self.partner_id = False
+            return
+        
+        partner_id = self.env['res.partner'].search([('kiosque_id','=',self.kiosque_id.id)], limit=1)
+        if partner_id:
+            self.partner_id = partner_id.id
+        else: 
+            self.partner_id = False
             
     @api.multi       
     def action_generer_redevance(self):

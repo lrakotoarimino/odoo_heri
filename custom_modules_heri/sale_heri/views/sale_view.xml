@@ -44,7 +44,13 @@
 			<field name="inherit_id" ref="sale_heri.sale_order_form_view_advanced"/>
 			<field name="arch" type="xml">
 			    <xpath expr="//field[@name='partner_id']" position="before">
-					<field name="kiosque_id" domain="[('is_kiosque', '=', True)]"/>
+			        <field name="facturation_type" invisible= "1"/>
+					<field 
+					    name="kiosque_id" 
+					    domain="[('is_kiosque', '=', True)]" 
+					    attrs="{'required': [('facturation_type', '=', 'facturation_redevance')]}"
+					    options="{'no_open':True,'no_create':True}"
+					    />
 				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field name="correction_et_motif" attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"/>
