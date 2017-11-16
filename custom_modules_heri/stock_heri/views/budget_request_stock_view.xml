@@ -7,13 +7,14 @@
             <field name="model">purchase.order</field>
             <field name="arch" type="xml">
                 <form string="Budget Request Stock">
+                <field name="is_breq_id_sale" invisible="1"/>
                 <header>
                    	<button 
                        string="Envoyer au supérieur hiérarchique"
                        type="object" 
                        name="envoyer_a_approuver"
                        class="oe_highlight" 
-                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False), ('is_creator', '=', False)]}"
+                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False),'|',('is_breq_id_sale', '=', True), ('is_creator', '=', False)]}"
                     />
                	 	<button 
                        string="Accorder"
@@ -34,7 +35,7 @@
                        type="object" 
                        name="action_annuler"
                        class="oe_highlight" 
-                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau','bs','cancel')),'|',('is_breq_stock', '=', False), ('is_creator', '=', False)]}"
+                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau','bs','cancel')),'|',('is_breq_stock', '=', False),'|',('is_breq_id_sale', '=', True), ('is_creator', '=', False)]}"
                     />
                     <field name="state" widget="statusbar" statusbar_visible="nouveau,a_approuver,bs" readonly="1"/>
                 </header>
@@ -43,7 +44,7 @@
                         <button type="object"
                             name="action_bs_lie"
                             class="oe_stat_button"
-                            icon="fa-truck" attrs="{'invisible':[('state','not in','bs')]}">
+                            icon="fa-truck" attrs="{'invisible':[('state','not in',('bs','comptabilise'))]}">
                             <field name="bs_lie_count" widget="statinfo" string="Bons de sortie" help="Bons de sortie rattaché au BReq stock"/>
                             <field name="picking_ids_bs" invisible="1"/>
                         </button>
@@ -247,7 +248,7 @@
 	    <record model="ir.actions.act_window" id="action_budget_request_stock">
 	       	<field name="name">Budget request stock</field>
 	       	<field name="res_model">purchase.order</field>
-			<field name="domain">[('is_breq_stock','=',True)]</field>
+			<field name="domain">['&amp;',('is_breq_stock','=',True),(('is_breq_id_sale','=',False))]</field>
 			
 			<!-- A rendre dynamique ou à corriger -->
 			<field name="context">{'default_is_breq_stock': True, 'default_partner_id':1,'default_mouvement_type': 'bs'}</field>
