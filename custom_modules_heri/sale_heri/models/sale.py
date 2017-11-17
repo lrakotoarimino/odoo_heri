@@ -2,7 +2,7 @@
 
 from odoo import fields, models, api
 from collections import namedtuple
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, RedirectWarning, ValidationError
 from odoo.tools.float_utils import float_compare
 import re
 import time
@@ -215,6 +215,24 @@ class SaleOrderLineHeri(models.Model):
      
     date_arrivee = fields.Datetime(string='Date d\'arrivée')
     nbre_jour_arrive = fields.Float(string='Nombre de jour d\'arrivé', default=0.0)
+    qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
+    location_id = fields.Many2one('stock.location', related='order_id.kiosque_id', readonly=True)
+     
+    @api.onchange('product_id')
+    def onchange_prod_id(self):
+        for line in self:
+            if line.order_id.facturation_type == 'facturation_tiers' and not line.location_id:
+                raise UserError("Le Kiosque ne doit pas être vide")        
+            stock_quant_ids = self.env['stock.quant'].search(['&',('product_id','=', line.product_id.id),('location_id','=', line.location_id.id)])
+            #recuperer tous les articles reserves dans bs
+            bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bs'), \
+                                                                   ('picking_id.state','not in', ('done','cancel')), \
+                                                                   ('product_id','=', line.product_id.id)
+                                                                   ])  
+            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
+            for quant in stock_quant_ids:
+                line.qte_prevu = quant.qty - total_bci_reserved
+     
      
     @api.multi
     def _create_breq_lines(self, breq_id):
@@ -246,7 +264,6 @@ class AccountInvoiceHeri(models.Model):
             ('proforma2', 'Pro-forma'),
             ('attente_envoi_sms', 'Attente d\'envoi SMS'),
             ('pour_visa','Visa'),
-            ('pour_edition','Edition'),
             ('open', 'SMS envoyé'),
             ('paid', 'Paid'),
             ('cancel', 'Cancelled'),
@@ -261,6 +278,9 @@ class AccountInvoiceHeri(models.Model):
     def action_aviser_callcenter(self):
         self.write({'state':'attente_envoi_sms'})
     def action_envoi_sms(self):
+        self.write({'state':'open'})
+    def action_pour_visa(self):
+        self.action_invoice_open()
         self.write({'state':'open'})
     
 class SaleAdvancePaymentInvHeri(models.TransientModel):

@@ -9,6 +9,12 @@
 			<field name="mode">primary</field>
 			<field name="inherit_id" ref="sale_heri.sale_order_form_view_advanced"/>
 			<field name="arch" type="xml">
+				<xpath expr="//field[@name='partner_id']" position="before">
+					<field 
+					    name="kiosque_id" 
+					    domain="[('is_kiosque', '=', True)]" 
+					    />
+				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 	name="facturation_type" invisible="1"/>
 				</xpath>
@@ -17,11 +23,15 @@
 							widget="statusbar" 
 					    	statusbar_visible="draft,breq_stock"/>
 				</xpath>
+				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
+					<field name="qte_prevu"/>
+				</xpath>
 				 <!--bouton pour le workflow facturation tiers -->
 				<xpath expr="//field[@name='state']" position="before">
 					<button 
 			      	    string="Genener BreqStock" 
 			      	    name="action_generer_breq_stock"
+			      	    groups="purchase_heri.group_special_manager_heri"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft')),('facturation_type', 'not in', ('facturation_tiers'))]}"
 			      	 />
