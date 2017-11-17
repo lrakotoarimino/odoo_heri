@@ -37,7 +37,13 @@ class SaleHeri(models.Model):
         ('observation_dg', 'Observation du DG'),
         ('verif_pec', 'Verification des PEC'),
         ('facture_generer', 'Facture Generee'),
-        ('breq_stock', 'Breq Stock Generee'),  
+        ('breq_stock','Budget request stock'),
+        
+        ('solvabilite_ok','Contrôle de solvabilité'),
+        ('capacite_ok','Contrôle capacité kiosque'),
+        ('preparation_test','Préparation matériels pour test'),
+        ('test','Test des matériels'),
+        
         ('sent', 'Quotation Sent'),
         ('sale', 'Génération facture SMS'),
         ('done', 'Locked'),
@@ -132,6 +138,19 @@ class SaleHeri(models.Model):
             self.action_done()
         return True
     
+    #demande d'ajout de materiel pour l'entrepreneur
+    def action_set_draft(self):
+        self.write({'state':'draft'})
+    def action_solvabilite_ok(self):
+        self.write({'state':'solvabilite_ok'})
+    def action_capacite_ok(self):
+        self._create_breq_stock()
+        self.write({'state':'capacite_ok'})
+    def action_preparation_materiel_ok(self):
+        self.write({'state':'preparation_test'})
+    def action_test_materiel_ok(self):
+        self.write({'state':'test'}) 
+    
     breq_stock_ids = fields.One2many('purchase.order', string="Breq stock ids", compute='_compute_breq_stock_lie')
     breq_stock_count = fields.Integer(compute='_compute_breq_stock_lie') 
     
@@ -167,7 +186,7 @@ class SaleHeri(models.Model):
                     'amount_untaxed': order.amount_total,
                     'date_planned':fields.Datetime.now(),
                     'mouvement_type':'bs',
-                    'justificatif': 'c est un justificatif',
+                    'justificatif': "C'/est un justificatif",
                     }
             breq_id = breq_stock_obj.create(vals)     
             breq_lines = order.order_line._create_breq_lines(breq_id)         

@@ -15,28 +15,34 @@
 			<field name="flow_start">True</field>
 			<field name="name">Nouveau</field>
 			<field name="kind">function</field>
-			<field name="action">set_draft()</field>
+			<field name="action">action_set_draft()</field>
 		</record>
 		
 		<record id="act_solvabilite_ok" model="workflow.activity">
 			<field name="wkf_id" ref="demande_location_entrepreneur_wkf"/>
 			<field name="name">Contrôle solvabilité ok</field>
 			<field name="kind">function</field>
-			<field name="action">solvabilite_ok()</field>
+			<field name="action">action_solvabilite_ok()</field>
 		</record>
 		
 		<record id="act_capacite_ok" model="workflow.activity">
 			<field name="wkf_id" ref="demande_location_entrepreneur_wkf"/>
 			<field name="name">Contrôle capacité kiosque ok</field>
 			<field name="kind">function</field>
-			<field name="action">capacite_ok()</field>
+			<field name="action">action_capacite_ok()</field>
 		</record>
 		
-		<record id="act_breq_stock" model="workflow.activity">
+		<record id="act_preparation_materiel" model="workflow.activity">
 			<field name="wkf_id" ref="demande_location_entrepreneur_wkf"/>
-			<field name="name">Contrôle de la capacité du kiosque ok</field>
+			<field name="name">Préparation de matétriel</field>
 			<field name="kind">function</field>
-			<field name="action">creer_breq_stock()</field>
+			<field name="action">action_preparation_materiel_ok()</field>
+		</record>
+		<record id="act_test_materiel" model="workflow.activity">
+			<field name="wkf_id" ref="demande_location_entrepreneur_wkf"/>
+			<field name="name">Testé</field>
+			<field name="kind">function</field>
+			<field name="action">action_test_materiel_ok()</field>
 		</record>
 		<!--End workflow activity-->
 		
@@ -50,7 +56,7 @@
         <record id="act_solvabilite_ok_to_act_draft2" model="workflow.transition">
             <field name="act_from" ref="act_solvabilite_ok"/>
             <field name="act_to" ref="act_draft2"/>
-            <field name="signal">action_annuler_act_solvabilite_ok</field>
+            <field name="signal">action_annuler_solvabilite_ok</field>
         </record>      
         
         <record id="act_solvabilite_ok_to_act_capacite_ok" model="workflow.transition">
@@ -65,16 +71,28 @@
             <field name="signal">action_annuler_capacite_ok</field>
         </record>
         
-        <record id="act_capacite_ok_to_act_breq_stock" model="workflow.transition">
+        <record id="act_capacite_ok_to_act_preparation_materiel" model="workflow.transition">
             <field name="act_from" ref="act_capacite_ok"/>
-            <field name="act_to" ref="act_breq_stock"/>
-            <field name="signal">action_generate_breq_stock</field>
+            <field name="act_to" ref="act_preparation_materiel"/>
+            <field name="signal">action_preparation_materiel</field>
         </record>
         
-        <record id="act_breq_stock_to_act_capacite_ok" model="workflow.transition">
-            <field name="act_from" ref="act_breq_stock"/>
+        <record id="act_preparation_materiel_to_act_capacite_ok" model="workflow.transition">
+            <field name="act_from" ref="act_preparation_materiel"/>
             <field name="act_to" ref="act_capacite_ok"/>
-            <field name="signal">action_annuler_generate_breq_stock</field>
+            <field name="signal">action_annuler_preparation_materiel</field>
+        </record>
+        
+        <record id="act_preparation_materiel_to_act_test_materiel" model="workflow.transition">
+            <field name="act_from" ref="act_preparation_materiel"/>
+            <field name="act_to" ref="act_test_materiel"/>
+            <field name="signal">action_tester</field>
+        </record>
+        
+        <record id="act_test_materiel_to_act_preparation_materiel" model="workflow.transition">
+            <field name="act_from" ref="act_test_materiel"/>
+            <field name="act_to" ref="act_preparation_materiel"/>
+            <field name="signal">action_annuler_test</field>
         </record>
 		<!--End workflow transition-->
 		<!--End workflow -->
