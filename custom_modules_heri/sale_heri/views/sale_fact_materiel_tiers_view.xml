@@ -35,7 +35,7 @@
 	                            attrs="{'invisible': ['|',('state', 'not in', ('breq_stock'))]}"
 	                            class="oe_stat_button"
 	                            icon="fa-folder">
-	                            <field name="breq_stock_count"  widget="statinfo" string="Budget Report Stock" help="Breq stock lie"/>
+	                            <field name="breq_stock_count"  widget="statinfo" string="Budget Request Stock" help="Breq stock lie"/>
 	                            <field name="breq_stock_ids" invisible="1"/>
 	                </button>
                 </xpath>

@@ -20,8 +20,10 @@ class PurchaseHeri(models.Model):
     @api.model
     def create(self, values):
         order = super(PurchaseHeri,self).create(values)
-        if not values['order_line']:
-                raise UserError('Veuillez renseigner les lignes de la commande.')
+        if not values['is_breq_id_sale']:
+            if not values['order_line']:
+                    raise UserError('Veuillez renseigner les lignes de la commande.')
+        
         #A executer dans un breq stock uniquement
         if order.is_breq_stock:
             order._create_picking2()
