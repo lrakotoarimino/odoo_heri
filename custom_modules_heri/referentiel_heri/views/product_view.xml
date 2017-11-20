@@ -14,8 +14,11 @@
 					<field name="family"/>
 					<field name="nature_analytique"/>
 					<field name="stock"/>
-					<field name="security_seuil" attrs="{'invisible': [('type', '!=', ('product'))]}" />
+					<field name="security_seuil" attrs="{'invisible': [('type', '!=', ('product'))]}"/>
 					<field name="taxe_douane"/>
+				</field>
+				<field name="lst_price" position="before">
+					<field name="frais_type" widget="radio" attrs="{'invisible': [('type', '=', ('service'))]}"/>
 				</field>
 			</field>
 		</record>	

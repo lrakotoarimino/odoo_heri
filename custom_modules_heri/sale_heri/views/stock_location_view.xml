@@ -7,8 +7,11 @@
 			<field name="model">stock.location</field>
 			<field name="inherit_id" ref="stock.view_location_form"/>
 			<field name="arch" type="xml">
-			    <xpath expr="//field[@name='scrap_location']" position="before">
+			    <xpath expr="//field[@name='usage']" position="before">
 					<field name="is_kiosque"/>
+					<field name="date_contrat"/>
+					<field name="plus_une_redevance" invisible="1"/>
+					<field name="region_id" attrs="{'required': [('is_kiosque', '=', True)], 'invisible':[('is_kiosque', '=', False)]}"/>
 				</xpath>
 			</field>
 		</record>	

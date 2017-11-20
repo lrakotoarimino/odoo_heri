@@ -63,7 +63,7 @@
         <record id="act_correction_motif_call_to_generation_list" model="workflow.transition">
             <field name="act_from" ref="act_correction_motif_call"/>
             <field name="act_to" ref="act_generation_list"/>
-            <field name="signal">action_annul_correction_motif</field>
+            <field name="signal">action_annul_correction_motif_call</field>
         </record>      
         
         <record id="act_correction_motif_call_to_correction_motif_finance" model="workflow.transition">
@@ -81,7 +81,8 @@
         <record id="act_correction_motif_finance_to_observation_dg" model="workflow.transition">
             <field name="act_from" ref="act_correction_motif_finance"/>
             <field name="act_to" ref="act_observation_dg"/>
-            <field name="signal">action_observation_dg</field>
+            <field name="condition">amount_untaxed &gt; 1</field>
+            <field name="signal">action_validation_finance</field>
         </record>
         
         <record id="act_observation_dg_to_correction_motif_finance" model="workflow.transition">
@@ -93,7 +94,8 @@
         <record id="act_correction_motif_finance_to_generation_facture_sms" model="workflow.transition">
             <field name="act_from" ref="act_correction_motif_finance"/>
             <field name="act_to" ref="act_generation_facture_sms"/>
-            <field name="signal">action_generation_facture_finance</field>
+            <field name="condition">amount_untaxed &lt;= 1</field>
+            <field name="signal">action_validation_finance</field>
         </record>
         
         <record id="act_observation_dg_to_verif_pec" model="workflow.transition">

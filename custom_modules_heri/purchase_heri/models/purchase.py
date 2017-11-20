@@ -7,10 +7,11 @@ from collections import namedtuple
 from odoo.api import onchange
 
 #Region
-class CodeBudgetaireRegion(models.Model):
-    _name = "br.region"
+class ResRegion(models.Model):
+    _name = "res.region"
     
-    region = fields.Char("Région")
+    name = fields.Char(u'Région')
+    frais_base = fields.Float("Frais de base")
 
 #Budget Request Achat
 class PurchaseHeri(models.Model):

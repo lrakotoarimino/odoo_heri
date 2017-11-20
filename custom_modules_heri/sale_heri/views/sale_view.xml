@@ -49,7 +49,6 @@
 					    name="kiosque_id" 
 					    domain="[('is_kiosque', '=', True)]" 
 					    attrs="{'required': [('facturation_type', '=', 'facturation_redevance')]}"
-					    options="{'no_open':True,'no_create':True}"
 					    />
 				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
@@ -99,26 +98,26 @@
 			      	    type="object"
 			      	 />
 					<button 
-			      	    string="A Faire Corriger" 
+			      	    string="Envoyer au call center pour vérification" 
 			      	    name="action_correction_motif_call"
 			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft'))]}"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft')), ('is_creator','=',False)]}"
 			      	 />
 					<button 
-			      	    string="Valider" 
+			      	    string="Valider et envoyer à la finance pour vérification" 
 			      	    name="action_correction_motif_finance"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"
 			      	 />
 			      	 <button 
 			      	    string="A Revoir" 
-			      	    name="action_annul_correction_motif"
+			      	    name="action_annul_correction_motif_call"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"
 			      	 />
 			      	<button 
 			      	    string="Valider" 
-			      	    name="action_generation_facture_finance"
+			      	    name="action_validation_finance"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
 			      	    groups="purchase_heri.group_finance_heri"
@@ -126,13 +125,6 @@
 			      	 <button 
 			      	    string="A revoir" 
 			      	    name="action_annul_correction_motif_finance"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
-			      	    groups="purchase_heri.group_finance_heri"
-			      	 />
-					<button 
-			      	    string="Envoyer au DG" 
-			      	    name="action_observation_dg"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
 			      	    groups="purchase_heri.group_finance_heri"
@@ -283,7 +275,8 @@
 			</field>
 		</record>
   		
-  		<menuitem id="menu_facture_redevance" name="Facturation redevance mensuelle" parent="sales_team.menu_sales" action="action_facture_redevance" sequence="2"/>
+  		<menuitem id="menu_facture_redevance" name="Facturation redevance mensuelle" parent="sales_team.menu_sales" action="sale_heri.action_facture_redevance" sequence="2"/>
+		<menuitem id="menu_sale_res_region" parent="sale.menu_sales_config" action="purchase_heri.action_res_region" name="Région" sequence="-100"/>
 		<!-- End Facturation redevance mensuelle form -->
 	</data>
 </odoo>

@@ -159,7 +159,7 @@
         </record>
 		<!-- Fin action bon de cession interne -->
 		
-		<!-- Debut action bon de sortie -->
+		<!-- Debut action bon de sortie -->		
         <record model="ir.actions.act_window" id="action_bon_de_sortie">
 	       	<field name="name">Bon de sortie en stock</field>
 	       	<field name="res_model">stock.picking</field>
@@ -182,7 +182,33 @@
             <field name="view_id" ref="stock.view_picking_form"/>
             <field name="act_window_id" ref="stock_heri.action_bon_de_sortie"/>
 		</record>
-				
+		
+		<record id="view_tree_move_form_inherit" model="ir.ui.view">
+            <field name="name">stok.move.form.inherit</field>
+            <field name="model">stock.move</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock.view_move_picking_form"/>
+            <field name="arch" type="xml">
+				<xpath expr="//field[@name='product_id']" position="after">
+					<field name="date_arrivee_relle"/>
+				</xpath>
+			</field>
+		</record>
+		
+		<record id="view_picking_bs_lie_form_advanced_inherit" model="ir.ui.view">
+            <field name="name">stok.bon.sortie.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="arch" type="xml">            
+				<xpath expr="//field[@name='move_lines']" position="attributes">
+					<attribute name="attrs">{'readonly': [('state', 'in', ('cancel'))]}</attribute>
+					<attribute name="options"></attribute>
+					<attribute name="context">{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}</attribute>
+				</xpath>
+			</field>
+		</record>
+		
 	   	<record model="ir.actions.act_window" id="action_bon_de_sortie_lie">
 	       	<field name="name">Bon de sortie en stock lié</field>
 	       	<field name="res_model">stock.picking</field>
@@ -201,7 +227,7 @@
         <record id="action_bon_sortie_form_lie" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock.view_picking_form"/>
+            <field name="view_id" ref="stock_heri.view_picking_bs_lie_form_advanced_inherit"/>
             <field name="act_window_id" ref="stock_heri.action_bon_de_sortie_lie"/>
 		</record>
 	  	<!-- Fin bon de sortie -->

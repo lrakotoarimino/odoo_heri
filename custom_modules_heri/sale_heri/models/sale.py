@@ -4,6 +4,7 @@ from odoo import fields, models, api
 from collections import namedtuple
 from odoo.exceptions import UserError, RedirectWarning, ValidationError
 from odoo.tools.float_utils import float_compare
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 import re
 import time
 from docutils.nodes import Invisible
@@ -84,6 +85,21 @@ class SaleHeri(models.Model):
         for order in self:
             for line in order:
                 line.order_line.unlink()
+            #implementer frais de base
+            order_line = self.env['sale.order.line']
+            product_frais_base_id = order.env.ref('sale_heri.product_frais_base')
+            for p in product_frais_base_id:
+                vals = {
+                    'name': 'Frais de base du kiosque',
+                    'product_id': p.id,
+                    'product_uom': p.uom_id.id,
+                    'product_uom_qty': 1,
+                    'order_id': order.id,
+                    'price_unit': order.kiosque_id.region_id.frais_base,
+                    'date_arrivee': datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT),
+                    'nbre_jour_arrive': 0.0,
+                }
+                order.order_line.create(vals)
             stock_quant_ids = order.env['stock.quant'].search([('location_id','=',order.kiosque_id.id)])
             for prod in stock_quant_ids:
                 in_date_list = []
@@ -92,29 +108,47 @@ class SaleHeri(models.Model):
                         in_date_list.append(product.in_date) 
                 for date in in_date_list:
                     quants = order.env['stock.quant'].search(['&', ('in_date','=',date), ('location_id','=',order.kiosque_id.id)])
-                    total_qty = 0.0
+                    product_redevance_list = []
+                    product_location_list = []
                     for q in quants:
-                        product_list = []
-                        if q.product_id not in product_list:
-                            product_list.append(q.product_id)
-                    for p in product_list:
+                        if q.product_id not in product_redevance_list and q.product_id.frais_type == 'redevance':
+                            product_redevance_list.append(q.product_id)
+                        elif q.product_id not in product_location_list and q.product_id.frais_type == 'location':
+                            product_location_list.append(q.product_id)
+                    #insertion redevance fixe pour les materiels productifs dans les lignes des articles
+                    for p in product_redevance_list:
                         product_quant = order.env['stock.quant'].search(['&', ('product_id','=',p.id), '&', ('in_date','=',date), ('location_id','=',order.kiosque_id.id)])
+                        total_qty = 0.0
                         for quant in product_quant:
                             total_qty += quant.qty
-                        order_line = self.env['sale.order.line']
-                        duree = str((datetime.now()-datetime.strptime(date, "%Y-%m-%d %H:%M:%S")).days)
                         vals = {
-                            'name': p.name,
+                            'name': 'Redevance fixe pour materiels productifs',
                             'product_id': p.id,
                             'product_uom': p.uom_id.id,
                             'product_uom_qty': total_qty,
                             'order_id': order.id,
                             'price_unit': p.lst_price,
                             'date_arrivee': date,
-                            'nbre_jour_arrive': duree,
+                            'nbre_jour_arrive': 0.0,
                         }
                         order.order_line.create(vals)   
                             
+                    for p in product_location_list:
+                        product_quant = order.env['stock.quant'].search(['&', ('product_id','=',p.id), '&', ('in_date','=',date), ('location_id','=',order.kiosque_id.id)])
+                        total_qty = 0.0
+                        for quant in product_quant:
+                            total_qty += quant.qty
+                        vals = {
+                            'name': 'Frais de location',
+                            'product_id': p.id,
+                            'product_uom': p.uom_id.id,
+                            'product_uom_qty': total_qty,
+                            'order_id': order.id,
+                            'price_unit': p.lst_price,
+                            'date_arrivee': date,
+                            'nbre_jour_arrive': 0.0,
+                        }
+                        order.order_line.create(vals)
     
     #facturation redevance
     def generation_list(self):
