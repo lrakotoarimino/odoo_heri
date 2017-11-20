@@ -4,7 +4,6 @@ from odoo import fields, models, api
 from collections import namedtuple
 from odoo.exceptions import UserError, RedirectWarning, ValidationError
 from odoo.tools.float_utils import float_compare
-from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 import re
 import time
 from docutils.nodes import Invisible
@@ -85,21 +84,6 @@ class SaleHeri(models.Model):
         for order in self:
             for line in order:
                 line.order_line.unlink()
-            #implementer frais de base
-            order_line = self.env['sale.order.line']
-            product_frais_base_id = order.env.ref('sale_heri.product_frais_base')
-            for p in product_frais_base_id:
-                vals = {
-                    'name': 'Frais de base du kiosque',
-                    'product_id': p.id,
-                    'product_uom': p.uom_id.id,
-                    'product_uom_qty': 1,
-                    'order_id': order.id,
-                    'price_unit': order.kiosque_id.region_id.frais_base,
-                    'date_arrivee': datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT),
-                    'nbre_jour_arrive': 0.0,
-                }
-                order.order_line.create(vals)
             stock_quant_ids = order.env['stock.quant'].search([('location_id','=',order.kiosque_id.id)])
             for prod in stock_quant_ids:
                 in_date_list = []
@@ -108,47 +92,29 @@ class SaleHeri(models.Model):
                         in_date_list.append(product.in_date) 
                 for date in in_date_list:
                     quants = order.env['stock.quant'].search(['&', ('in_date','=',date), ('location_id','=',order.kiosque_id.id)])
-                    product_redevance_list = []
-                    product_location_list = []
+                    total_qty = 0.0
                     for q in quants:
-                        if q.product_id not in product_redevance_list and q.product_id.frais_type == 'redevance':
-                            product_redevance_list.append(q.product_id)
-                        elif q.product_id not in product_location_list and q.product_id.frais_type == 'location':
-                            product_location_list.append(q.product_id)
-                    #insertion redevance fixe pour les materiels productifs dans les lignes des articles
-                    for p in product_redevance_list:
+                        product_list = []
+                        if q.product_id not in product_list:
+                            product_list.append(q.product_id)
+                    for p in product_list:
                         product_quant = order.env['stock.quant'].search(['&', ('product_id','=',p.id), '&', ('in_date','=',date), ('location_id','=',order.kiosque_id.id)])
-                        total_qty = 0.0
                         for quant in product_quant:
                             total_qty += quant.qty
+                        order_line = self.env['sale.order.line']
+                        duree = str((datetime.now()-datetime.strptime(date, "%Y-%m-%d %H:%M:%S")).days)
                         vals = {
-                            'name': 'Redevance fixe pour materiels productifs',
+                            'name': p.name,
                             'product_id': p.id,
                             'product_uom': p.uom_id.id,
                             'product_uom_qty': total_qty,
                             'order_id': order.id,
                             'price_unit': p.lst_price,
                             'date_arrivee': date,
-                            'nbre_jour_arrive': 0.0,
+                            'nbre_jour_arrive': duree,
                         }
                         order.order_line.create(vals)   
                             
-                    for p in product_location_list:
-                        product_quant = order.env['stock.quant'].search(['&', ('product_id','=',p.id), '&', ('in_date','=',date), ('location_id','=',order.kiosque_id.id)])
-                        total_qty = 0.0
-                        for quant in product_quant:
-                            total_qty += quant.qty
-                        vals = {
-                            'name': 'Frais de location',
-                            'product_id': p.id,
-                            'product_uom': p.uom_id.id,
-                            'product_uom_qty': total_qty,
-                            'order_id': order.id,
-                            'price_unit': p.lst_price,
-                            'date_arrivee': date,
-                            'nbre_jour_arrive': 0.0,
-                        }
-                        order.order_line.create(vals)
     
     #facturation redevance
     def generation_list(self):
@@ -223,7 +189,7 @@ class SaleHeri(models.Model):
                     'justificatif': "C'/est un justificatif",
                     }
             breq_id = breq_stock_obj.create(vals)     
-            breq_lines = order.order_line._create_breq_lines(breq_id)         
+            breq_lines = order.order_line._create_breq_lines(breq_id)        
         return True
     
     @api.multi
@@ -239,6 +205,12 @@ class SaleHeri(models.Model):
             action = {'type': 'ir.actions.act_window_close'}
         return action
     
+    @api.multi
+    def action_breq_stock_lie_facture(self):
+        action = self.env.ref('sale_heri.action_budget_request_stock_heri_lie_facture')
+        result = action.read()[0]
+        return result
+    
     #facturation aux tiers   
     def generation_breq_stock(self):
         self._create_breq_stock()
@@ -251,21 +223,63 @@ class SaleOrderLineHeri(models.Model):
     nbre_jour_arrive = fields.Float(string='Nombre de jour d\'arrivé', default=0.0)
     qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
     location_id = fields.Many2one('stock.location', related='order_id.kiosque_id', readonly=True)
+    product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
      
     @api.onchange('product_id')
     def onchange_prod_id(self):
         for line in self:
-            if line.order_id.facturation_type == 'facturation_tiers' and not line.location_id:
-                raise UserError("Le Kiosque ne doit pas être vide")        
-            stock_quant_ids = self.env['stock.quant'].search(['&',('product_id','=', line.product_id.id),('location_id','=', line.location_id.id)])
-            #recuperer tous les articles reserves dans bs
-            bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bs'), \
+            if not line.location_id and self.order_id.facturation_type == "facturation_tiers":
+                raise UserError("Le kiosque ne doit pas être vide")
+            #line.qte_prevu = line.product_id.virtual_available
+            
+            location_src_id = line.location_id
+            total_qty_available = 0.0
+            total_reserved = 0.0
+            liste_picking_ids = []
+            
+            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+            line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
+                                                               ('order_id.bs_id.state','not in', ('done','cancel')), \
+                                                               ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
+                                                               ])
+            #recuperer tous les articles reserves dans bci
+            bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
                                                                    ('picking_id.state','not in', ('done','cancel')), \
                                                                    ('product_id','=', line.product_id.id)
                                                                    ])  
-            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
+            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
+            total_reserved = sum(x.product_qty for x in line_ids)
             for quant in stock_quant_ids:
-                line.qte_prevu = quant.qty - total_bci_reserved
+                total_qty_available += quant.qty
+            line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
+    
+    @api.onchange('product_uom_qty')
+    def onchange_product_qty(self):
+        if self.order_id.facturation_type == "facturation_tiers": 
+            product_seuil_id = self.env['product.product'].search([('id','=',self.product_id.id)])
+            product_seuil = product_seuil_id.security_seuil
+            qte_restant = self.qte_prevu - self.product_uom_qty
+
+            if self.qte_prevu < self.product_uom_qty:
+#                 self.product_qty = self.qte_prevu
+                return {
+                        'warning': {
+                                    'title': 'Avertissement!', 'message': 'La quantité demandée réduite au disponible dans le magasin: '+str(self.qte_prevu)
+                                },
+                        'value': {
+                                'product_uom_qty': self.qte_prevu,
+                                }
+                        }
+            elif self.qte_prevu > self.product_uom_qty and qte_restant < product_seuil:
+                return {
+                        'warning': {
+                                    'title': 'Avertissement - Seuil de sécurité!', 'message': 'Le seuil de securité pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantité restante serait "'+str(qte_restant)+'" qui est en-dessous de seuil de sécurité.'
+                                },
+                        'value': {
+                                'product_uom_qty': self.product_uom_qty,
+                                }
+                        }
+        return
      
      
     @api.multi

@@ -44,10 +44,28 @@
 	                            name="action_breq_stock_lie"
 	                            attrs="{'invisible': ['|',('state', 'not in', ('breq_stock'))]}"
 	                            class="oe_stat_button"
-	                            icon="fa-folder">
+	                            icon="fa-truck">
 	                            <field name="breq_stock_count"  widget="statinfo" string="Budget Request Stock" help="Breq stock lie"/>
 	                            <field name="breq_stock_ids" invisible="1"/>
 	                </button>
+                </xpath>
+                <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="replace">
+			      <button name="action_view_invoice"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            invisible="1">
+                            <field name="invoice_count" widget="statinfo" string="Invoices"/>
+                  </button>
+                </xpath>
+                <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
+			      <button name="action_breq_stock_lie_facture"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            attrs="{'invisible': [('invoice_count', '=', 0)]}">
+                            <field name="invoice_count" widget="statinfo" string="Facture"/>
+                  </button>
                 </xpath>
 
 			</field>

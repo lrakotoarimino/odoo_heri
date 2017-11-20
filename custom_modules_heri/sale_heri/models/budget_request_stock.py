@@ -54,8 +54,7 @@ class BreqStockHeri(models.Model):
         ('nouveau', 'Nouveau'),
         ('confirmation_dg', 'En attente validation DG'),
         ('a_approuver', 'Avis supérieur hiérarchique'),
-        ('avis_magasinier', 'Avis Magasinier'),
-        ('test', 'Test Materiel'),
+        ('test', 'Test des matériels'),
         ('etab_facture', 'Etablissement Facture'),
         ('comptabilise', 'Comptabilise'),
         ('aviser_finance', 'Etablissement OV'),
@@ -84,7 +83,7 @@ class BreqStockHeri(models.Model):
         if facture_lie:
             self.statut_facture = facture_lie.state     
     
-    @api.depends('statut_facture')
+    @api.depends('state')
     def _compute_all_comptabilise(self):
         for order in self:
             current_brq_stock_id = self.env['account.invoice'].search([('breq_stock_id','=',order.id)])
@@ -92,19 +91,17 @@ class BreqStockHeri(models.Model):
                 order.is_facture_comptabilise = True
             else :
                 order.is_facture_comptabilise = False 
-            
-    def envoyer_magasinier(self):
-        self.write({'state':'avis_magasinier'})
-        self._create_picking3()
+
     def envoyer_pour_tester(self):
-        self.write({'state':'test'}) 
+        self._create_picking3()
+        self.write({'state':'test'})  
     def annule_test(self):
         self.write({'state':'nouveau'})
     def envoyer_pour_facturation(self):
         self.write({'state':'etab_facture'}) 
         self._create_facture_breq_stock()
     def annule_facturation(self):
-        self.write({'state':'avis_magasinier'})  
+        self.write({'state':'nouveau'})  
     def comptabiliser_sale(self):
         self.write({'state':'comptabilise'})
 
@@ -178,6 +175,9 @@ class AccountInvoiceHeri(models.Model):
     _inherit = 'account.invoice'
      
     breq_stock_id = fields.Many2one('purchase.order')
+    
+    def print_duplicata(self):
+        return self.env["report"].get_action(self, 'account.account_invoice_report_duplicate_main')
     
 # class StockMoveHeri(models.Model):
 #     _inherit = 'stock.move'
