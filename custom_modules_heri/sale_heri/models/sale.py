@@ -21,7 +21,7 @@ class SaleHeri(models.Model):
         return res
     #champ pour r�cup�rer le kiosque
     kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
-    
+    location_heri = fields.Many2one('stock.location', string='Emplacement Heri *') 
     facturation_type = fields.Selection([
             ('facturation_redevance','Redevance mensuelle'),
             ('materiel_loue', 'Materiel Loué'),
@@ -216,7 +216,7 @@ class SaleHeri(models.Model):
                     'is_breq_stock' : True,
                     'is_breq_id_sale' :True,
                     'move_type': 'direct',
-                    'location_id':order.partner_id.kiosque_id.id,
+                    'location_id':order.location_heri.id,
                     'company_id': order.company_id.id,
                     'amount_untaxed': order.amount_total,
                     'date_planned':fields.Datetime.now(),
@@ -257,14 +257,14 @@ class SaleOrderLineHeri(models.Model):
     date_arrivee = fields.Datetime(string='Date d\'arrivée')
     nbre_jour_arrive = fields.Float(string='Nombre de jour d\'arrivé', default=0.0)
     qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
-    location_id = fields.Many2one('stock.location', related='order_id.kiosque_id', readonly=True)
+    location_id = fields.Many2one('stock.location', related='order_id.location_heri', readonly=True)
     product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
      
     @api.onchange('product_id')
     def onchange_prod_id(self):
         for line in self:
             if not line.location_id and self.order_id.facturation_type == "facturation_tiers":
-                raise UserError("Le kiosque ne doit pas être vide")
+                raise UserError("Emplacement Heri ne doit pas être vide")
             #line.qte_prevu = line.product_id.virtual_available
             
             location_src_id = line.location_id

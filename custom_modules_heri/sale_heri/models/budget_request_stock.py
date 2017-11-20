@@ -107,7 +107,8 @@ class BreqStockHeri(models.Model):
 
     breq_facture_stock_ids = fields.One2many('account.invoice', string="Breq facture ids", compute='_compute_breq_stock_facture_lie')
     breq_facture_stock_count = fields.Integer(compute='_compute_breq_stock_facture_lie') 
-     
+    
+    #facture lié count 
     @api.multi
     def _compute_breq_stock_facture_lie(self):
         for order in self:
@@ -115,12 +116,15 @@ class BreqStockHeri(models.Model):
             if breq_stock_facture_child:
                 order.breq_facture_stock_ids = breq_stock_facture_child
                 order.breq_facture_stock_count = len(breq_stock_facture_child)
+                
+    #facture lié vue
     @api.multi
     def action_breq_stock_lie_facture(self):
         action = self.env.ref('sale_heri.action_budget_request_stock_heri_lie_facture')
         result = action.read()[0]
         return result
     
+    #création facture
     @api.multi
     def _create_facture_breq_stock(self):
         breq_stock_facture_obj = self.env['account.invoice']
@@ -145,6 +149,7 @@ class BreqStockHeri(models.Model):
             breq_facture_lines = order.order_line._create_facture_breq_stock_lines(breq_facture_id)
         return True
     
+    #action form bon de sortie facturation aux tiers
     @api.multi
     def action_bs_lie_facturation_tiers(self):
         action = self.env.ref('sale_heri.action_bon_de_sortie_lie_facture_tiers')
@@ -181,7 +186,7 @@ class AccountInvoiceHeri(models.Model):
     
 # class StockMoveHeri(models.Model):
 #     _inherit = 'stock.move'
-#     
+#      
 #     state = fields.Selection([
 #         ('draft', 'New'), ('cancel', 'Cancelled'),
 #         ('attente_logistique', 'Avis logistique'),('attente_magasinier', 'Avis magasinier'),
@@ -193,14 +198,17 @@ class AccountInvoiceHeri(models.Model):
 #              "* Waiting Availability: This state is reached when the procurement resolution is not straight forward. It may need the scheduler to run, a component to be manufactured...\n"
 #              "* Available: When products are reserved, it is set to \'Available\'.\n"
 #              "* Done: When the shipment is processed, the state is \'Done\'.")
-#     
+#      
 #     def reception_magasinier(self):
-#         self.action_confirm()
 #         self.write({'state':'attente_magasinier'})
-#     
+#      
 # class StockPickingHeri(models.Model):
 #     _inherit = 'stock.picking'   
-#     
+#      
+#     def aviser_logistique(self):
+#         self.action_confirm()
+#         self.write({'state':'attente_logistique'})    
+# 
 #     def action_aviser_magasinier_bs(self):
 #         self.action_assign()
 #         self.write({'state':'assigned'})

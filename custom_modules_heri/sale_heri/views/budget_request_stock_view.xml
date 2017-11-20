@@ -207,7 +207,7 @@
 					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>
 				</xpath>
 				<xpath expr="//header" position="inside">		
-				    <button name="action_aviser_logistique" string="Pour visa" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_magasinier')),('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
+				    <button name="aviser_logistique" string="Pour visa" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_magasinier')),('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
 				    <button name="action_aviser_magasinier_bs" string="Vu" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_logistique')), ('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 				</xpath>
             </field>
