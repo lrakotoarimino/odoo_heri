@@ -187,7 +187,7 @@ class PurchaseHeri(models.Model):
     employee_id = fields.Many2one('hr.employee', string='Demandeur', default=get_employee_id, readonly=True)
     manager_id = fields.Many2one('hr.employee', string='Responsable d\'approbation',default=get_manager_id, readonly=True)
     description = fields.Char("Description")
-    region_id = fields.Many2one('br.region', string='Région')
+    region_id = fields.Many2one('res.region', string='Région')
     is_manager = fields.Boolean(compute="_get_is_manager", string='Est un manager')
     change_state_date = fields.Datetime(string="Date changement d\'état", readonly=True, help="Date du dernier changement d\'état.") 
     purchase_ids = fields.One2many('purchase.order', string="purchase_ids", compute='_compute_br_lie')
