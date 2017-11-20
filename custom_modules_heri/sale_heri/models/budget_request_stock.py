@@ -4,9 +4,11 @@ from odoo import fields, models, api
 from collections import namedtuple
 from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare
+from odoo.tools import float_compare, float_round
 import re
 import time
 from docutils.nodes import Invisible
+from odoo.api import onchange
 
 class BreqStockHeri(models.Model):
     _inherit = "purchase.order"
@@ -30,6 +32,7 @@ class BreqStockHeri(models.Model):
                     'location_id': order.location_id.id,
                     'company_id': order.company_id.id,
                     'move_type': 'direct',
+                    'state':'attente_magasinier',
                     'employee_id': order.employee_id.id,
                     'breq_id' : order.id,
                     'section' : order.section,
@@ -42,7 +45,7 @@ class BreqStockHeri(models.Model):
             move_lines = order.order_line._create_stock_moves(move)
             move_lines = move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
             move_lines.action_assign()
-#             move_lines.reception_magasinier()
+            move_lines.reception_magasinier()
             
          
         picking_type = self.env['stock.picking.type'].search([('id','=',picking_type_id)])
@@ -184,24 +187,24 @@ class AccountInvoiceHeri(models.Model):
     def print_duplicata(self):
         return self.env["report"].get_action(self, 'account.account_invoice_report_duplicate_main')
     
-# class StockMoveHeri(models.Model):
-#     _inherit = 'stock.move'
-#      
-#     state = fields.Selection([
-#         ('draft', 'New'), ('cancel', 'Cancelled'),
-#         ('attente_logistique', 'Avis logistique'),('attente_magasinier', 'Avis magasinier'),
-#         ('waiting', 'Waiting Another Move'), ('confirmed', 'Waiting Availability'),
-#         ('assigned', 'Available'), ('done', 'Done')], string='Status',
-#         copy=False, default='draft', index=True, readonly=True,
-#         help="* New: When the stock move is created and not yet confirmed.\n"
-#              "* Waiting Another Move: This state can be seen when a move is waiting for another one, for example in a chained flow.\n"
-#              "* Waiting Availability: This state is reached when the procurement resolution is not straight forward. It may need the scheduler to run, a component to be manufactured...\n"
-#              "* Available: When products are reserved, it is set to \'Available\'.\n"
-#              "* Done: When the shipment is processed, the state is \'Done\'.")
-#      
-#     def reception_magasinier(self):
-#         self.write({'state':'attente_magasinier'})
-#      
+class StockMoveHeri(models.Model):
+    _inherit = 'stock.move'
+      
+    state = fields.Selection([
+        ('draft', 'New'), ('cancel', 'Cancelled'),
+        ('attente_logistique', 'Avis logistique'),('attente_magasinier', 'Avis magasinier'),
+        ('waiting', 'Waiting Another Move'), ('confirmed', 'Waiting Availability'),
+        ('assigned', 'Available'), ('done', 'Done')], string='Status',
+        copy=False, default='draft', index=True, readonly=True,
+        help="* New: When the stock move is created and not yet confirmed.\n"
+             "* Waiting Another Move: This state can be seen when a move is waiting for another one, for example in a chained flow.\n"
+             "* Waiting Availability: This state is reached when the procurement resolution is not straight forward. It may need the scheduler to run, a component to be manufactured...\n"
+             "* Available: When products are reserved, it is set to \'Available\'.\n"
+             "* Done: When the shipment is processed, the state is \'Done\'.")
+      
+    def reception_magasinier(self):
+        self.write({'picking_id.state':'attente_magasinier'})
+      
 # class StockPickingHeri(models.Model):
 #     _inherit = 'stock.picking'   
 #      

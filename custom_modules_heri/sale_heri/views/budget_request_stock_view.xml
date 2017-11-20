@@ -29,13 +29,13 @@
 					<button name="envoyer_pour_facturation" 
 							string="Test OK" 
 							type="object"
-							groups="purchase_heri.group_logistique_heri"
+							groups="purchase_heri.group_technicien_heri"
 							class="oe_highlight" 
                        		attrs="{'invisible': ['|',('state', 'not in', ('test')),('is_breq_stock', '=', False)]}"/>
                     <button name="annule_facturation" 
                     		string="A revoir" 
                     		type="object"
-                    		groups="purchase_heri.group_logistique_heri"
+                    		groups="purchase_heri.group_technicien_heri"
 							class="oe_highlight" 
                        		attrs="{'invisible': ['|',('state', 'not in', ('test')),('is_breq_stock', '=', False)]}"/>
                     <button name="comptabiliser_sale" 
@@ -148,7 +148,9 @@
 		    		<attribute name="invisible">1</attribute>
 		    	</xpath>
 		    	<xpath expr="//button[@name='%(account.action_account_invoice_payment)d']" position="attributes">
+		    		<attribute name="string">Comptabiliser</attribute>
 		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
+		    		<attribute name="attrs">{'invisible':['|',('sent','=',False)]}</attribute>
 		    	</xpath>
 		    	<xpath expr="//button[@name='invoice_print'][1]" position="attributes">
 		    		<attribute name="string">Edition</attribute>

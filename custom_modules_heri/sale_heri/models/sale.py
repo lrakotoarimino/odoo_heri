@@ -21,7 +21,7 @@ class SaleHeri(models.Model):
         return res
     #champ pour r�cup�rer le kiosque
     kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
-    location_heri = fields.Many2one('stock.location', string='Emplacement Heri *') 
+    location_id = fields.Many2one('stock.location', string='Emplacement Heri *') 
     facturation_type = fields.Selection([
             ('facturation_redevance','Redevance mensuelle'),
             ('materiel_loue', 'Materiel Loué'),
@@ -31,6 +31,7 @@ class SaleHeri(models.Model):
     #partner_id = fields.Many2one('res.partner', string='Customer', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)],'nouveau': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
     correction_et_motif = fields.Text(string="Correction et Motif")
     purchase_id= fields.Many2one('purchase.order')
+    
     state = fields.Selection([
         ('draft', 'Nouveau'),
         ('correction_et_motif', 'Correction et Motif Call Center'),
@@ -202,7 +203,18 @@ class SaleHeri(models.Model):
         action = self.env.ref('sale_heri.action_budget_request_stock_heri_lie')
         result = action.read()[0]
         return result
-    
+    statut_facture = fields.Selection(compute="_get_statut_facture", string='Etat Facture',
+                      selection=[
+                             ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
+                             ('open','Entierement facturé'),
+                             ('paid','Comptabilisé'),
+                             ])
+    @api.one
+    def _get_statut_facture(self):  
+        for order in self :
+            facture_lie = order.env['account.invoice'].search([('origin','=',order.name)])
+            if facture_lie:
+                order.statut_facture = facture_lie.state 
                 
     @api.multi
     def _create_breq_stock(self):
@@ -211,12 +223,13 @@ class SaleHeri(models.Model):
             vals = {
                     'partner_id': order.partner_id.id,
                     'origin': order.name,
+                    'employee_id':order.user_id.id,
                     'breq_id_sale': order.id,                     
                     'company_id': order.company_id.id,
                     'is_breq_stock' : True,
                     'is_breq_id_sale' :True,
                     'move_type': 'direct',
-                    'location_id':order.location_heri.id,
+                    'location_id':order.location_id.id,
                     'company_id': order.company_id.id,
                     'amount_untaxed': order.amount_total,
                     'date_planned':fields.Datetime.now(),
@@ -248,8 +261,13 @@ class SaleHeri(models.Model):
     
     #facturation aux tiers   
     def generation_breq_stock(self):
-        self._create_breq_stock()
-        self.write({'state':'breq_stock'}) 
+        for order in self.order_line :
+            if order.qte_prevu < order.product_uom_qty :
+                raise UserError("Verifiez la quantité disponible de chaque article demandée")
+            if order.product_uom_qty <= 0.0:
+                raise UserError("la quantité demandée ne doit pas étre 0.0 ou negative ")
+            self._create_breq_stock()
+            self.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
@@ -257,7 +275,7 @@ class SaleOrderLineHeri(models.Model):
     date_arrivee = fields.Datetime(string='Date d\'arrivée')
     nbre_jour_arrive = fields.Float(string='Nombre de jour d\'arrivé', default=0.0)
     qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
-    location_id = fields.Many2one('stock.location', related='order_id.location_heri', readonly=True)
+    location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
     product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
      
     @api.onchange('product_id')
