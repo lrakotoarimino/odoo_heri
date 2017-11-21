@@ -1,7 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 	<data>
-	    <!-- Budget Expense Report form -->
+	    <!-- Budget Expense Report form ando-->
+		<record id="budget_request_stock_materiel_entrepreneur_form" model="ir.ui.view">
+            <field name="name">budget.request.form.stock.heri</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="stock_heri.budget_request_stock_form"/>
+            <field name="mode">primary</field>
+            <field name="arch" type="xml">
+               <field name="state" position="replace">
+				    <field name="state" widget="statusbar" statusbar_visible="nouveau,test,bs" />
+				</field>
+				<field name="partner_id" position="after">
+				    <field name="breq_id_sale" invisible="1" />
+				    <field name="is_breq_id_sale" invisible="1" />	  
+				    <field name="is_facture_comptabilise" invisible="1" />	  
+				</field>
+				<field name="location_id" position="replace">
+				    <field name="location_id" readonly="1" />  
+				</field>
+				<field name="state" position="before">					
+					<button name="envoyer_pour_tester" 
+							string="A tester" 
+							type="object"
+							class="oe_highlight" 
+							groups="purchase_heri.group_magasinier_heri"
+                       		attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False),('is_breq_id_sale', '=', False)]}"/>
+					<button name="creer_bs" 
+							string="Générer le bon de sortie" 
+							type="object"
+							groups="purchase_heri.group_technicien_heri"
+							class="oe_highlight" 
+                       		attrs="{'invisible': ['|',('state', 'not in', ('test')),('is_breq_stock', '=', False)]}"/>
+                    <button name="annule_test" 
+                    		string="A revoir" 
+                    		type="object"
+                    		groups="purchase_heri.group_technicien_heri"
+							class="oe_highlight" 
+                       		attrs="{'invisible': ['|',('state', 'not in', ('test')),('is_breq_stock', '=', False)]}"/>
+                    
+				</field>
+				<xpath expr="//div[@name='button_box']//button[@name='action_bs_lie']" position="before">
+				 	<button type="object"
+				 				name="action_breq_stock_lie_facture"
+	                            attrs="{'invisible': ['|',('state', 'not in', ('etab_facture','comptabilise'))]}"
+	                            class="oe_stat_button"
+	                            icon="fa-pencil-square-o">
+	                            <field name="breq_facture_stock_count"  widget="statinfo" string="Facture" help="Facture Breq Stock"/>
+	                            <field name="breq_facture_stock_ids" invisible="1"/>
+	                </button>
+                </xpath>
+                <xpath expr="//div[@name='button_box']//button[@name='action_bs_lie']" position="replace">
+				 	<button type="object"
+                            name="action_bs_lie_facturation_tiers"
+                            class="oe_stat_button"
+                            icon="fa-truck" attrs="{'invisible':[('state','not in',('bs'))]}">
+                            <field name="bs_lie_count" widget="statinfo" string="Bons de sortie" help="Bons de sortie rattaché au BReq stock"/>
+                            <field name="picking_ids_bs" invisible="1"/>
+                        </button>
+                </xpath>
+				
+            </field>
+        </record>
+        
+	    <!-- Budget Expense Report form mirado-->
 		<record id="budget_request_stock_form_heri" model="ir.ui.view">
             <field name="name">budget.request.form.stock.heri</field>
             <field name="model">purchase.order</field>
@@ -96,7 +158,7 @@
 		<!-- Fin Budget request stock tree -->	
         <!-- Fin form breq stock -->
         
-		 <!-- Budget Request stock menu action lie -->
+	 	<!-- Budget Request stock menu action lie -->
 	    <record model="ir.actions.act_window" id="action_budget_request_stock_heri_lie">
 	       	<field name="name">Budget request stock</field>
 	       	<field name="res_model">purchase.order</field>
@@ -125,6 +187,34 @@
             <field name="act_window_id" ref="sale_heri.action_budget_request_stock_heri_lie"/>
 		</record>
 		<!-- Fin budget request stock -->
+		
+		<!-- Budget Request stock menu action lie -->
+	    <record model="ir.actions.act_window" id="action_budget_request_stock_heri_2">
+	       	<field name="name">Budget request stock</field>
+	       	<field name="res_model">purchase.order</field>
+			<field name="domain">[('breq_id_sale','=',active_id)]</field>
+			<field name="context">{'default_is_breq_stock': True,'default_is_breq_id_sale': True,'default_partner_id':1,'default_mouvement_type': 'bs'}</field>
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	       	<field name="help" type="html">
+         	<p class="oe_view_nocontent_create">
+	             Click here to create a new Budget Request Stock lie.
+         	</p>
+	       </field>
+	   	</record>
+	   	<record id="action_br_stock_tree_heri_lie2" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="sale_heri.budget_request_stock_tree_heri"/>
+            <field name="act_window_id" ref="sale_heri.action_budget_request_stock_heri_2"/>
+        </record>
+	   	<record id="action_br_stock_form_heri_lie2" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="sale_heri.budget_request_stock_materiel_entrepreneur_form"/>
+            <field name="act_window_id" ref="sale_heri.action_budget_request_stock_heri_2"/>
+		</record>
+		
 		<!--  budget request stock facture-->
 		<record model="ir.ui.view" id="facturation_tiers_form_view_facturation">
 			<field name="name">sale.facturation.tiers.invoice</field>

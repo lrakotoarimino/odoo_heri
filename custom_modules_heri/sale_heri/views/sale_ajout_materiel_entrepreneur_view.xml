@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 	<data>
-
+		
 		<!-- Facturation tiers form -->
 		<record model="ir.ui.view" id="ajout_materiel_entrepreneur_form_view">
 			<field name="name">Demande d’ajout de materiels loués par l'entrepreneur</field>
@@ -11,11 +11,15 @@
 			<field name="arch" type="xml">
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 	name="facturation_type" invisible="1"/>
+					<field 	name="location_id" attrs="{'required': [('facturation_type', '=', 'materiel_loue')]}"/>
 				</xpath>
 				<xpath expr="//field[@name='state']" position="replace">
 					<field name="state"
 							widget="statusbar" 
-					    	statusbar_visible="draft,solvabilite_ok,capacite_ok,preparation_test,test"/>
+					    	statusbar_visible="draft,solvabilite_ok,capacite_ok"/>
+				</xpath>
+				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
+					<field name="qte_prevu" />
 				</xpath>
 				
 				<!--bouton pour le workflow facturation tiers -->
@@ -25,32 +29,35 @@
 			      	    name="action_solvabilte_ok"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': [('state', '!=', 'draft')]}"
+			      	    groups="purchase_heri.group_call_center_heri"
 			      	 />
 					<button 
 			      	    string="Valider" 
 			      	    name="action_capacite_ok"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': [('state', '!=', 'solvabilite_ok')]}"
+			      	    groups="purchase_heri.group_technicien_heri"
 			      	 />
 					<button 
 			      	    string="A revoir" 
 			      	    name="action_annuler_solvabilite_ok"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': [('state', '!=', 'solvabilite_ok')]}"
+			      	    groups="purchase_heri.group_technicien_heri"
 			      	 />
-					<button 
+					<!-- <button 
 			      	    string="Préparation matériel" 
 			      	    name="action_preparation_materiel"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': [('state', '!=', 'capacite_ok')]}"
-			      	 />
-					<button 
+			      	 /> -->
+					<!-- <button 
 			      	    string="A revoir" 
 			      	    name="action_annuler_capacite_ok"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': [('state', '!=', 'capacite_ok')]}"
-			      	 />
-					<button 
+			      	 /> -->
+					<!-- <button 
 			      	    string="A tester" 
 			      	    name="action_tester"
 			      	    class="oe_highlight" 
@@ -67,14 +74,14 @@
 			      	    name="action_annuler_test"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': [('state', '!=', 'test')]}"
-			      	 />
+			      	 /> -->
 				<!--End bouton pour le workflow facturation tiers -->
 		      	 
 				</xpath>
 				
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
 				 	<button type="object"
-	                            name="action_breq_stock_lie"
+	                            name="action_breq_stock_lie2"
 	                            attrs="{'invisible': ['|',('state', 'not in', ('capacite_ok'))]}"
 	                            class="oe_stat_button"
 	                            icon="fa-folder">

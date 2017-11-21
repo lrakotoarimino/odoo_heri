@@ -32,7 +32,7 @@
 			<field name="action">action_capacite_ok()</field>
 		</record>
 		
-		<record id="act_preparation_materiel" model="workflow.activity">
+		<!-- <record id="act_preparation_materiel" model="workflow.activity">
 			<field name="wkf_id" ref="demande_location_entrepreneur_wkf"/>
 			<field name="name">Préparation de matétriel</field>
 			<field name="kind">function</field>
@@ -43,7 +43,7 @@
 			<field name="name">Testé</field>
 			<field name="kind">function</field>
 			<field name="action">action_test_materiel_ok()</field>
-		</record>
+		</record> -->
 		<!--End workflow activity-->
 		
 		<!-- workflow transition-->
@@ -71,7 +71,7 @@
             <field name="signal">action_annuler_capacite_ok</field>
         </record>
         
-        <record id="act_capacite_ok_to_act_preparation_materiel" model="workflow.transition">
+        <!-- <record id="act_capacite_ok_to_act_preparation_materiel" model="workflow.transition">
             <field name="act_from" ref="act_capacite_ok"/>
             <field name="act_to" ref="act_preparation_materiel"/>
             <field name="signal">action_preparation_materiel</field>
@@ -93,7 +93,7 @@
             <field name="act_from" ref="act_test_materiel"/>
             <field name="act_to" ref="act_preparation_materiel"/>
             <field name="signal">action_annuler_test</field>
-        </record>
+        </record> -->
 		<!--End workflow transition-->
 		<!--End workflow -->
 	</data>

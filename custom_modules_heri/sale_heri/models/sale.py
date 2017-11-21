@@ -9,6 +9,7 @@ import re
 import time
 from docutils.nodes import Invisible
 from datetime import datetime
+from pyparsing import lineEnd
 
 class SaleHeri(models.Model):
     _inherit = "sale.order"
@@ -203,6 +204,13 @@ class SaleHeri(models.Model):
         action = self.env.ref('sale_heri.action_budget_request_stock_heri_lie')
         result = action.read()[0]
         return result
+    
+    #action ouvrir budget request stock ajout materiel loué par entrepreneur
+    @api.multi
+    def action_breq_stock_lie2(self):
+        action = self.env.ref('sale_heri.action_budget_request_stock_heri_2')
+        result = action.read()[0]
+        return result
     statut_facture = fields.Selection(compute="_get_statut_facture", string='Etat Facture',
                       selection=[
                              ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
@@ -223,7 +231,7 @@ class SaleHeri(models.Model):
             vals = {
                     'partner_id': order.partner_id.id,
                     'origin': order.name,
-                    'employee_id':order.user_id.id,
+                    'employee_id': self.env['hr.employee'].search([('user_id','=',order.user_id.id)],limit=1).id,
                     'breq_id_sale': order.id,                     
                     'company_id': order.company_id.id,
                     'is_breq_stock' : True,
@@ -263,9 +271,9 @@ class SaleHeri(models.Model):
     def generation_breq_stock(self):
         for order in self.order_line :
             if order.qte_prevu < order.product_uom_qty :
-                raise UserError("Verifiez la quantité disponible de chaque article demandée")
+                raise UserError("Verifiez la quantité demandée par rapport à la quantité disponible.")
             if order.product_uom_qty <= 0.0:
-                raise UserError("la quantité demandée ne doit pas étre 0.0 ou negative ")
+                raise UserError("la quantité demandée doit être une valeur positive.")
             self._create_breq_stock()
             self.write({'state':'breq_stock'}) 
      
@@ -281,7 +289,7 @@ class SaleOrderLineHeri(models.Model):
     @api.onchange('product_id')
     def onchange_prod_id(self):
         for line in self:
-            if not line.location_id and self.order_id.facturation_type == "facturation_tiers":
+            if not line.location_id and line.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
                 raise UserError("Emplacement Heri ne doit pas être vide")
             #line.qte_prevu = line.product_id.virtual_available
             
@@ -308,7 +316,7 @@ class SaleOrderLineHeri(models.Model):
     
     @api.onchange('product_uom_qty')
     def onchange_product_qty(self):
-        if self.order_id.facturation_type == "facturation_tiers": 
+        if self.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
             product_seuil_id = self.env['product.product'].search([('id','=',self.product_id.id)])
             product_seuil = product_seuil_id.security_seuil
             qte_restant = self.qte_prevu - self.product_uom_qty

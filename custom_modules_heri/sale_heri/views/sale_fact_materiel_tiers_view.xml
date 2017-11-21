@@ -23,7 +23,7 @@
 					    	statusbar_visible="draft,breq_stock"/>
 				</xpath>
 				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
-					<field name="qte_prevu" groups="purchase_heri.group_special_manager_heri"/>
+					<field name="qte_prevu" />
 				</xpath>
 				 <!--bouton pour le workflow facturation tiers -->
 				<xpath expr="//field[@name='state']" position="before">
