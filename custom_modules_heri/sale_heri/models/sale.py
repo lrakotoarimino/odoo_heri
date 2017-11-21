@@ -268,14 +268,16 @@ class SaleHeri(models.Model):
         return result
     
     #facturation aux tiers   
+    @api.multi
     def generation_breq_stock(self):
-        for order in self.order_line :
-            if order.qte_prevu < order.product_uom_qty :
-                raise UserError("Verifiez la quantité demandée par rapport à la quantité disponible.")
-            if order.product_uom_qty <= 0.0:
-                raise UserError("la quantité demandée doit être une valeur positive.")
-            self._create_breq_stock()
-            self.write({'state':'breq_stock'}) 
+        for order in self:
+            for line in order.order_line :
+                if line.qte_prevu < line.product_uom_qty :
+                    raise UserError("Verifiez la quantité demandée par rapport à la quantité disponible.")
+                if line.product_uom_qty <= 0.0:
+                    raise UserError("la quantité demandée doit être une valeur positive.")
+            order._create_breq_stock()
+            order.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
