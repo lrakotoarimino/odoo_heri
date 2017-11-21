@@ -9,6 +9,11 @@
 			<field name="mode">primary</field>
 			<field name="inherit_id" ref="sale_heri.sale_order_form_view_advanced"/>
 			<field name="arch" type="xml">
+				<xpath expr="//field[@name='partner_id']" position="before">
+					<field 
+					    name="kiosque_id" 
+					    />
+				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 	name="facturation_type" invisible="1"/>
 					<field 	name="location_id" attrs="{'required': [('facturation_type', '=', 'materiel_loue')]}"/>

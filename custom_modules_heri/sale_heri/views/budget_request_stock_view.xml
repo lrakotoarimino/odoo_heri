@@ -19,6 +19,9 @@
 				<field name="location_id" position="replace">
 				    <field name="location_id" readonly="1" />  
 				</field>
+				<field name="location_id" position="after">
+				    <field name="kiosque_id" readonly="1" />  
+				</field>
 				<field name="state" position="before">					
 					<button name="envoyer_pour_tester" 
 							string="A tester" 

@@ -22,7 +22,7 @@ class SaleHeri(models.Model):
         return res
     #champ pour r�cup�rer le kiosque
     kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
-    location_id = fields.Many2one('stock.location', string='Emplacement Heri *') 
+    location_id = fields.Many2one('stock.location', string='Magasin d\'origine *') 
     facturation_type = fields.Selection([
             ('facturation_redevance','Redevance mensuelle'),
             ('materiel_loue', 'Materiel Loué'),
@@ -237,7 +237,8 @@ class SaleHeri(models.Model):
                     'is_breq_stock' : True,
                     'is_breq_id_sale' :True,
                     'move_type': 'direct',
-                    'location_id':order.location_id.id,
+                    'location_id': order.location_id.id,
+                    'kiosque_id': order.partner_id.kiosque_id.id,
                     'company_id': order.company_id.id,
                     'amount_untaxed': order.amount_total,
                     'date_planned':fields.Datetime.now(),

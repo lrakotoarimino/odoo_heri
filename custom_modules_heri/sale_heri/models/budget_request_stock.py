@@ -16,6 +16,7 @@ class BreqStockHeri(models.Model):
     breq_id_sale = fields.Many2one("sale.order")
     is_breq_id_sale = fields.Boolean('Est un breq stock sale')
     is_facture_comptabilise = fields.Boolean('Est comptabilise',compute="_compute_all_comptabilise")
+    kiosque_id = fields.Many2one('stock.location', string='Kiosque Client') 
     
     #creation bon de sortie (budget request stock)
     @api.multi
@@ -28,7 +29,7 @@ class BreqStockHeri(models.Model):
                     'partner_id': order.partner_id.id,
                     'date': order.date_order,
                     'origin': order.breq_id_sale.name,
-                    'location_dest_id': order.env.ref('purchase_heri.stock_location_virtual_heri').id,
+                    'location_dest_id': order.kiosque_id.id,
                     'location_id': order.location_id.id,
                     'company_id': order.company_id.id,
                     'move_type': 'direct',
