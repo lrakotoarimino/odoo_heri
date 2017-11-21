@@ -183,28 +183,14 @@
             <field name="act_window_id" ref="stock_heri.action_bon_de_sortie"/>
 		</record>
 		
-		<record id="view_tree_move_form_inherit" model="ir.ui.view">
-            <field name="name">stok.move.form.inherit</field>
-            <field name="model">stock.move</field>
-            <field name="mode">primary</field>
-            <field name="inherit_id" ref="stock.view_move_picking_form"/>
-            <field name="arch" type="xml">
-				<xpath expr="//field[@name='product_id']" position="after">
-					<field name="date_arrivee_relle"/>
-				</xpath>
-			</field>
-		</record>
-		
 		<record id="view_picking_bs_lie_form_advanced_inherit" model="ir.ui.view">
             <field name="name">stok.bon.sortie.form</field>
             <field name="model">stock.picking</field>
             <field name="mode">primary</field>
             <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
             <field name="arch" type="xml">            
-				<xpath expr="//field[@name='move_lines']" position="attributes">
-					<attribute name="attrs">{'readonly': [('state', 'in', ('cancel'))]}</attribute>
-					<attribute name="options"></attribute>
-					<attribute name="context">{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}</attribute>
+				<xpath expr="//field[@name='min_date']" position="after">
+					<field name="date_arrivee_relle" attrs="{'required': [('state', 'not in', ('done', 'cancel')), ('mouvement_type', '=', 'bs')], 'invisible': [('mouvement_type', '!=', 'bs')], 'readonly': [('state', 'in', ('done','cancel'))]}"/>
 				</xpath>
 			</field>
 		</record>

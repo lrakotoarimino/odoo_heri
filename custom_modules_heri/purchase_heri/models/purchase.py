@@ -12,7 +12,7 @@ class ResRegion(models.Model):
     
     name = fields.Char(u'Région')
     frais_base = fields.Float("Frais de base")
-
+    
 #Budget Request Achat
 class PurchaseHeri(models.Model):
     _inherit = "purchase.order"

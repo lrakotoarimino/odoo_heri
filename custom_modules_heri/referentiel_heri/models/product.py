@@ -22,6 +22,7 @@ class ProductHeri(models.Model):
     taxe_douane = fields.Float(string=u'Taxe de douane(%)')
     frais_type = fields.Selection([
         ('redevance', 'Redevance fixe pour matériels productifs'),
-        ('location', 'Frais de location')
+        ('location', 'Frais de location'),
+        ('sans_frais', 'Sans frais')
         ], 'Type de frais',
         default='redevance')

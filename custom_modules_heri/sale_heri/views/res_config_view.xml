@@ -7,8 +7,9 @@
 			<field name="model">sale.config.settings</field>
 			<field name="inherit_id" ref="sales_team.view_sale_config_settings"/>
 			<field name="arch" type="xml">
-				<xpath expr="//field[@name='sale_note']" position="before">
+				<xpath expr="//field[@name='sale_pricelist_setting']" position="before">
 					<field name="seuil_nbr_jour"/>
+					<field name="jour_etab_facture_redevance"/>
 				</xpath>
             </field>
 		</record>

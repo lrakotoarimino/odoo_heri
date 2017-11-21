@@ -13,6 +13,7 @@ class PurchaseConfigSettings(models.TransientModel):
         return seuil_non_prevu
     
     seuil_nbr_jour = fields.Float("Seuil du montant total de la facturation redevance mensuelle", default=lambda self: self._default_seuil_nbr_jour_non_prevu())
+    jour_etab_facture_redevance = fields.Float("Jour du mois pour l'etablissement de la facture redevance", default=25)
     
     def set_seuil_prevu(self):
         waiting_mode = self.env.ref('sale_heri.act_correction_motif_finance_to_observation_dg')
