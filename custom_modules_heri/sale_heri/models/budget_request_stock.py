@@ -29,7 +29,7 @@ class BreqStockHeri(models.Model):
                     'partner_id': order.partner_id.id,
                     'date': order.date_order,
                     'origin': order.breq_id_sale.name,
-                    'location_dest_id': order.kiosque_id.id,
+                    'location_dest_id': order.kiosque_id.id or order.env.ref('purchase_heri.stock_location_virtual_heri').id,
                     'location_id': order.location_id.id,
                     'company_id': order.company_id.id,
                     'move_type': 'direct',
