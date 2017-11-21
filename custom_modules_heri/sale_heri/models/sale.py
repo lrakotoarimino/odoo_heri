@@ -240,6 +240,7 @@ class SaleHeri(models.Model):
                     'location_id': order.location_id.id,
                     'kiosque_id': order.partner_id.kiosque_id.id,
                     'company_id': order.company_id.id,
+                    'amount_tax': order.amount_tax,
                     'amount_untaxed': order.amount_total,
                     'date_planned':fields.Datetime.now(),
                     'mouvement_type':'bs',
@@ -360,6 +361,7 @@ class SaleOrderLineHeri(models.Model):
                 'price_subtotal' : line.price_subtotal,
                 'date_planned':fields.Datetime.now(),
                 'purchase_line_id':line.order_id.id,
+                'sale_tax_id': [(6, 0, line.tax_id.ids)],
                 'order_id': breq_id.id,
                 
 #                 'purchase_type': line.order_id.purchase_type,

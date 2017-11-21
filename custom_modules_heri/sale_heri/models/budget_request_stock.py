@@ -145,8 +145,9 @@ class BreqStockHeri(models.Model):
                     'breq_stock_id': order.id, 
                     'parent_id':order.breq_id_sale,
                     'partner_id': order.partner_id.id,
-                    'user_id': order.employee_id.id,                   
-                    'amount_total': order.amount_untaxed,
+                    'user_id': order.employee_id.id,   
+                    'amount_tax': order.amount_tax,                
+                    'amount_total': order.amount_total,
                     'date_invoice':fields.Datetime.now(),
                     }
             breq_facture_id = breq_stock_facture_obj.create(vals)     
@@ -162,6 +163,10 @@ class BreqStockHeri(models.Model):
 
 class PurchaseOrderLineHeri(models.Model):
     _inherit = 'purchase.order.line'
+    
+    sale_tax_id =fields.Many2many('account.tax',
+        'account_invoice_line_tax', 'invoice_line_id', 'tax_id',
+        string='Taxes', domain=[('type_tax_use','!=','none'), '|', ('active', '=', False), ('active', '=', True)], oldname='invoice_line_tax_id')
      
     @api.multi
     def _create_facture_breq_stock_lines(self, breq_facture_id):
@@ -175,6 +180,7 @@ class PurchaseOrderLineHeri(models.Model):
                 'price_subtotal' : line.price_subtotal,
                 'account_id': 1,
                 'invoice_id': breq_facture_id.id,  
+                'invoice_line_tax_ids':[(6, 0, line.sale_tax_id.ids)],
 #                 'purchase_type': line.order_id.purchase_type,
             }     
             breq_facture_lines = breq_facture_line.create(vals)
