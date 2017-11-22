@@ -37,7 +37,7 @@ class SaleHeri(models.Model):
     #Concatener mois precedent et mois en cours pour connaitre la duree de la facturation
     def _get_date_facturation_redevance(self):
         calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
-        if not calendar:
+        if not calendar.last_month and not calendar.current_month:
             duree_facturation_redevance = ""
             return duree_facturation_redevance
         else:
@@ -100,7 +100,7 @@ class SaleHeri(models.Model):
         for order in self:
             nbr_jour_frais_base = 0.0
             calendar = order.env.ref('sale_heri.calendrier_facturation_redevance')   
-            if not calendar:
+            if not calendar.last_month and not calendar.current_month:
                 raise UserError('Veuillez renseigner le calendrier de la facturation !')
             else:
                 for line in order:
@@ -124,9 +124,9 @@ class SaleHeri(models.Model):
                     jour_dans_le_mois = (current_month - last_month).days
                     nbr_jour_frais_base = float(effet)/float(jour_dans_le_mois)
                 elif datetime.now() < current_month:
-                    raise UserError('La date d\'etablissement de la fature redevance serait apres le 25 du mois en cours')
+                    raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
                 elif date_contrat >= current_month:
-                    raise UserError('La date d\'etablissement de la fature redevance serait apres le 25 du mois en cours')
+                    raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
                 for p in product_frais_base_id:
                     vals = {
                         'name': 'Frais de base du kiosque',
@@ -176,9 +176,9 @@ class SaleHeri(models.Model):
                         elif date_arrivee <= last_month and datetime.now() >= current_month:
                             nbre_jour_detention_materiel_prod = 1
                         elif datetime.now() < current_month:
-                            raise UserError('La date d\'etablissement de la fature redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
                         elif date_arrivee >= current_month:
-                            raise UserError('La date d\'etablissement de la fature redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
                         vals = {
                             'name': 'Redevance fixe pour materiels productifs / mois',
                             'product_id': p.id,
@@ -202,9 +202,9 @@ class SaleHeri(models.Model):
                         elif date_arrivee <= last_month and datetime.now() >= current_month:
                             nbre_jour_detention_lampe = float((current_month - last_month).days)
                         elif datetime.now() < current_month:
-                            raise UserError('La date d\'etablissement de la fature redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
                         elif date_arrivee >= current_month:
-                            raise UserError('La date d\'etablissement de la fature redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
                         vals = {
                             'name': 'Frais de location / jour',
                             'product_id': p.id,

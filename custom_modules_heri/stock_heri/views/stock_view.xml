@@ -179,7 +179,7 @@
         <record id="action_bon_sortie_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock.view_picking_form"/>
+            <field name="view_id" ref="stock_heri.view_picking_bs_lie_form_advanced_inherit"/>
             <field name="act_window_id" ref="stock_heri.action_bon_de_sortie"/>
 		</record>
 		
