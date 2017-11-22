@@ -8,7 +8,8 @@
             <field name="inherit_id" ref="stock_heri.budget_request_stock_form"/>
             <field name="mode">primary</field>
             <field name="arch" type="xml">
-               <field name="state" position="replace">
+                
+               	<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="nouveau,test,bs" />
 				</field>
 				<field name="partner_id" position="after">
@@ -73,7 +74,13 @@
             <field name="inherit_id" ref="stock_heri.budget_request_stock_form"/>
             <field name="mode">primary</field>
             <field name="arch" type="xml">
-               <field name="state" position="replace">
+                <field name="amount_tax" position="replace">
+				    <field name="amount_tax" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+				</field>
+                <field name="taxes_id" position="replace">
+				    <field name="taxes_id" widget="many2many_tags" />
+				</field>
+                <field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="nouveau,test,etab_facture,comptabilise" />
 				</field>
 				<field name="partner_id" position="after">
@@ -225,6 +232,12 @@
 			<field name="mode">primary</field>
 			<field name="inherit_id" ref="sale_heri.account_invoice_form_view_advanced"/>
 			<field name="arch" type="xml">
+			    <field name="invoice_line_tax_ids" position="replace">
+				    <field 
+				        name="invoice_line_tax_ids" 
+				        widget="many2many_tags" 
+				        options="{'no_create': True}"/>
+				</field>
 				<field name="partner_id" position="before">
 					<field name="breq_stock_id" invisible="1" />
 				</field>

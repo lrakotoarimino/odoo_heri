@@ -20,12 +20,12 @@ class SaleHeri(models.Model):
         res = super(SaleHeri, self).create(vals)
         vals['is_create'] = True
         return res
-    #champ pour r�cup�rer le kiosque
+    #champ pour rï¿½cupï¿½rer le kiosque
     kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
     location_id = fields.Many2one('stock.location', string='Magasin d\'origine *') 
     facturation_type = fields.Selection([
             ('facturation_redevance','Redevance mensuelle'),
-            ('materiel_loue', 'Materiel Loué'),
+            ('materiel_loue', 'Materiel LouÃ©'),
             ('facturation_tiers', 'Tiers'),
             ('facturation_entrepreneurs', 'Entrepreneurs'),
         ], string='Type de Facturation')
@@ -42,13 +42,13 @@ class SaleHeri(models.Model):
         ('facture_generer', 'Facture Generee'),
         ('breq_stock','Budget request stock'),
         
-        ('solvabilite_ok','Contrôle de solvabilité'),
-        ('capacite_ok','Contrôle capacité kiosque'),
-        ('preparation_test','Préparation matériels pour test'),
-        ('test','Test des matériels'),
+        ('solvabilite_ok','ContrÃ´le de solvabilitÃ©'),
+        ('capacite_ok','ContrÃ´le capacitÃ© kiosque'),
+        ('preparation_test','PrÃ©paration matÃ©riels pour test'),
+        ('test','Test des matÃ©riels'),
         
         ('sent', 'Quotation Sent'),
-        ('sale', 'Génération facture SMS'),
+        ('sale', 'GÃ©nÃ©ration facture SMS'),
         ('done', 'Locked'),
         ('cancel', 'Cancelled'),
         ], string='Status', readonly=True, copy=False, index=True, track_visibility='onchange',default='draft')
@@ -205,7 +205,7 @@ class SaleHeri(models.Model):
         result = action.read()[0]
         return result
     
-    #action ouvrir budget request stock ajout materiel loué par entrepreneur
+    #action ouvrir budget request stock ajout materiel louÃ© par entrepreneur
     @api.multi
     def action_breq_stock_lie2(self):
         action = self.env.ref('sale_heri.action_budget_request_stock_heri_2')
@@ -214,8 +214,8 @@ class SaleHeri(models.Model):
     statut_facture = fields.Selection(compute="_get_statut_facture", string='Etat Facture',
                       selection=[
                              ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
-                             ('open','Entierement facturé'),
-                             ('paid','Comptabilisé'),
+                             ('open','Entierement facturÃ©'),
+                             ('paid','ComptabilisÃ©'),
                              ])
     @api.one
     def _get_statut_facture(self):  
@@ -275,18 +275,18 @@ class SaleHeri(models.Model):
         for order in self:
             for line in order.order_line :
                 if line.qte_prevu < line.product_uom_qty :
-                    raise UserError("Verifiez la quantité demandée par rapport à la quantité disponible.")
+                    raise UserError("Verifiez la quantitÃ© demandÃ©e par rapport Ã  la quantitÃ© disponible.")
                 if line.product_uom_qty <= 0.0:
-                    raise UserError("la quantité demandée doit être une valeur positive.")
+                    raise UserError("la quantitÃ© demandÃ©e doit Ãªtre une valeur positive.")
             order._create_breq_stock()
             order.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
      
-    date_arrivee = fields.Datetime(string='Date d\'arrivée')
-    nbre_jour_arrive = fields.Float(string='Nombre de jour d\'arrivé', default=0.0)
-    qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
+    date_arrivee = fields.Datetime(string='Date d\'arrivÃ©e')
+    nbre_jour_arrive = fields.Float(string='Nombre de jour d\'arrivÃ©', default=0.0)
+    qte_prevu = fields.Float(compute="onchange_prod_id",string='QuantitÃ© disponible', readonly=True)
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
     product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
      
@@ -294,7 +294,7 @@ class SaleOrderLineHeri(models.Model):
     def onchange_prod_id(self):
         for line in self:
             if not line.location_id and line.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
-                raise UserError("Emplacement Heri ne doit pas être vide")
+                raise UserError("Emplacement Heri ne doit pas Ãªtre vide")
             #line.qte_prevu = line.product_id.virtual_available
             
             location_src_id = line.location_id
@@ -329,7 +329,7 @@ class SaleOrderLineHeri(models.Model):
 #                 self.product_qty = self.qte_prevu
                 return {
                         'warning': {
-                                    'title': 'Avertissement!', 'message': 'La quantité demandée réduite au disponible dans le magasin: '+str(self.qte_prevu)
+                                    'title': 'Avertissement!', 'message': 'La quantitÃ© demandÃ©e rÃ©duite au disponible dans le magasin: '+str(self.qte_prevu)
                                 },
                         'value': {
                                 'product_uom_qty': self.qte_prevu,
@@ -338,7 +338,7 @@ class SaleOrderLineHeri(models.Model):
             elif self.qte_prevu > self.product_uom_qty and qte_restant < product_seuil:
                 return {
                         'warning': {
-                                    'title': 'Avertissement - Seuil de sécurité!', 'message': 'Le seuil de securité pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantité restante serait "'+str(qte_restant)+'" qui est en-dessous de seuil de sécurité.'
+                                    'title': 'Avertissement - Seuil de sÃ©curitÃ©!', 'message': 'Le seuil de securitÃ© pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantitÃ© restante serait "'+str(qte_restant)+'" qui est en-dessous de seuil de sÃ©curitÃ©.'
                                 },
                         'value': {
                                 'product_uom_qty': self.product_uom_qty,
@@ -361,7 +361,7 @@ class SaleOrderLineHeri(models.Model):
                 'price_subtotal' : line.price_subtotal,
                 'date_planned':fields.Datetime.now(),
                 'purchase_line_id':line.order_id.id,
-                'sale_tax_id': [(6, 0, line.tax_id.ids)],
+                'taxes_id': [(6, 0, line.tax_id.ids)],
                 'order_id': breq_id.id,
                 
 #                 'purchase_type': line.order_id.purchase_type,
@@ -378,7 +378,7 @@ class AccountInvoiceHeri(models.Model):
             ('proforma2', 'Pro-forma'),
             ('attente_envoi_sms', 'Attente d\'envoi SMS'),
             ('pour_visa','Visa'),
-            ('open', 'SMS envoyé'),
+            ('open', 'SMS envoyÃ©'),
             ('paid', 'Paid'),
             ('cancel', 'Cancelled'),
         ], string='Status', index=True, readonly=True, default='draft',

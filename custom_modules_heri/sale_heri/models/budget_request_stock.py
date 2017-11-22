@@ -133,6 +133,7 @@ class BreqStockHeri(models.Model):
     def _create_facture_breq_stock(self):
         breq_stock_facture_obj = self.env['account.invoice']
         for order in self:
+            y = order.amount_tax
             vals = {
                     'name': order.name or order.name,
                     'origin': order.breq_id_sale.name,
@@ -150,8 +151,11 @@ class BreqStockHeri(models.Model):
                     'amount_total': order.amount_total,
                     'date_invoice':fields.Datetime.now(),
                     }
-            breq_facture_id = breq_stock_facture_obj.create(vals)     
+            breq_facture_id = breq_stock_facture_obj.create(vals)
+            
             breq_facture_lines = order.order_line._create_facture_breq_stock_lines(breq_facture_id)
+            x=breq_facture_id.amount_tax
+            
         return True
     
     #action form bon de sortie facturation aux tiers
@@ -164,9 +168,7 @@ class BreqStockHeri(models.Model):
 class PurchaseOrderLineHeri(models.Model):
     _inherit = 'purchase.order.line'
     
-    sale_tax_id =fields.Many2many('account.tax',
-        'account_invoice_line_tax', 'invoice_line_id', 'tax_id',
-        string='Taxes', domain=[('type_tax_use','!=','none'), '|', ('active', '=', False), ('active', '=', True)], oldname='invoice_line_tax_id')
+    sale_tax_id =fields.Many2many('account.tax', string='Taxes', domain=['|', ('active', '=', False), ('active', '=', True)])
      
     @api.multi
     def _create_facture_breq_stock_lines(self, breq_facture_id):
@@ -174,16 +176,19 @@ class PurchaseOrderLineHeri(models.Model):
         for line in self:
             vals = {
                 'name': line.name or '',
-                'product_id': line.product_id.id,
+                'product_id': line.product_id.id or False,
+                'origin': line.order_id.breq_id_sale.name,
+                'account_id': 1,
                 'quantity' : line.product_qty,
                 'price_unit': line.price_unit,
+                'uom_id': line.product_uom.id,
                 'price_subtotal' : line.price_subtotal,
-                'account_id': 1,
                 'invoice_id': breq_facture_id.id,  
-                'invoice_line_tax_ids':[(6, 0, line.sale_tax_id.ids)],
-#                 'purchase_type': line.order_id.purchase_type,
-            }     
+                'invoice_line_tax_ids':[(6, 0, line.taxes_id.ids)],
+            }
+            
             breq_facture_lines = breq_facture_line.create(vals)
+        breq_facture_id._onchange_invoice_line_ids()
         return True
     
 class AccountInvoiceHeri(models.Model):
