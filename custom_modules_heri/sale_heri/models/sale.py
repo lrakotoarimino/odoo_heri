@@ -223,7 +223,8 @@ class SaleHeri(models.Model):
             facture_lie = order.env['account.invoice'].search([('origin','=',order.name)])
             if facture_lie:
                 order.statut_facture = facture_lie.state 
-                
+
+            
     @api.multi
     def _create_breq_stock(self):
         breq_stock_obj = self.env['purchase.order']
@@ -241,7 +242,8 @@ class SaleHeri(models.Model):
                     'kiosque_id': order.partner_id.kiosque_id.id,
                     'company_id': order.company_id.id,
                     'amount_tax': order.amount_tax,
-                    'amount_untaxed': order.amount_total,
+                    'amount_untaxed': order.amount_untaxed,
+                    'amount_total': order.amount_total,
                     'date_planned':fields.Datetime.now(),
                     'mouvement_type':'bs',
                     'justificatif': "C'/est un justificatif",
@@ -249,6 +251,7 @@ class SaleHeri(models.Model):
             breq_id = breq_stock_obj.create(vals)     
             breq_lines = order.order_line._create_breq_lines(breq_id)        
         return True
+    
     
     @api.multi
     def action_view_facture_sms(self):
@@ -378,7 +381,7 @@ class AccountInvoiceHeri(models.Model):
             ('proforma2', 'Pro-forma'),
             ('attente_envoi_sms', 'Attente d\'envoi SMS'),
             ('pour_visa','Visa'),
-            ('open', 'SMS envoyÃ©'),
+            ('open', 'Ouvert'),
             ('paid', 'Paid'),
             ('cancel', 'Cancelled'),
         ], string='Status', index=True, readonly=True, default='draft',

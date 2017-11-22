@@ -18,7 +18,7 @@ class BreqStockHeri(models.Model):
     is_facture_comptabilise = fields.Boolean('Est comptabilise',compute="_compute_all_comptabilise")
     kiosque_id = fields.Many2one('stock.location', string='Kiosque Client') 
     
-    #creation bon de sortie (budget request stock)
+    #creation bon de sortie (budget request stock) loué
     @api.multi
     def _create_picking3(self):
         StockPickingHeri = self.env['stock.picking']
@@ -28,8 +28,8 @@ class BreqStockHeri(models.Model):
                     'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
                     'partner_id': order.partner_id.id,
                     'date': order.date_order,
-                    'origin': order.breq_id_sale.name,
-                    'location_dest_id': order.kiosque_id.id or order.env.ref('purchase_heri.stock_location_virtual_heri').id,
+                    'origin': order.name,
+                    'location_dest_id': order.kiosque_id.id,
                     'location_id': order.location_id.id,
                     'company_id': order.company_id.id,
                     'move_type': 'direct',
@@ -46,7 +46,40 @@ class BreqStockHeri(models.Model):
             move_lines = order.order_line._create_stock_moves(move)
             move_lines = move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
             move_lines.action_assign()
-            move_lines.reception_magasinier()
+            
+         
+        picking_type = self.env['stock.picking.type'].search([('id','=',picking_type_id)])
+        picking_type.default_location_src_id = self.location_id.id
+        return True
+    #creation bon de sortie (budget request stock) tiers
+    @api.multi
+    def _create_picking4(self):
+        StockPickingHeri = self.env['stock.picking']
+        for order in self:
+            vals = {
+
+                    'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                    'partner_id': order.partner_id.id,
+                    'date': order.date_order,
+                    'origin': order.name,
+                    'location_dest_id': order.env.ref('purchase_heri.stock_location_virtual_heri').id,
+                    'location_id': order.location_id.id,
+                    'company_id': order.company_id.id,
+                    'move_type': 'direct',
+                    'state':'attente_magasinier',
+                    'employee_id': order.employee_id.id,
+                    'breq_id' : order.id,
+                    'section' : order.section,
+                    'amount_untaxed' : order.amount_untaxed,
+                    'is_bs': True,
+                    'mouvement_type' : order.mouvement_type,
+                    }
+            picking_type_id = order.env.ref('purchase_heri.type_preparation_heri').id
+            move = StockPickingHeri.create(vals)
+            move_lines = order.order_line._create_stock_moves(move)
+            move_lines = move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
+            move_lines.action_assign()
+            move.aviser_magasinier_tiers()
             
          
         picking_type = self.env['stock.picking.type'].search([('id','=',picking_type_id)])
@@ -99,6 +132,9 @@ class BreqStockHeri(models.Model):
     def envoyer_pour_tester(self):
         self._create_picking3()
         self.write({'state':'test'})  
+    def envoyer_pour_tester1(self):
+        self._create_picking4()
+        self.write({'state':'test'})
     def annule_test(self):
         self.write({'state':'nouveau'})
     def envoyer_pour_facturation(self):
@@ -144,17 +180,17 @@ class BreqStockHeri(models.Model):
                     'payment_term_id': order.payment_term_id.id,
                     'fiscal_position_id': order.fiscal_position_id.id or order.partner_id.property_account_position_id.id,
                     'breq_stock_id': order.id, 
-                    'parent_id':order.breq_id_sale,
+                    'breq_id_sale': order.breq_id_sale.id,
+                    'parent_id':order.breq_id_sale.id,
                     'partner_id': order.partner_id.id,
-                    'user_id': order.employee_id.id,   
-                    'amount_tax': order.amount_tax,                
+                    'user_id': order.employee_id.id,                 
+                    'amount_untaxed': order.amount_untaxed,
+                    'amount_tax': order.amount_tax,
                     'amount_total': order.amount_total,
                     'date_invoice':fields.Datetime.now(),
                     }
             breq_facture_id = breq_stock_facture_obj.create(vals)
-            
             breq_facture_lines = order.order_line._create_facture_breq_stock_lines(breq_facture_id)
-            x=breq_facture_id.amount_tax
             
         return True
     
@@ -168,8 +204,6 @@ class BreqStockHeri(models.Model):
 class PurchaseOrderLineHeri(models.Model):
     _inherit = 'purchase.order.line'
     
-    sale_tax_id =fields.Many2many('account.tax', string='Taxes', domain=['|', ('active', '=', False), ('active', '=', True)])
-     
     @api.multi
     def _create_facture_breq_stock_lines(self, breq_facture_id):
         breq_facture_line = self.env['account.invoice.line']
@@ -195,36 +229,9 @@ class AccountInvoiceHeri(models.Model):
     _inherit = 'account.invoice'
      
     breq_stock_id = fields.Many2one('purchase.order')
+    breq_id_sale = fields.Many2one('sale.order')
     
+            
     def print_duplicata(self):
         return self.env["report"].get_action(self, 'account.account_invoice_report_duplicate_main')
-    
-class StockMoveHeri(models.Model):
-    _inherit = 'stock.move'
-      
-    state = fields.Selection([
-        ('draft', 'New'), ('cancel', 'Cancelled'),
-        ('attente_logistique', 'Avis logistique'),('attente_magasinier', 'Avis magasinier'),
-        ('waiting', 'Waiting Another Move'), ('confirmed', 'Waiting Availability'),
-        ('assigned', 'Available'), ('done', 'Done')], string='Status',
-        copy=False, default='draft', index=True, readonly=True,
-        help="* New: When the stock move is created and not yet confirmed.\n"
-             "* Waiting Another Move: This state can be seen when a move is waiting for another one, for example in a chained flow.\n"
-             "* Waiting Availability: This state is reached when the procurement resolution is not straight forward. It may need the scheduler to run, a component to be manufactured...\n"
-             "* Available: When products are reserved, it is set to \'Available\'.\n"
-             "* Done: When the shipment is processed, the state is \'Done\'.")
-      
-    def reception_magasinier(self):
-        self.write({'picking_id.state':'attente_magasinier'})
-      
-# class StockPickingHeri(models.Model):
-#     _inherit = 'stock.picking'   
-#      
-#     def aviser_logistique(self):
-#         self.action_confirm()
-#         self.write({'state':'attente_logistique'})    
-# 
-#     def action_aviser_magasinier_bs(self):
-#         self.action_assign()
-#         self.write({'state':'assigned'})
     

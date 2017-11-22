@@ -21,7 +21,7 @@
 				    <field name="location_id" readonly="1" />  
 				</field>
 				<field name="location_id" position="after">
-				    <field name="kiosque_id" readonly="1" />  
+				    <field name="kiosque_id"  readonly="1" />  
 				</field>
 				<field name="state" position="before">					
 					<button name="envoyer_pour_tester" 
@@ -92,7 +92,7 @@
 				    <field name="location_id" readonly="1" />  
 				</field>
 				<field name="state" position="before">					
-					<button name="envoyer_pour_tester" 
+					<button name="envoyer_pour_tester1" 
 							string="A tester" 
 							type="object"
 							class="oe_highlight" 
@@ -250,6 +250,9 @@
 		    	<xpath expr="//button[@name='action_invoice_sent']" position="attributes">
 		    		<attribute name="invisible">1</attribute>
 		    	</xpath>
+		    	<xpath expr="//button[@name='action_invoice_cancel']" position="attributes">
+		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
+		    	</xpath>
 		    	<xpath expr="//button[@name='%(account.action_account_invoice_refund)d']" position="attributes">
 		    		<attribute name="invisible">1</attribute>
 		    	</xpath>
@@ -274,7 +277,7 @@
 		 <record model="ir.actions.act_window" id="action_budget_request_stock_heri_lie_facture">
 	       	<field name="name">Facture</field>
 	       	<field name="res_model">account.invoice</field>
-			<field name="domain">['|',('breq_stock_id','=',active_id),('breq_stock_id.breq_id_sale','=',active_id)]</field>
+			<field name="domain">['|',('breq_stock_id','=',active_id),('breq_id_sale','=',active_id)]</field>
 	       	<field name="view_type">form</field>
 	       	<field name="view_mode">tree,form</field>
 	       	<field name="help" type="html">
