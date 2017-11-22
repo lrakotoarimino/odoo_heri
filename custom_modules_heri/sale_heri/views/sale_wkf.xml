@@ -81,8 +81,7 @@
         <record id="act_correction_motif_finance_to_observation_dg" model="workflow.transition">
             <field name="act_from" ref="act_correction_motif_finance"/>
             <field name="act_to" ref="act_observation_dg"/>
-            <field name="condition">amount_untaxed &gt; 1</field>
-            <field name="signal">action_validation_finance</field>
+            <field name="signal">action_verification_dg</field>
         </record>
         
         <record id="act_observation_dg_to_correction_motif_finance" model="workflow.transition">
@@ -91,14 +90,13 @@
             <field name="signal">action_refus_dg</field>
         </record>      
         
-        <record id="act_correction_motif_finance_to_generation_facture_sms" model="workflow.transition">
+        <record id="act_correction_motif_finance_to_verif_pec" model="workflow.transition">
             <field name="act_from" ref="act_correction_motif_finance"/>
-            <field name="act_to" ref="act_generation_facture_sms"/>
-            <field name="condition">amount_untaxed &lt;= 1</field>
+            <field name="act_to" ref="act_verif_pec"/>
             <field name="signal">action_validation_finance</field>
         </record>
         
-        <record id="act_observation_dg_to_verif_pec" model="workflow.transition">
+        <record id="act_verif_dg_to_verif_pec" model="workflow.transition">
             <field name="act_from" ref="act_observation_dg"/>
             <field name="act_to" ref="act_verif_pec"/>
             <field name="signal">action_verification_pec</field>
@@ -113,7 +111,7 @@
         <record id="act_verif_pec_to_generation_facture_sms" model="workflow.transition">
             <field name="act_from" ref="act_verif_pec"/>
             <field name="act_to" ref="act_generation_facture_sms"/>
-            <field name="signal">action_generation_facture_dg</field>
+            <field name="signal">action_generation_facture_sms</field>
         </record>
 		<!--End workflow transition-->
 		<!--End workflow -->

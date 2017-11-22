@@ -16,10 +16,18 @@ class ResCalendar(models.Model):
     _name = "res.calendar"
     
     name = fields.Char(u'Entre deux dates')
-    last_month = fields.Datetime(string="Date du mois précedent", help="Date du mois precedent dont le jour est selon le parametre indiqué dans la configuration vente") 
-    current_month = fields.Datetime(string="Date du mois en cours", help="Date du mois en cours dont le jour est selon le parametre indiqué dans la configuration vente") 
+    last_month = fields.Datetime(string="Date du mois précedent") 
+    current_month = fields.Datetime(string="Date du mois en cours") 
+    is_initialize = fields.Boolean(string='Est initialisé')
     
     def _compute_date_faturation_redevance(self):
         calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
-        for c in calendar:
-            print 'test OK ok ok ok ok ok ok ok'
+        if not calendar.is_initialize:
+            calendar.last_month = fields.Datetime.now()
+            calendar.current_month = fields.Datetime.now()
+            calendar.is_initialize = True
+            print 'INITIALISATION'
+        else:
+            calendar.last_month = calendar.current_month
+            calendar.current_month = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+            print 'NON NON NON NON NON NON NON NON NON NON'
