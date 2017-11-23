@@ -309,6 +309,9 @@
                 <field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="attente_magasinier,attente_logistique,assigned,done" />
 				</field>
+				<field name="min_date" position="after">
+				    <field name="date_arrivee_relle"  />
+				</field>
 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
 					<attribute name="invisible">1</attribute>
