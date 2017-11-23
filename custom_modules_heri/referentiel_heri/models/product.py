@@ -25,4 +25,4 @@ class ProductHeri(models.Model):
         ('location', 'Frais de location'),
         ('sans_frais', 'Sans frais')
         ], 'Type de frais',
-        default='redevance')
+        default='sans_frais')

@@ -11,8 +11,8 @@
 			<field name="arch" type="xml">
 				<xpath expr="//field[@name='partner_id']" position="before">
 					<field 
-					    name="kiosque_id" 
-					    />
+					    name="kiosque_id" domain="[('is_kiosque', '=', True)]" 
+					    attrs="{'required': [('facturation_type', '=', 'materiel_loue')]}"/>
 				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 	name="facturation_type" invisible="1"/>

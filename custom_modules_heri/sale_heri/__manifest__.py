@@ -21,6 +21,7 @@
                 'views/sale_wkf.xml',
                 'views/sale_ajout_materiel_entrepreneur_wkf.xml',
                 'views/sale_fact_materiel_tiers_wkf.xml',
+                'views/cron_calendar.xml',
             ],
     'demo': [],
     'test': [],

@@ -11,8 +11,7 @@
 			<field name="arch" type="xml">
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 
-					    name="location_id" 
-					    />
+					    name="location_id" />
 				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 	name="facturation_type" invisible="1"/>

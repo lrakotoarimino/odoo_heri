@@ -20,12 +20,12 @@ class SaleHeri(models.Model):
         res = super(SaleHeri, self).create(vals)
         vals['is_create'] = True
         return res
-    #champ pour rï¿½cupï¿½rer le kiosque
+    #champ pour recuperer le kiosque
     kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
     location_id = fields.Many2one('stock.location', string='Magasin d\'origine *') 
     facturation_type = fields.Selection([
             ('facturation_redevance','Redevance mensuelle'),
-            ('materiel_loue', 'Materiel LouÃ©'),
+            ('materiel_loue', 'Materiel Loué'),
             ('facturation_tiers', 'Tiers'),
             ('facturation_entrepreneurs', 'Entrepreneurs'),
         ], string='Type de Facturation')
@@ -44,7 +44,7 @@ class SaleHeri(models.Model):
             duree_facturation_redevance = str(datetime.strptime(calendar.last_month, "%Y-%m-%d %H:%M:%S")) +' - '+str(datetime.strptime(calendar.current_month, "%Y-%m-%d %H:%M:%S"))
             return duree_facturation_redevance
     
-    duree_facturation_redevance = fields.Char(default=_get_date_facturation_redevance, string="Durée de facturation")
+    duree_facturation_redevance = fields.Char(string="Durée de facturation")
     
     state = fields.Selection([
         ('draft', 'Nouveau'),
@@ -52,16 +52,16 @@ class SaleHeri(models.Model):
         ('correction_et_motif_finance', 'Correction et Motif Finance'),
         ('observation_dg', 'Observation du DG'),
         ('verif_pec', 'Verification des PEC'),
-        ('facture_generer', 'Facture Generee'),
+        ('facture_generer', 'Facture Generée'),
         ('breq_stock','Budget request stock'),
         
-        ('solvabilite_ok','ContrÃ´le de solvabilitÃ©'),
-        ('capacite_ok','ContrÃ´le capacitÃ© kiosque'),
-        ('preparation_test','PrÃ©paration matÃ©riels pour test'),
-        ('test','Test des matÃ©riels'),
+        ('solvabilite_ok','Contrôle de solvabilité'),
+        ('capacite_ok','Contrôle capacité kiosque'),
+        ('preparation_test','Préparation matériels pour test'),
+        ('test','Test des matériels'),
         
         ('sent', 'Quotation Sent'),
-        ('sale', 'GÃ©nÃ©ration facture SMS'),
+        ('sale', 'Génération facture SMS'),
         ('done', 'Locked'),
         ('cancel', 'Cancelled'),
         ], string='Status', readonly=True, copy=False, index=True, track_visibility='onchange',default='draft')
@@ -115,18 +115,16 @@ class SaleHeri(models.Model):
                     raise UserError('Veuillez renseigner la date du debut du contrat !')
                 if date_contrat > last_month and date_contrat < current_month and datetime.now() >= current_month:
                     effet = (current_month - date_contrat).days
-                    jour_dans_le_mois = (current_month - last_month).days
-                    nbr_jour_frais_base = float(effet)/float(jour_dans_le_mois)
+                    nbr_jour_frais_base = float(effet)/31
                 elif date_contrat < last_month and order.kiosque_id.plus_une_redevance and datetime.now() >= current_month:
                     nbr_jour_frais_base = 1
                 elif date_contrat < last_month and not order.kiosque_id.plus_une_redevance and datetime.now() >= current_month:
                     effet = (current_month - date_contrat).days
-                    jour_dans_le_mois = (current_month - last_month).days
-                    nbr_jour_frais_base = float(effet)/float(jour_dans_le_mois)
+                    nbr_jour_frais_base = float(effet)/31
                 elif datetime.now() < current_month:
-                    raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
+                    raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours 1')
                 elif date_contrat >= current_month:
-                    raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
+                    raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours 2')
                 for p in product_frais_base_id:
                     vals = {
                         'name': 'Frais de base du kiosque',
@@ -171,14 +169,13 @@ class SaleHeri(models.Model):
                             raise UserError('Veuillez renseigner la date d\'arrivee du materiel!')
                         if date_arrivee > last_month and date_arrivee < current_month and datetime.now() >= current_month:
                             effet = (current_month - date_arrivee).days
-                            jour_dans_le_mois = (current_month - last_month).days
-                            nbre_jour_detention_materiel_prod = float(effet)/float(jour_dans_le_mois)
+                            nbre_jour_detention_materiel_prod = float(effet)/31
                         elif date_arrivee <= last_month and datetime.now() >= current_month:
                             nbre_jour_detention_materiel_prod = 1
                         elif datetime.now() < current_month:
-                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours 3')
                         elif date_arrivee >= current_month:
-                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours 4')
                         vals = {
                             'name': 'Redevance fixe pour materiels productifs / mois',
                             'product_id': p.id,
@@ -202,9 +199,9 @@ class SaleHeri(models.Model):
                         elif date_arrivee <= last_month and datetime.now() >= current_month:
                             nbre_jour_detention_lampe = float((current_month - last_month).days)
                         elif datetime.now() < current_month:
-                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours 5')
                         elif date_arrivee >= current_month:
-                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours')
+                            raise UserError('La date d\'etablissement de la facture redevance serait apres le 25 du mois en cours 6')
                         vals = {
                             'name': 'Frais de location / jour',
                             'product_id': p.id,
@@ -273,7 +270,7 @@ class SaleHeri(models.Model):
         result = action.read()[0]
         return result
     
-    #action ouvrir budget request stock ajout materiel louÃ© par entrepreneur
+    #action ouvrir budget request stock ajout materiel louÃƒÂ© par entrepreneur
     @api.multi
     def action_breq_stock_lie2(self):
         action = self.env.ref('sale_heri.action_budget_request_stock_heri_2')
@@ -282,8 +279,8 @@ class SaleHeri(models.Model):
     statut_facture = fields.Selection(compute="_get_statut_facture", string='Etat Facture',
                       selection=[
                              ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
-                             ('open','Entierement facturÃ©'),
-                             ('paid','ComptabilisÃ©'),
+                             ('open','Entierement facturé'),
+                             ('paid','Comptabilisé'),
                              ])
     @api.one
     def _get_statut_facture(self):  
@@ -300,7 +297,7 @@ class SaleHeri(models.Model):
             vals = {
                     'partner_id': order.partner_id.id,
                     'origin': order.name,
-                    'employee_id': self.env['hr.employee'].search([('user_id','=',order.user_id.id)],limit=1).id,
+                    'employee_id': order.env['hr.employee'].search([('user_id','=',order.user_id.id)],limit=1).id,
                     'breq_id_sale': order.id,                     
                     'company_id': order.company_id.id,
                     'is_breq_stock' : True,
@@ -315,6 +312,7 @@ class SaleHeri(models.Model):
                     'date_planned':fields.Datetime.now(),
                     'mouvement_type':'bs',
                     'justificatif': "C'/est un justificatif",
+                    'department_id': order.env['hr.employee'].search([('user_id','=',order.user_id.id)],limit=1).department_id.id,
                     }
             breq_id = breq_stock_obj.create(vals)     
             breq_lines = order.order_line._create_breq_lines(breq_id)        
@@ -349,15 +347,17 @@ class SaleHeri(models.Model):
                     raise UserError("Verifiez la quantité demandée par rapport à  la quantité disponible.")
                 if line.product_uom_qty <= 0.0:
                     raise UserError("la quantité demandée doit être une valeur positive.")
+
             order._create_breq_stock()
             order.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
      
-    date_arrivee = fields.Datetime(string='Date d\'arrivÃ©e')
+    date_arrivee = fields.Datetime(string='Date d\'arrivée')
     nbre_jour_detention = fields.Float(string='Nombre de jour de l\'effet', default=0.0)
-    qte_prevu = fields.Float(compute="onchange_prod_id",string='QuantitÃ© disponible', readonly=True)
+    qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
+
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
     product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
      
@@ -365,7 +365,7 @@ class SaleOrderLineHeri(models.Model):
     def onchange_prod_id(self):
         for line in self:
             if not line.location_id and line.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
-                raise UserError("Emplacement Heri ne doit pas Ãªtre vide")
+                raise UserError("Emplacement Heri ne doit pas être vide")
             #line.qte_prevu = line.product_id.virtual_available
             
             location_src_id = line.location_id
@@ -400,7 +400,7 @@ class SaleOrderLineHeri(models.Model):
 #                 self.product_qty = self.qte_prevu
                 return {
                         'warning': {
-                                    'title': 'Avertissement!', 'message': 'La quantitÃ© demandÃ©e rÃ©duite au disponible dans le magasin: '+str(self.qte_prevu)
+                                    'title': 'Avertissement!', 'message': 'La quantité demandée réduite à la quantité disponible dans le magasin : '+str(self.qte_prevu)
                                 },
                         'value': {
                                 'product_uom_qty': self.qte_prevu,
@@ -409,7 +409,7 @@ class SaleOrderLineHeri(models.Model):
             elif self.qte_prevu > self.product_uom_qty and qte_restant < product_seuil:
                 return {
                         'warning': {
-                                    'title': 'Avertissement - Seuil de sÃ©curitÃ©!', 'message': 'Le seuil de securitÃ© pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantitÃ© restante serait "'+str(qte_restant)+'" qui est en-dessous de seuil de sÃ©curitÃ©.'
+                                    'title': 'Avertissement - Seuil de sécurité!', 'message': 'Le seuil de securité pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantité restante serait "'+str(qte_restant)+'" qui est en-dessous de la seuil de sécurité.'
                                 },
                         'value': {
                                 'product_uom_qty': self.product_uom_qty,

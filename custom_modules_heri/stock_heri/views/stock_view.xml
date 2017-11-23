@@ -71,6 +71,7 @@
 				    <button name="do_stock_transfer" string="Valider" class="oe_highlight" attrs="{'invisible': [('state','not in',('assigned'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
                     <button name="action_cancel" string="Annuler" attrs="{'invisible': [('state','not in',('assigned'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
 				</xpath>
+				
             </field>
         </record>
 		
@@ -190,7 +191,8 @@
             <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
             <field name="arch" type="xml">            
 				<xpath expr="//field[@name='min_date']" position="after">
-					<field name="date_arrivee_relle" attrs="{'required': [('state', 'not in', ('done', 'cancel')), ('mouvement_type', '=', 'bs')], 'invisible': [('mouvement_type', '!=', 'bs')], 'readonly': [('state', 'in', ('done','cancel'))]}"/>
+				    <field name="min_date" />
+					<!-- <field name="date_arrivee_relle" attrs="{'required': [('state', 'not in', ('done', 'cancel')), ('mouvement_type', '=', 'bs')], 'invisible': [('mouvement_type', '!=', 'bs')], 'readonly': [('state', 'in', ('done','cancel'))]}"/> -->
 				</xpath>
 			</field>
 		</record>
