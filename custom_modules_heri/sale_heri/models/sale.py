@@ -20,7 +20,7 @@ class SaleHeri(models.Model):
         res = super(SaleHeri, self).create(vals)
         vals['is_create'] = True
         return res
-    #champ pour recuperer le kiosque
+    #champ pour recupérer le kiosque
     kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
     location_id = fields.Many2one('stock.location', string='Magasin d\'origine *') 
     facturation_type = fields.Selection([
