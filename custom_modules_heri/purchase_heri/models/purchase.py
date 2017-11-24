@@ -21,9 +21,9 @@ class PurchaseHeri(models.Model):
     @api.model
     def create(self, values):
         order = super(PurchaseHeri,self).create(values)
-        if not values['is_breq_id_sale']:
-            if not values['order_line']:
-                    raise UserError('Veuillez renseigner les lignes de la commande.')
+        if not values.get('is_breq_id_sale',False):
+            if not values.get('order_line',False):
+                raise UserError('Veuillez renseigner les lignes de la commande.')
         
         #A executer dans un breq stock uniquement
         if order.is_breq_stock:
@@ -33,11 +33,14 @@ class PurchaseHeri(models.Model):
     #creation bon de sortie (budget request stock)
     @api.multi
     def _create_picking2(self):
-        StockPickingHeri = self.env['stock.picking']
+        picking_obj = self.env['stock.picking']
+        
         for order in self:
+            picking_type_id = order.env.ref('purchase_heri.type_preparation_heri')
+            picking_type_id.write({'default_location_src_id': order.location_id.id})
+            
             vals = {
-
-                    'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                    'picking_type_id': picking_type_id.id,
                     'partner_id': order.partner_id.id,
                     'date': order.date_order,
                     'origin': order.name,
@@ -46,20 +49,17 @@ class PurchaseHeri(models.Model):
                     'company_id': order.company_id.id,
                     'move_type': 'direct',
                     'employee_id': order.employee_id.id,
-                    'breq_id' : order.id,
-                    'section' : order.section,
-                    'amount_untaxed' : order.amount_untaxed,
+                    'breq_id': order.id,
+                    'section': order.section,
+                    'amount_untaxed': order.amount_untaxed,
                     'is_bs': True,
-                    'mouvement_type' : order.mouvement_type,
+                    'mouvement_type': order.mouvement_type,
                     }
-            picking_type_id = order.env.ref('purchase_heri.type_preparation_heri').id
-            move = StockPickingHeri.create(vals)
-            move_lines = order.order_line._create_stock_moves(move)
+            picking_id = picking_obj.create(vals)
+            move_lines = order.order_line._create_stock_moves(picking_id)
             move_lines = move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
             move_lines.action_assign()
-         
-        picking_type = self.env['stock.picking.type'].search([('id','=',picking_type_id)])
-        picking_type.default_location_src_id = self.location_id.id
+
         return True
     
     def action_cancel(self):
