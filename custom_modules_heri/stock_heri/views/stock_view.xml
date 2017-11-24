@@ -206,7 +206,7 @@
 					<!-- <field name="date_arrivee_relle" attrs="{'required': [('state', 'not in', ('done', 'cancel')), ('mouvement_type', '=', 'bs')], 'invisible': [('mouvement_type', '!=', 'bs')], 'readonly': [('state', 'in', ('done','cancel'))]}"/> -->
 				</xpath>
 				<field name="location_dest_id" position="attributes">
-                    <attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': False}</attribute>
+                    <attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': [('state', '=', 'done')]}</attribute>
 				</field>
 				<field name="location_id" position="replace">
 				    <field name="location_id" invisible="1"/>
