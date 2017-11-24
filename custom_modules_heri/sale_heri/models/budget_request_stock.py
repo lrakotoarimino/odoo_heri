@@ -14,7 +14,6 @@ class BreqStockHeri(models.Model):
     _inherit = "purchase.order"
     
     breq_id_sale = fields.Many2one("sale.order")
-    is_breq_id_sale = fields.Boolean('Est un breq stock sale')
     is_facture_comptabilise = fields.Boolean('Est comptabilise',compute="_compute_all_comptabilise")
     kiosque_id = fields.Many2one('stock.location', string='Kiosque Client') 
     

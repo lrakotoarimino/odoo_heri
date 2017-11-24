@@ -6,7 +6,7 @@
     'sequence': 0,
     'description': """Module des ventes pour Heri""",
     'website': 'https://www.beheri.com',
-    'depends': ['sale','purchase'],
+    'depends': ['sale','purchase','stock_heri'],
     'data': [
                 #views
                 'views/sale_view.xml',

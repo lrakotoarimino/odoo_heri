@@ -266,16 +266,18 @@
         <record id="action_br_stock_tree" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="stock_heri.budget_request_stock_tree"/>
-            <field name="act_window_id" ref="stock_heri.action_budget_request_stock"/>
+            <field name="view_id" ref="budget_request_stock_tree"/>
+            <field name="act_window_id" ref="action_budget_request_stock"/>
         </record>
 
         <record id="action_br_stock_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock_heri.budget_request_stock_form"/>
-            <field name="act_window_id" ref="stock_heri.action_budget_request_stock"/>
+            <field name="view_id" ref="budget_request_stock_form"/>
+            <field name="act_window_id" ref="action_budget_request_stock"/>
 		</record>
 		<!-- Fin budget request stock -->
+		
+		<menuitem  action="action_budget_request_stock" id="menu_budget_request_stock_heri" parent="menu_stock_picking_heri" sequence="1" name="Budget Request Stock"/>
 	</data>
 </odoo>

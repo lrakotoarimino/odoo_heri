@@ -34,17 +34,24 @@ class SaleHeri(models.Model):
     purchase_id= fields.Many2one('purchase.order')
     calendar_id = fields.Many2one('res.calendar', string='Calendrier de facturation')
     
-    #Concatener mois precedent et mois en cours pour connaitre la duree de la facturation
-    def _get_date_facturation_redevance(self):
-        calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
-        if not calendar.last_month and not calendar.current_month:
-            duree_facturation_redevance = ""
-            return duree_facturation_redevance
-        else:
-            duree_facturation_redevance = str(datetime.strptime(calendar.last_month, "%Y-%m-%d %H:%M:%S")) +' - '+str(datetime.strptime(calendar.current_month, "%Y-%m-%d %H:%M:%S"))
-            return duree_facturation_redevance
+    def _get_date_debut_facturation(self):
+        if self.facturation_type == 'facturation_redevance':
+            calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
+            if not calendar.last_month:
+                return False
+            else:
+                return calendar.last_month
     
-    duree_facturation_redevance = fields.Char(string="Durée de facturation")
+    def _get_date_fin_facturation(self):
+        if self.facturation_type == 'facturation_redevance':
+            calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
+            if not calendar.current_month:
+                return False
+            else:
+                return calendar.current_month
+        
+    date_debut_facturation = fields.Datetime(string="Date debut de la facturation", default=_get_date_debut_facturation, help="Date debut de la facturation") 
+    date_fin_facturation = fields.Datetime(string="Date fin de la facturation", default=_get_date_fin_facturation, help="Date fin de la facturation") 
     
     state = fields.Selection([
         ('draft', 'Nouveau'),
@@ -54,12 +61,10 @@ class SaleHeri(models.Model):
         ('verif_pec', 'Verification des PEC'),
         ('facture_generer', 'Facture Generée'),
         ('breq_stock','Budget request stock'),
-        
         ('solvabilite_ok','Contrôle de solvabilité'),
         ('capacite_ok','Contrôle capacité kiosque'),
         ('preparation_test','Préparation matériels pour test'),
         ('test','Test des matériels'),
-        
         ('sent', 'Quotation Sent'),
         ('sale', 'Génération facture SMS'),
         ('done', 'Locked'),

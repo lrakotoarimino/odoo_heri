@@ -139,7 +139,8 @@ class PurchaseHeri(models.Model):
             br = dict(res.env['purchase.order'].fields_get(allfields=['state'])['state']['selection'])[res.state]
             
             res.statut_breq_bex = br + " / " + bx
-            
+           
+    is_breq_id_sale = fields.Boolean('Est un breq stock sale') 
     is_breq_stock = fields.Boolean('Est un budget request stock', default=False)
     statut_breq_bex = fields.Char(compute="_concate_state", string='Etat BReq/BEX')
     

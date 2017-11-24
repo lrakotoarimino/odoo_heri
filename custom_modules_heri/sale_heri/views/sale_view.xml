@@ -55,7 +55,8 @@
 					<field name="correction_et_motif" attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"/>
 				</xpath>
 				<xpath expr="//field[@name='date_order']" position="after">
-					<field name="duree_facturation_redevance" readonly="1"/>
+					<field name="date_debut_facturation" readonly="1"/>
+					<field name="date_fin_facturation" readonly="1"/>
 				</xpath>
 				<xpath expr="//field[@name='state']" position="replace">
 					<field 	name="state"
@@ -284,6 +285,15 @@
 		    	</xpath>
 			</field>
 		</record>
+  		
+  		<record id="seq_facture_redevance" model="ir.sequence">  
+            <field name="name">Facturation redevance</field>  
+            <field name="code">sale.facturation.redevance.seq</field>  
+            <field name="implementation">standard</field>
+            <field name="prefix">REDEV N°</field>  
+            <field name="padding">6</field>  
+            <field eval="1" name="number_increment"/>  
+      	</record>  
   		
   		<menuitem id="menu_facture_redevance" name="Facturation redevance mensuelle" parent="sales_team.menu_sales" action="sale_heri.action_facture_redevance" sequence="2"/>
 		<menuitem id="menu_sale_res_region" parent="sale.menu_sales_config" action="purchase_heri.action_res_region" name="Région" sequence="-100"/>

@@ -37,7 +37,7 @@ class StockPicking(models.Model):
     is_returned = fields.Boolean('dejà retourner')
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie d\'origine")
     magasinier_id = fields.Many2one('hr.employee')
-    date_arrivee_relle = fields.Datetime(string="Date d'arrivée réelle des matériels") 
+    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels")  
     
     picking_ids_bret = fields.One2many('stock.picking', string="stock_ids_bret", compute='_compute_bret_lie')
     picking_count_bret = fields.Integer(compute='_compute_bret_lie') 
@@ -463,7 +463,7 @@ class StockQuant(models.Model):
             'qty': float_round(qty, precision_rounding=rounding),
             'cost': price_unit,
             'history_ids': [(4, move.id)],
-            'in_date': move.date_arrivee_relle or datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT),
+            'in_date': move.date_arrivee_reelle or datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT),
             'company_id': move.company_id.id,
             'lot_id': lot_id,
             'owner_id': owner_id,
@@ -494,7 +494,7 @@ class StockMove(models.Model):
      
     qte_prevu = fields.Float(compute="onchange_product_id", string='Quantité disponible', readonly=True)
     product_uom_qty = fields.Float('Quantity', default=0.0, required=True, states={'done': [('readonly', True)]})
-    date_arrivee_relle = fields.Datetime(string="Date d'arrivée réelle des matériels", related='picking_id.date_arrivee_relle', store=True) 
+    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", related='picking_id.date_arrivee_reelle', store=True) 
        
     @api.onchange('product_id')
     def onchange_product_id(self):

@@ -309,9 +309,6 @@
                 <field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="attente_magasinier,attente_logistique,assigned,done" />
 				</field>
-				<field name="min_date" position="after">
-				    <field name="date_arrivee_relle"  />
-				</field>
 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
 					<attribute name="invisible">1</attribute>
@@ -324,9 +321,6 @@
 				    <button name="aviser_logistique" string="Pour visa" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_magasinier')),('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
 				    <button name="action_aviser_magasinier_bs" string="Vu" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_logistique')), ('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 				</xpath>
-				<field name="min_date" position="after">
-        			<field name="date_arrivee_relle" />
-    			</field>
             </field>
         </record>
         
