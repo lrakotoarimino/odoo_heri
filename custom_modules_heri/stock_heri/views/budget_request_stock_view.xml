@@ -230,7 +230,7 @@
 	                <field name="partner_id" invisible="1"/>
                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                     <field name="date_planned" invisible="context.get('quotation_only', False)"/>
-                    <field name="amount_untaxed" sum="Total Untaxed amount" string="Untaxed" widget="monetary"/>
+                    <field name="amount_untaxed" sum="Total Untaxed amount" string="Total HT" widget="monetary"/>
                     <field name="amount_total" sum="Total amount" widget="monetary" invisible="1"/>
                     <field name="currency_id" invisible="1"/>
                     <field name="change_state_date"/>
