@@ -503,33 +503,29 @@ class StockQuant(models.Model):
 class StockMove(models.Model):
     _inherit = 'stock.move'
      
-    qte_prevu = fields.Float(compute="onchange_product_id", string='Quantité disponible', readonly=True)
+    qte_prevu = fields.Float(string='Quantité disponible')
     product_uom_qty = fields.Float('Quantity', default=0.0, required=True, states={'done': [('readonly', True)]})
     date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", related='picking_id.date_arrivee_reelle', store=True) 
        
     @api.onchange('product_id')
-    def onchange_product_id(self):
-        product = self.product_id.with_context(lang=self.partner_id.lang or self.env.user.lang)
-        self.name = product.partner_ref
-        self.product_uom = product.uom_id.id
+    def onchange_product_id_new(self):
         for line in self:
             if line.picking_id.mouvement_type == 'bci':
                 if not line.location_id:
                     raise UserError("La zone d'emplacement source ne doit pas être vide")
-                #line.qte_prevu = line.product_id.virtual_available
                 
                 location_src_id = line.location_id
                 total_qty_available = 0.0
                 total_reserved = 0.0
                 liste_picking_ids = []
                 
-                stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
-                line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
+                stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+                line_ids = line.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
                                                                    ('order_id.bs_id.state','not in', ('done','cancel')), \
                                                                    ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
                                                                    ])
                 #recuperer tous les articles reserves dans bci
-                bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+                bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
                                                                        ('picking_id.state','not in', ('done','cancel')), \
                                                                        ('product_id','=', line.product_id.id)
                                                                        ])  
@@ -538,7 +534,8 @@ class StockMove(models.Model):
                 for quant in stock_quant_ids:
                     total_qty_available += quant.qty
                 line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
-        return {'domain': {'product_uom': [('category_id', '=', product.uom_id.category_id.id)]}}
+        
+        return True
 
     @api.onchange('product_uom_qty')
     def onchange_product_uom_qty(self):

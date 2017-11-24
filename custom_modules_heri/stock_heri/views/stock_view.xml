@@ -87,16 +87,9 @@
 				</field>
 				<xpath expr="//field[@name='picking_type_id']" position="attributes">
 				    <attribute name="domain">[('code','=','internal')]</attribute>
-				</xpath>
-<!-- 
-				<xpath expr="//field[@name='move_lines']//field[@name='product_uom_qty']" position="after">
-				    <field name="qte_prevu" readonly="1"/>
-
-				<xpath expr="//field[@name='move_lines']" position="inside">
-				    <field name="location_id" readonly="1"/> 
-
-				</xpath> -->
-				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
+				</xpath> 
+			    
+ 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
 					<attribute name="attrs">{'invisible': [('state','not in',('attente_magasinier'))]}</attribute>
 				</xpath>
@@ -206,11 +199,14 @@
 					<!-- <field name="date_arrivee_relle" attrs="{'required': [('state', 'not in', ('done', 'cancel')), ('mouvement_type', '=', 'bs')], 'invisible': [('mouvement_type', '!=', 'bs')], 'readonly': [('state', 'in', ('done','cancel'))]}"/> -->
 				</xpath>
 				<field name="location_dest_id" position="attributes">
-                    <attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': [('state', '=', 'done')]}</attribute>
+					<attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': [('state', '=', 'done')]}</attribute>
 				</field>
 				<field name="location_id" position="replace">
 				    <field name="location_id" invisible="1"/>
 				</field>
+				<button name="do_new_transfer" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
 			</field>
 		</record>
         
@@ -488,6 +484,21 @@
 				</field>
 			</field>
 		</record>
+		<!--  -->
+		
+		<!-- Début ajout du champ qte_prevu dans move_lines-->
+		<record model="ir.ui.view" id="view_move_picking_advanced_tree">
+			<field name="name">stock.move.advanced.tree</field>
+			<field name="model">stock.move</field>
+			<field name="inherit_id" ref="stock.view_move_picking_tree"/>
+			<field name="arch" type="xml"> 
+		        <xpath expr="//field[@name='product_uom_qty']" position="after">
+			    	<field name="qte_prevu" readonly="1"/>
+			    </xpath>
+	    	</field>
+    	</record>
+	    <!-- Ajout du champ qte_prevu dans move_lines -->
+		
 		
 		<!-- Sequences for bon de cessio interne --> 
         <record id="seq_bon_cession_interne" model="ir.sequence">
@@ -498,7 +509,7 @@
             <field name="padding">6</field>
             <field name="company_id" eval="False"/>
         </record>
-		
+        
         <!-- Menus -->
 		<menuitem id="menu_stock_picking_heri" parent="stock.menu_stock_root" sequence="-100" name="Stock"/>
 		<menuitem  action="action_bon_de_sortie" id="menu_bon_sortie_stock_heri" parent="menu_stock_picking_heri" sequence="2" name="Bon de Sortie"/>
