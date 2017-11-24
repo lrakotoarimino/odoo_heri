@@ -445,6 +445,17 @@ class StockPicking(models.Model):
                 return True
         return False
     
+    @api.onchange('location_dest_id')
+    def onchange_location_dest_id(self):
+        for pick in self:
+            if pick.mouvement_type == 'bs':
+                after_vals = {}
+                if pick.location_dest_id:
+                    after_vals['location_dest_id'] = pick.location_dest_id.id
+                if after_vals:
+                    pick.pack_operation_product_ids.write(after_vals)
+                    
+    
 class StockQuant(models.Model):
     _inherit = 'stock.quant'
     
