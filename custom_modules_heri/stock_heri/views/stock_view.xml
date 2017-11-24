@@ -108,6 +108,13 @@
 				    <button name="action_aviser_logistique" string="Envoyer au logistique" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('draft')),('mouvement_type','not in',('bci'))]}" type="object"/>
 				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_logistique')), ('mouvement_type','not in',('bci'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 				</xpath>
+				
+				<field name="location_dest_id" position="attributes">
+                    <attribute name="domain">[('is_kiosque','=',False)]</attribute>
+				</field>
+				<field name="location_id" position="attributes">
+				    <attribute name="domain">[('is_kiosque','=',False)]</attribute>
+				</field>
             </field>
         </record>
 		<!-- Fin bon de cession interne form view -->
@@ -189,11 +196,10 @@
             <field name="name">stok.bon.sortie.form</field>
             <field name="model">stock.picking</field>
             <field name="mode">primary</field>
-            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="inherit_id" ref="view_picking_form_advanced"/>
             <field name="arch" type="xml">
                 <xpath expr="//form" position="attributes">
                     <attribute name="create">0</attribute>
-                    <attribute name="edit">0</attribute>
                 </xpath>            
 				<xpath expr="//field[@name='min_date']" position="after">
 				    <field name="min_date" />
@@ -206,13 +212,13 @@
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_bon_sortie_sans_creer_tree"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_sortie"/>
+            <field name="act_window_id" ref="action_bon_de_sortie"/>
         </record>
         <record id="action_bon_sortie_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock_heri.view_picking_bs_lie_form_advanced_inherit"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_sortie"/>
+            <field name="view_id" ref="view_picking_bs_lie_form_advanced_inherit"/>
+            <field name="act_window_id" ref="action_bon_de_sortie"/>
 		</record>
 
 	   	<record model="ir.actions.act_window" id="action_bon_de_sortie_lie">
@@ -396,8 +402,7 @@
                 <field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_hierarchie,attente_magasinier,done" />
 				</field>
-
-            	</field>
+			</field>
         </record> 
         
 	   	<record model="ir.actions.act_window" id="action_bon_de_retour">
