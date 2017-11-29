@@ -601,18 +601,17 @@ class PurchaseOrderLine(models.Model):
             total_reserved = 0.0
             liste_picking_ids = []
             
-            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
-            line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
-                                                               ('order_id.bs_id.state','not in', ('done','cancel')), \
+            stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+            line_ids = line.search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
                                                                ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
                                                                ])
             #recuperer tous les articles reserves dans bci
-            bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+            bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
                                                                    ('picking_id.state','not in', ('done','cancel')), \
                                                                    ('product_id','=', line.product_id.id)
                                                                    ])  
-            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
-            total_reserved = sum(x.product_qty for x in line_ids)
+            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
+            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel'))
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
             line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved

@@ -97,6 +97,10 @@
 					<attribute name="invisible">1</attribute>
 				</xpath>
 				
+				<xpath expr="//field[@name='order_line']//field[@name='date_planned']" position="attributes">
+					<attribute name="invisible">1</attribute>
+				</xpath>
+				
 				<xpath expr="//field[@name='date_planned'][3]" position="replace">
 					<field name="date_planned" invisible="1"/>
 				</xpath>
@@ -232,7 +236,7 @@
 	                <field name="partner_id"/>
                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                     <field name="date_planned" invisible="context.get('quotation_only', False)"/>
-                    <field name="amount_untaxed" sum="Total Untaxed amount" string="Untaxed" widget="monetary"/>
+                    <field name="amount_untaxed" sum="Total Untaxed amount" string="Montant HT" widget="monetary"/>
                     <field name="amount_total" sum="Total amount" widget="monetary"/>
                     <field name="statut_budget"/>
                     <field name="currency_id" invisible="1"/>

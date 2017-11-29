@@ -143,16 +143,15 @@
             <field name="model">budget.expense.report</field>
             <field name="arch" type="xml">
                 <tree  string="Budget Expenses Report list">
-                    <field name="name"/>
+                    <field name="name" string="Nom"/>
                     <field name="employee_id"/>
                     <field name="department_id"/>
                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                     <field name="location_dest_id" invisible="1"/>
-                    <field name="partner_id"/>
-                    <field name="date" invisible="1"/>
+                    <field name="partner_id" string="Fournisseur"/>
                     <field name="date"/>
                     <field name="group_id" invisible="1"/>
-                    <field name="amount_untaxed_breq" sum="Total Untaxed amount" string="Untaxed BReq" widget="monetary"/>
+                    <field name="amount_untaxed_breq" sum="Total Untaxed amount" string="Total HT" widget="monetary"/>
                     <field name="amount_total_breq" sum="Total amount" string="Total BReq" widget="monetary"/>
                     <field name="change_state_date" invisible="1"/>
                     <field name="state"/>
