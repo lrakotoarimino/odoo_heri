@@ -10,6 +10,7 @@ import time
 from docutils.nodes import Invisible
 from datetime import datetime, date
 from pyparsing import lineEnd
+from odoo.tools import float_is_zero
 
 class SaleHeri(models.Model):
     _inherit = "sale.order"
@@ -28,12 +29,61 @@ class SaleHeri(models.Model):
             ('materiel_loue', 'Materiel Loué'),
             ('facturation_tiers', 'Tiers'),
             ('facturation_entrepreneurs', 'Entrepreneurs'),
+            ('facturation_heri_entrepreneurs', 'Entrepreneurs Heri'),
         ], string='Type de Facturation')
     #partner_id = fields.Many2one('res.partner', string='Customer', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)],'nouveau': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
     correction_et_motif = fields.Text(string="Correction et Motif")
     purchase_id= fields.Many2one('purchase.order')
     calendar_id = fields.Many2one('res.calendar', string='Calendrier de facturation')
+    partner_client_id = fields.Many2one('res.partner', string='Client', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
+    sent_finance = fields.Boolean('Est envoyé au finance')
     
+    @api.depends('state', 'order_line.invoice_status')
+    def _get_invoiced(self):
+        """
+        Compute the invoice status of a SO. Possible statuses:
+        - no: if the SO is not in status 'sale' or 'done', we consider that there is nothing to
+          invoice. This is also hte default value if the conditions of no other status is met.
+        - to invoice: if any SO line is 'to invoice', the whole SO is 'to invoice'
+        - invoiced: if all SO lines are invoiced, the SO is invoiced.
+        - upselling: if all SO lines are invoiced or upselling, the status is upselling.
+
+        The invoice_ids are obtained thanks to the invoice lines of the SO lines, and we also search
+        for possible refunds created directly from existing invoices. This is necessary since such a
+        refund is not directly linked to the SO.
+        """
+        for order in self:
+            invoice_ids = order.order_line.mapped('invoice_lines').mapped('invoice_id').filtered(lambda r: r.type in ['out_invoice', 'out_refund'])
+            # Search for invoices which have been 'cancelled' (filter_refund = 'modify' in
+            # 'account.invoice.refund')
+            # use like as origin may contains multiple references (e.g. 'SO01, SO02')
+            refunds = invoice_ids.search([('origin', 'like', order.name)])
+            invoice_ids |= refunds.filtered(lambda r: order.name in [origin.strip() for origin in r.origin.split(',')])
+            # Search for refunds as well
+            refund_ids = self.env['account.invoice'].browse()
+            if invoice_ids:
+                for inv in invoice_ids:
+                    refund_ids += refund_ids.search([('type', '=', 'out_refund'), ('origin', '=', inv.number), ('origin', '!=', False), ('journal_id', '=', inv.journal_id.id)])
+
+            line_invoice_status = [line.invoice_status for line in order.order_line]
+
+            if order.state not in ('sale', 'done','breq_stock','capacite_ok'):
+                invoice_status = 'no'
+            elif any(invoice_status == 'to invoice' for invoice_status in line_invoice_status):
+                invoice_status = 'to invoice'
+            elif all(invoice_status == 'invoiced' for invoice_status in line_invoice_status):
+                invoice_status = 'invoiced'
+            elif all(invoice_status in ['invoiced', 'upselling'] for invoice_status in line_invoice_status):
+                invoice_status = 'upselling'
+            else:
+                invoice_status = 'no'
+
+            order.update({
+                'invoice_count': len(set(invoice_ids.ids + refund_ids.ids)),
+                'invoice_ids': invoice_ids.ids + refund_ids.ids,
+                'invoice_status': invoice_status
+            })
+            
     def _get_date_debut_facturation(self):
         if self.facturation_type == 'facturation_redevance':
             calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
@@ -257,6 +307,14 @@ class SaleHeri(models.Model):
         self.write({'state':'preparation_test'})
     def action_test_materiel_ok(self):
         self.write({'state':'test'}) 
+    def action_sale(self):
+        self.write({'state':'sale'}) 
+    def action_annuler(self):
+        self.write({'state':'cancel'})
+    def action_au_finance(self):
+        self.sent_finance = True
+        self.action_invoice_create()
+        
     
     breq_stock_ids = fields.One2many('purchase.order', string="Breq stock ids", compute='_compute_breq_stock_lie')
     breq_stock_count = fields.Integer(compute='_compute_breq_stock_lie') 
@@ -281,6 +339,20 @@ class SaleHeri(models.Model):
         action = self.env.ref('sale_heri.action_budget_request_stock_heri_2')
         result = action.read()[0]
         return result
+    #action ouvrir budget request stock facturation materiel par heri aux entrepreneur
+    @api.multi
+    def action_breq_stock_lie3(self):
+        action = self.env.ref('sale_heri.action_budget_request_stock_heri_3')
+        result = action.read()[0]
+        return result
+    #action ouvrir budget request stock facturation materiel par heri aux entrepreneur
+    @api.multi
+    def action_breq_stock_lie4(self):
+        action = self.env.ref('sale_heri.action_budget_request_stock_heri_4')
+        result = action.read()[0]
+        return result
+    
+    
     statut_facture = fields.Selection(compute="_get_statut_facture", string='Etat Facture',
                       selection=[
                              ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
@@ -315,6 +387,7 @@ class SaleHeri(models.Model):
                     'amount_untaxed': order.amount_untaxed,
                     'amount_total': order.amount_total,
                     'date_planned':fields.Datetime.now(),
+                    'facturation_type':order.facturation_type,
                     'mouvement_type':'bs',
                     'justificatif': "C'/est un justificatif",
                     'department_id': order.env['hr.employee'].search([('user_id','=',order.user_id.id)],limit=1).department_id.id,
@@ -338,8 +411,8 @@ class SaleHeri(models.Model):
         return action
     
     @api.multi
-    def action_breq_stock_lie_facture(self):
-        action = self.env.ref('sale_heri.action_budget_request_stock_heri_lie_facture')
+    def action_sale_heri_lie_facture(self):
+        action = self.env.ref('sale_heri.action_sale_heri_lie_facture')
         result = action.read()[0]
         return result
     
@@ -353,8 +426,8 @@ class SaleHeri(models.Model):
                 if line.product_uom_qty <= 0.0:
                     raise UserError("la quantité demandée doit être une valeur positive.")
 
-            order._create_breq_stock()
-            order.write({'state':'breq_stock'}) 
+        self._create_breq_stock()
+        self.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
@@ -362,10 +435,75 @@ class SaleOrderLineHeri(models.Model):
     date_arrivee = fields.Datetime(string='Date d\'arrivée')
     nbre_jour_detention = fields.Float(string='Nombre de jour de l\'effet', default=0.0)
     qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
+    qte_detenu_par_kiosque = fields.Float(compute="onchange_prod_id",string='Quantité detenu par le kiosque', readonly=True)
 
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
+    location_kiosque_id = fields.Many2one('stock.location', related='order_id.kiosque_id', readonly=True)
     product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
-     
+    
+    state = fields.Selection([
+        ('draft', 'Nouveau'),
+        ('correction_et_motif', 'Correction et Motif Call Center'),
+        ('correction_et_motif_finance', 'Correction et Motif Finance'),
+        ('observation_dg', 'Observation du DG'),
+        ('verif_pec', 'Verification des PEC'),
+        ('facture_generer', 'Facture Generée'),
+        ('breq_stock','Budget request stock'),
+        ('solvabilite_ok','Contrôle de solvabilité'),
+        ('capacite_ok','Contrôle capacité kiosque'),
+        ('preparation_test','Préparation matériels pour test'),
+        ('test','Test des matériels'),
+        ('sent', 'Quotation Sent'),
+        ('sale', 'Génération facture SMS'),
+        ('done', 'Locked'),
+        ('cancel', 'Cancelled'),
+        ],related="order_id.state", string='Status', readonly=True, copy=False, index=True, track_visibility='onchange',default='draft')
+    
+    @api.depends('state', 'product_uom_qty', 'qty_delivered', 'qty_to_invoice', 'qty_invoiced')
+    def _compute_invoice_status(self):
+        """
+        Compute the invoice status of a SO line. Possible statuses:
+        - no: if the SO is not in status 'sale' or 'done', we consider that there is nothing to
+          invoice. This is also hte default value if the conditions of no other status is met.
+        - to invoice: we refer to the quantity to invoice of the line. Refer to method
+          `_get_to_invoice_qty()` for more information on how this quantity is calculated.
+        - upselling: this is possible only for a product invoiced on ordered quantities for which
+          we delivered more than expected. The could arise if, for example, a project took more
+          time than expected but we decided not to invoice the extra cost to the client. This
+          occurs onyl in state 'sale', so that when a SO is set to done, the upselling opportunity
+          is removed from the list.
+        - invoiced: the quantity invoiced is larger or equal to the quantity ordered.
+        """
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        for line in self:
+            if line.state not in ('sale','draft', 'done','breq_stock','capacite_ok'):
+                line.invoice_status = 'no'
+            elif not float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                line.invoice_status = 'to invoice'
+            elif line.state in ('sale','draft','breq_stock','capacite_ok') and line.product_id.invoice_policy == 'order' and\
+                    float_compare(line.qty_delivered, line.product_uom_qty, precision_digits=precision) == 1:
+                line.invoice_status = 'upselling'
+            elif float_compare(line.qty_invoiced, line.product_uom_qty, precision_digits=precision) >= 0:
+                line.invoice_status = 'invoiced'
+            else:
+                line.invoice_status = 'no'
+
+    @api.depends('qty_invoiced', 'qty_delivered', 'product_uom_qty', 'order_id.state')
+    def _get_to_invoice_qty(self):
+        """
+        Compute the quantity to invoice. If the invoice policy is order, the quantity to invoice is
+        calculated from the ordered quantity. Otherwise, the quantity delivered is used.
+        """
+        for line in self:
+            if line.order_id.state in ['draft','sale', 'done','breq_stock','capacite_ok']:
+                if line.product_id.invoice_policy == 'order':
+                    line.qty_to_invoice = line.product_uom_qty - line.qty_invoiced
+                else:
+                    line.qty_to_invoice = line.qty_delivered - line.qty_invoiced
+            else:
+                line.qty_to_invoice = 0
+
+ 
     @api.onchange('product_id')
     def onchange_prod_id(self):
         for line in self:
@@ -374,11 +512,14 @@ class SaleOrderLineHeri(models.Model):
             #line.qte_prevu = line.product_id.virtual_available
             
             location_src_id = line.location_id
+            location_kiosque_id = line.location_kiosque_id
             total_qty_available = 0.0
+            total_qty_available_kiosque = 0.0
             total_reserved = 0.0
             liste_picking_ids = []
             
             stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+            stock_quant_kiosque_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_kiosque_id.id)])
             line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
                                                                ('order_id.bs_id.state','not in', ('done','cancel')), \
                                                                ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
@@ -392,11 +533,14 @@ class SaleOrderLineHeri(models.Model):
             total_reserved = sum(x.product_qty for x in line_ids)
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
+            for quant_kiosque in stock_quant_kiosque_ids:
+                total_qty_available_kiosque +=quant_kiosque.qty
             line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
+            line.qte_detenu_par_kiosque = total_qty_available_kiosque
     
     @api.onchange('product_uom_qty')
     def onchange_product_qty(self):
-        if self.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
+        if self.order_id.facturation_type in ('facturation_tiers','materiel_loue','facturation_heri_entrepreneurs'):
             product_seuil_id = self.env['product.product'].search([('id','=',self.product_id.id)])
             product_seuil = product_seuil_id.security_seuil
             qte_restant = self.qte_prevu - self.product_uom_qty
@@ -444,34 +588,6 @@ class SaleOrderLineHeri(models.Model):
             }     
             breq_lines = breq_line.create(vals)
         return True
-     
-class AccountInvoiceHeri(models.Model):
-    _inherit = "account.invoice"
-    
-    state = fields.Selection([
-            ('draft','Draft'),
-            ('proforma', 'Pro-forma'),
-            ('proforma2', 'Pro-forma'),
-            ('attente_envoi_sms', 'Attente d\'envoi SMS'),
-            ('pour_visa','Visa'),
-            ('open', 'Ouvert'),
-            ('paid', 'Paid'),
-            ('cancel', 'Cancelled'),
-        ], string='Status', index=True, readonly=True, default='draft',
-        track_visibility='onchange', copy=False,
-        help=" * The 'Draft' status is used when a user is encoding a new and unconfirmed Invoice.\n"
-             " * The 'Pro-forma' status is used when the invoice does not have an invoice number.\n"
-             " * The 'Open' status is used when user creates invoice, an invoice number is generated. It stays in the open status till the user pays the invoice.\n"
-             " * The 'Paid' status is set automatically when the invoice is paid. Its related journal entries may or may not be reconciled.\n"
-             " * The 'Cancelled' status is used when user cancel invoice.")
-
-    def action_aviser_callcenter(self):
-        self.write({'state':'attente_envoi_sms'})
-    def action_envoi_sms(self):
-        self.write({'state':'open'})
-    def action_pour_visa(self):
-        self.action_invoice_open()
-        self.write({'state':'open'})
     
 class SaleAdvancePaymentInvHeri(models.TransientModel):
     _inherit = "sale.advance.payment.inv"

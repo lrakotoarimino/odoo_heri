@@ -4,3 +4,4 @@ import stock_location
 import res_calendar
 import res_config
 import stock
+import account_invoice

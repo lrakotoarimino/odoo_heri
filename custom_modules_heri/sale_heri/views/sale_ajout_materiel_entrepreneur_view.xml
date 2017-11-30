@@ -26,6 +26,9 @@
 				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
 					<field name="qte_prevu" />
 				</xpath>
+				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
 				
 				<!--bouton pour le workflow facturation tiers -->
 				<xpath expr="//field[@name='state']" position="before">
