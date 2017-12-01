@@ -108,6 +108,15 @@
                             <field name="invoice_count" widget="statinfo" string="Invoices"/>
                   </button>
                 </xpath>
+                 <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="before">
+			      <button name="action_impayee_facture"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            >
+                            <field name="impayee_count" widget="statinfo" string="Impayées"/>
+                  </button>
+                </xpath>
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
 				 	<button type="object"
 	                            name="action_breq_stock_lie3"

@@ -401,7 +401,19 @@ class SaleHeri(models.Model):
             breq_lines = order.order_line._create_breq_lines(breq_id)        
         return True
     
+    impayee_count = fields.Float(compute="_compute_facture_impayee")
     
+    @api.multi
+    def _compute_facture_impayee(self):
+        for order in self:
+            facture_impayee = order.env['account.invoice'].search([('partner_id','=',order.partner_id.id),('state','!=','paid')])
+            if facture_impayee:
+                order.impayee_count = len(facture_impayee)
+    @api.multi
+    def action_impayee_facture(self):
+        action = self.env.ref('account.action_invoice_tree1').read()[0]
+        return action
+                
     @api.multi
     def action_view_facture_sms(self):
         invoices = self.mapped('invoice_ids')
