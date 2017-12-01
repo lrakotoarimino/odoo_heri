@@ -29,7 +29,7 @@
 			<field name="name">sale.order.advanced.form</field>
 			<field name="model">sale.order</field>
 			<field name="mode">primary</field>
-			<field name="inherit_id" ref="sale_heri.sale_order_form_view_base"/>
+			<field name="inherit_id" ref="sale_order_form_view_base"/>
 			<field name="arch" type="xml">
 				<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale" />
@@ -41,7 +41,7 @@
 			<field name="name">sale.facturation.redevance</field>
 			<field name="model">sale.order</field>
 			<field name="mode">primary</field>
-			<field name="inherit_id" ref="sale_heri.sale_order_form_view_advanced"/>
+			<field name="inherit_id" ref="sale_order_form_view_advanced"/>
 			<field name="arch" type="xml">
 			    <xpath expr="//field[@name='partner_id']" position="before">
 			        <field name="facturation_type" invisible= "1"/>
@@ -85,10 +85,13 @@
 		    		<attribute name="string">Générer une facture SMS</attribute>
 		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
 		    	</xpath>
+		    	<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="before">
+					<field name="qte_article"/>
+				</xpath>
 				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
 					<field name="date_arrivee"/>
 				</xpath>
-				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
+				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="before">
 					<field name="nbre_jour_detention"/>
 				</xpath>
 				 <!--bouton pour le workflow facturation redevance -->
@@ -112,12 +115,13 @@
 			      	    name="action_correction_motif_finance"
 			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"
+			      	    groups="purchase_heri.group_call_center_heri"
 			      	 />
 			      	 <button 
 			      	    string="A Revoir" 
 			      	    name="action_annul_correction_motif_call"
-			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"
+			      	    groups="purchase_heri.group_call_center_heri"
 			      	 />
 			      	<button 
 			      	    string="Valider" 
@@ -136,7 +140,6 @@
 			      	 <button 
 			      	    string="A revoir" 
 			      	    name="action_annul_correction_motif_finance"
-			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
 			      	    groups="purchase_heri.group_finance_heri"
 			      	 />
@@ -150,7 +153,6 @@
 			      	 <button 
 			      	    string="A revoir" 
 			      	    name="action_refus_dg"
-			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
 			      	    groups="purchase_heri.group_dg_heri"
 			      	 />
@@ -164,7 +166,6 @@
 			      	 <button 
 			      	    string="A revoir" 
 			      	    name="action_annul_verif_pec"
-			      	    class="oe_highlight" 
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('verif_pec'))]}"
 			      	    groups="purchase_heri.group_finance_heri"
 			      	 />
@@ -201,46 +202,47 @@
 		</record>	
 		
 		<record model="ir.ui.view" id="facturation_redevance_tree">
-         <field name="name">Facturation redevance</field>
-         <field name="model">sale.order</field>
-         <field name="arch" type="xml">
-             <tree string="Sales Orders" decoration-bf="message_needaction==True" decoration-muted="state=='cancel'">
-                    <field name="message_needaction" invisible="1"/>
-                    <field name="name" string="Order Number"/>
-                    <field name="date_order"/>
-                    <field name="partner_id"/>
-                    <field name="user_id"/>
-                    <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
-                    <field name="currency_id" invisible="1"/>
-                    <field name="invoice_status"/>
-                    <field name="state" invisible="1"/>
-                </tree>
-         </field>
+	        <field name="name">Facturation redevance</field>
+	        <field name="model">sale.order</field>
+	        <field name="arch" type="xml">
+	            <tree string="Sales Orders" decoration-bf="message_needaction==True" decoration-muted="state=='cancel'">
+	                   <field name="message_needaction" invisible="1"/>
+	                   <field name="name" string="Order Number"/>
+	                   <field name="date_order"/>
+	                   <field name="partner_id"/>
+	                   <field name="user_id"/>
+	                   <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
+	                   <field name="currency_id" invisible="1"/>
+	                   <field name="invoice_status"/>
+	                   <field name="state"/>
+	               </tree>
+	        </field>
      	</record>
+     	
 		<record model="ir.actions.act_window" id="action_facture_redevance">
-        <field name="name">Facturation redevance mensuelle</field>
-        <field name="res_model">sale.order</field>
-        <field name="domain">[('facturation_type','=','facturation_redevance')]</field>  	
-		<field name="context">{'default_facturation_type': 'facturation_redevance'}</field> 
-        <field name="help" type="html">
-          <p class="oe_view_nocontent_create">
-              Cliquer ici pour créer une facturation redevance mensuelle.
-          </p>
-        </field>
+	        <field name="name">Facturation redevance mensuelle</field>
+	        <field name="res_model">sale.order</field>
+	        <field name="domain">[('facturation_type','=','facturation_redevance')]</field>  	
+			<field name="context">{'default_facturation_type': 'facturation_redevance'}</field> 
+	        <field name="help" type="html">
+	          <p class="oe_view_nocontent_create">
+	              Cliquer ici pour créer une facturation redevance mensuelle.
+	          </p>
+	        </field>
      	</record>
      
      	<record id="action_facturation_redevance_tree" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="sale_heri.facturation_redevance_tree"/>
-            <field name="act_window_id" ref="sale_heri.action_facture_redevance"/>
+            <field name="view_id" ref="facturation_redevance_tree"/>
+            <field name="act_window_id" ref="action_facture_redevance"/>
         </record>
 
         <record id="action_facturation_redevance_form_view" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="sale_heri.facturation_redevance_form_view"/>
-            <field name="act_window_id" ref="sale_heri.action_facture_redevance"/>
+            <field name="view_id" ref="facturation_redevance_form_view"/>
+            <field name="act_window_id" ref="action_facture_redevance"/>
         </record>
   		<!-- End Facturation redevance mensuelle form -->
   		
@@ -259,7 +261,7 @@
 			<field name="name">account.invoice.advanced.form</field>
 			<field name="model">account.invoice</field>
 			<field name="mode">primary</field>
-			<field name="inherit_id" ref="sale_heri.account_invoice_form_view_base"/>
+			<field name="inherit_id" ref="account_invoice_form_view_base"/>
 			<field name="arch" type="xml">
 				<field name="date_invoice" position="replace">
 					<field name="date_invoice"/>
@@ -271,17 +273,26 @@
 			<field name="name">facturation.redevance.sms.form</field>
 			<field name="model">account.invoice</field>
 			<field name="mode">primary</field>
-			<field name="inherit_id" ref="sale_heri.account_invoice_form_view_advanced"/>
+			<field name="inherit_id" ref="account_invoice_form_view_advanced"/>
 			<field name="arch" type="xml">
 				<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_envoi_sms,open,paid"/>
 				</field>
-				<xpath expr="//button[@name='action_invoice_open'][1]" position="attributes">
+				<xpath expr="//button[@name='action_invoice_open']" position="attributes">
 		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='invoice_print'][2]" position="replace">
+		    		<button name="imprimer_facture_redevance_duplicata" string="Imprimer la facture" type="object" attrs="{'invisible':['|',('sent','=',False), ('state', '!=', 'open')]}" groups="base.group_user"/>
+		    	</xpath>
+		    	<xpath expr="//button[@name='action_invoice_sent']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='action_invoice_proforma2']" position="replace">
+		    		<button name="action_invoice_proforma2" invisible="1" type="object" states="draft" string="PRO-FORMA" groups="account.group_proforma_invoices"/>
 		    	</xpath>
 		    	<xpath expr="//field[@name='state']" position="before">
 		    		<button name="action_aviser_callcenter" string="SMS à envoyer" attrs="{'invisible': ['|',('state', 'not in', ('draft'))]}" groups="purchase_heri.group_finance_heri" type="object" class="oe_highlight" />
-		    		<button name="action_envoi_sms" string="SMS envoyé" attrs="{'invisible': ['|',('state', 'not in', ('attente_envoi_sms'))]}" groups="purchase_heri.group_call_center_heri" type="object" class="oe_highlight" />
+		    		<button name="action_envoi_sms" type="object" string="SMS envoyé" attrs="{'invisible': ['|',('state', 'not in', ('attente_envoi_sms'))]}" groups="purchase_heri.group_call_center_heri" class="oe_highlight" />
 		    	</xpath>
 			</field>
 		</record>
@@ -295,7 +306,7 @@
             <field eval="1" name="number_increment"/>  
       	</record>  
   		
-  		<menuitem id="menu_facture_redevance" name="Facturation redevance mensuelle" parent="sales_team.menu_sales" action="sale_heri.action_facture_redevance" sequence="2"/>
+  		<menuitem id="menu_facture_redevance" name="Facturation redevance mensuelle" parent="sales_team.menu_sales" action="action_facture_redevance" sequence="2"/>
 		<menuitem id="menu_sale_res_region" parent="sale.menu_sales_config" action="purchase_heri.action_res_region" name="Région" sequence="-100"/>
 		<!-- End Facturation redevance mensuelle form -->
 	</data>

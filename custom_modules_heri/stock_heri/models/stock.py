@@ -39,6 +39,7 @@ class StockPicking(models.Model):
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie d\'origine")
     magasinier_id = fields.Many2one('hr.employee')
     date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels")  
+    is_bci_sale_id = fields.Boolean('Est un bci venant sale order ?') 
     
     picking_ids_bret = fields.One2many('stock.picking', string="stock_ids_bret", compute='_compute_bret_lie')
     picking_count_bret = fields.Integer(compute='_compute_bret_lie') 
@@ -167,6 +168,10 @@ class StockPicking(models.Model):
         
     @api.multi
     def do_print_BS(self):
+        #Tester le champ la date d'arrivee reelle (date_arrivee_reelle) s'il est vide avant de valider une sortie de stock
+        if self.mouvement_type == 'bs':
+            if not self.date_arrivee_reelle:
+                raise UserError('Veuillez renseigner la date d\'arrivée réelle des matériels. ')
         employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)])
         if employee_id:
             self.magasinier_id = employee_id[0].id
@@ -288,7 +293,6 @@ class StockPicking(models.Model):
         manager_id = self.employee_id.coach_id.id
         if current_employee_id == manager_id:
             self.is_manager = True
-    
      
     @api.multi
     def do_new_transfer(self):
@@ -351,15 +355,57 @@ class StockPicking(models.Model):
             return  self.env["report"].get_action(self, 'stock_heri.report_bon_de_sortie_template')
         else :
             return
+        
+    @api.multi
+    def _create_breq_stock(self):
+        breq_stock_obj = self.env['purchase.order']
+        breq_line = self.env['purchase.order.line']
+        #Creer Breq stock
+        for pick in self:
+            vals = {
+                    'partner_id': pick.partner_id.id,
+                    'origin': pick.name,
+                    'employee_id': pick.employee_id.id,         
+                    'company_id': pick.company_id.id,
+                    'picking_bci_id': pick.id,
+                    'is_from_bci' : True,
+                    'is_breq_stock' : True,
+                    'is_breq_id_sale' :False,
+                    'move_type': 'direct',
+                    'location_id': pick.location_dest_id.id,
+                    'company_id': pick.company_id.id,
+                    'amount_untaxed': pick.amount_untaxed,
+                    'date_planned':fields.Datetime.now(),
+                    'mouvement_type':'bci',
+                    'justificatif': "C'/est un justificatif",
+                    'department_id': pick.employee_id.department_id.id,
+                    }
+            budget_request_stock = breq_stock_obj.create(vals)    
+            #Creer order_line dans le breq_stock 
+            for line in pick.move_lines:
+                order_line = {
+                    'order_id': budget_request_stock.id,
+                    'name': line.name or '',
+                    'product_id': line.product_id.id,
+                    'product_uom': line.product_uom.id,
+                    'sale_line_id': line.id,
+                    'product_qty' : line.product_uom_qty,
+                    'price_unit': line.price_unit,
+                    'date_planned':fields.Datetime.now(),
+                }     
+                breq_lines = breq_line.create(order_line)
+        return True
     
     @api.multi
     def do_stock_transfer(self):
         for pick in self:
+            if pick.is_bci_sale_id:
+                pick._create_breq_stock()
             dict = {}
             product_list = []
             location_src_id = pick.location_id.id
             #Verifier la liste de produit dans move_lines si la quantite en stock est insuffisante lors de la demande sauf pour le bon d'entree qui n'a pas besoin de zone d'emplacement source
-            if self.mouvement_type != 'be':
+            if pick.mouvement_type != 'be':
                 for line in pick.move_lines:
                     if line.product_id not in product_list:
                         product_list.append(line.product_id)
@@ -473,46 +519,20 @@ class StockPicking(models.Model):
 class StockQuant(models.Model):
     _inherit = 'stock.quant'
     
-    @api.model
-    def _quant_create_from_move(self, qty, move, lot_id=False, owner_id=False,
-                                src_package_id=False, dest_package_id=False,
-                                force_location_from=False, force_location_to=False):
-        '''Create a quant in the destination location and create a negative
-        quant in the source location if it's an internal location. '''
-        price_unit = move.get_price_unit()
-        location = force_location_to or move.location_dest_id
-        rounding = move.product_id.uom_id.rounding
+    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels")
+    
+    @api.multi
+    def _quant_update_from_move(self, move, location_dest_id, dest_package_id, lot_id=False, entire_pack=False):
         vals = {
-            'product_id': move.product_id.id,
-            'location_id': location.id,
-            'qty': float_round(qty, precision_rounding=rounding),
-            'cost': price_unit,
+            'location_id': location_dest_id.id,
             'history_ids': [(4, move.id)],
-            'in_date': move.date_arrivee_reelle or datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT),
-            'company_id': move.company_id.id,
-            'lot_id': lot_id,
-            'owner_id': owner_id,
-            'package_id': dest_package_id,
-        }
-        if move.location_id.usage == 'internal':
-            # if we were trying to move something from an internal location and reach here (quant creation),
-            # it means that a negative quant has to be created as well.
-            negative_vals = vals.copy()
-            negative_vals['location_id'] = force_location_from and force_location_from.id or move.location_id.id
-            negative_vals['qty'] = float_round(-qty, precision_rounding=rounding)
-            negative_vals['cost'] = price_unit
-            negative_vals['negative_move_id'] = move.id
-            negative_vals['package_id'] = src_package_id
-            negative_quant_id = self.sudo().create(negative_vals)
-            vals.update({'propagated_from_id': negative_quant_id.id})
-
-        picking_type = move.picking_id and move.picking_id.picking_type_id or False
-        if lot_id and move.product_id.tracking == 'serial' and (not picking_type or (picking_type.use_create_lots or picking_type.use_existing_lots)):
-            if qty != 1.0:
-                raise UserError(_('You should only receive by the piece with the same serial number'))
-
-        # create the quant as superuser, because we want to restrict the creation of quant manually: we should always use this method to create quants
-        return self.sudo().create(vals)
+            'reservation_id': False,
+            'date_arrivee_reelle': move.date_arrivee_reelle}
+        if lot_id and any(quant for quant in self if not quant.lot_id.id):
+            vals['lot_id'] = lot_id
+        if not entire_pack:
+            vals.update({'package_id': dest_package_id})
+        self.write(vals)
     
 class StockMove(models.Model):
     _inherit = 'stock.move'

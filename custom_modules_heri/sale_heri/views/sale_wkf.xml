@@ -104,7 +104,7 @@
         
         <record id="act_verif_pec_to_observation_dg" model="workflow.transition">
             <field name="act_from" ref="act_verif_pec"/>
-            <field name="act_to" ref="act_observation_dg"/>
+            <field name="act_to" ref="act_correction_motif_finance"/>
             <field name="signal">action_annul_verif_pec</field>
         </record>
         
