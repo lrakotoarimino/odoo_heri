@@ -288,7 +288,7 @@
                     <field name="name" string="Reference"/>
                     <field name="employee_id"/>
                     <field name="department_id"/>
-	                <field name="partner_id" invisible="1"/>
+	                  <field name="partner_id" invisible="1"/>
                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                     <field name="date_planned" invisible="context.get('quotation_only', False)"/>
                     <field name="amount_untaxed" sum="Total Untaxed amount" string="Total HT" widget="monetary"/>
@@ -324,8 +324,8 @@
 	    <record model="ir.actions.act_window" id="action_budget_request_stock_heri_lie">
 	       	<field name="name">Budget request stock</field>
 	       	<field name="res_model">purchase.order</field>
-			<field name="domain">[('breq_id_sale','=',active_id)]</field>
-			<field name="context">{'default_is_breq_stock': True,'default_is_breq_id_sale': True,'default_partner_id':1,'default_mouvement_type': 'bs'}</field>
+			    <field name="domain">[('breq_id_sale','=',active_id)]</field>
+			    <field name="context">{'default_is_breq_stock': True,'default_is_breq_id_sale': True,'default_partner_id':1,'default_mouvement_type': 'bs'}</field>
 	       	<field name="view_type">form</field>
 	       	<field name="view_mode">tree,form</field>
 	       	<field name="help" type="html">
@@ -381,8 +381,63 @@
 	    <record model="ir.actions.act_window" id="action_budget_request_stock_heri_3">
 	       	<field name="name">Budget request stock</field>
 	       	<field name="res_model">purchase.order</field>
-			<field name="domain">[('breq_id_sale','=',active_id)]</field>
-			<field name="context">{'default_is_breq_stock': True,'default_is_breq_id_sale': True,'default_partner_id':1,'default_mouvement_type': 'bs'}</field>
+			    <field name="domain">[('breq_id_sale','=',active_id)]</field>
+			    <field name="context">{'default_is_breq_stock': True,'default_is_breq_id_sale': True,'default_partner_id':1,'default_mouvement_type': 'bs'}</field>
+    </record>
+    
+		<!--  budget request stock facture-->
+		<record model="ir.ui.view" id="facturation_tiers_form_view_facturation">
+			<field name="name">sale.facturation.tiers.invoice</field>
+			<field name="model">account.invoice</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="account_invoice_form_view_advanced"/>
+			<field name="arch" type="xml">
+			    <field name="invoice_line_tax_ids" position="replace">
+				    <field 
+				        name="invoice_line_tax_ids" 
+				        widget="many2many_tags" 
+				        options="{'no_create': True}"/>
+				</field>
+				<field name="partner_id" position="before">
+					<field name="breq_stock_id" invisible="1" />
+				</field>
+				<field name="state" position="replace">
+				    <field name="state" widget="statusbar" statusbar_visible="draft,open,paid"/>
+				</field>
+				<xpath expr="//button[@name='action_invoice_open'][1]" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='action_invoice_sent']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='action_invoice_cancel']" position="attributes">
+		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='%(account.action_account_invoice_refund)d']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='%(account.action_account_invoice_payment)d']" position="attributes">
+		    		<attribute name="string">Comptabiliser</attribute>
+		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
+		    		<attribute name="attrs">{'invisible':['|',('sent','=',False)]}</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='invoice_print'][1]" position="attributes">
+		    		<attribute name="string">Edition</attribute>
+		    		<attribute name="groups">purchase_heri.group_special_manager_heri</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='invoice_print'][2]" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+		    	<xpath expr="//field[@name='state']" position="before">
+		    		<button name="print_duplicata" string="Imprimer" attrs="{'invisible': ['|',('state', 'not in', ('paid'))]}" type="object" class="oe_highlight" />
+		    		<button name="action_pour_visa" string="Pour visa" attrs="{'invisible': ['|',('state', 'not in', ('draft'))]}" groups="purchase_heri.group_finance_heri" type="object" class="oe_highlight" />
+		    	</xpath>
+			</field>
+		</record>
+		<record model="ir.actions.act_window" id="action_budget_request_stock_heri_lie_facture">
+	       	<field name="name">Facture</field>
+	       	<field name="res_model">account.invoice</field>
+			    <field name="domain">['|',('breq_stock_id','=',active_id),('breq_id_sale','=',active_id)]</field>
 	       	<field name="view_type">form</field>
 	       	<field name="view_mode">tree,form</field>
 	       	<field name="help" type="html">
@@ -402,6 +457,12 @@
             <field name="view_mode">form</field>
             <field name="view_id" ref="budget_request_stock_form_heri_facturation_entrepreneurs"/>
             <field name="act_window_id" ref="action_budget_request_stock_heri_3"/>
+      </record>
+        <record id="action_br_stock_form_heri_lie_facture" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="facturation_tiers_form_view_facturation"/>
+            <field name="act_window_id" ref="action_budget_request_stock_heri_lie_facture"/>
 		</record>
 		
 		<!-- Budget Request stock menu action lie entrepreneurs -->
@@ -423,12 +484,12 @@
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_breq_stock_sans_creer_tree"/>
             <field name="act_window_id" ref="action_budget_request_stock_heri_4"/>
-        </record>
+    </record>
 	   	<record id="action_br_stock_form_heri_lie4" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
             <field name="view_id" ref="budget_request_stock_form_facturation_entrepreneurs"/>
             <field name="act_window_id" ref="action_budget_request_stock_heri_4"/>
-		</record>
+      </record>
 	</data>
 </odoo>

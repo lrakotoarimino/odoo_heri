@@ -5,3 +5,5 @@ import res_calendar
 import res_config
 import stock
 import account_invoice
+import sale_fact_materiel_mauvais_etat
+

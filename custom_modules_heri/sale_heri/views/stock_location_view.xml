@@ -10,7 +10,7 @@
 			    <xpath expr="//field[@name='usage']" position="before">
 					<field name="is_kiosque"/>
 					<field name="date_contrat" required="1"/>
-					<field name="plus_une_redevance" invisible="1"/>
+					<field name="premiere_redevance" invisible="1"/>
 					<field name="region_id" attrs="{'required': [('is_kiosque', '=', True)], 'invisible':[('is_kiosque', '=', False)]}"/>
 				</xpath>
 			</field>

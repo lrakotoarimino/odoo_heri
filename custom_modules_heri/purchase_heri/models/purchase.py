@@ -22,11 +22,12 @@ class PurchaseHeri(models.Model):
     def create(self, values):
         order = super(PurchaseHeri,self).create(values)
         if not values.get('is_breq_id_sale',False):
-            if not values.get('order_line',False):
+                                                    #S'il ne provient pas d'un BCI dans la facturation des materiels en mauvais etat
+            if not values.get('order_line',False) and not values.get('is_from_bci',False):
                 raise UserError('Veuillez renseigner les lignes de la commande.')
         
         #A executer dans un breq stock uniquement
-        if order.is_breq_stock:
+        if order.is_breq_stock and not values.get('is_from_bci',False):
             order._create_picking2()
         return order 
     
@@ -143,6 +144,7 @@ class PurchaseHeri(models.Model):
     is_breq_id_sale = fields.Boolean('Est un breq stock sale') 
     is_breq_stock = fields.Boolean('Est un budget request stock', default=False)
     statut_breq_bex = fields.Char(compute="_concate_state", string='Etat BReq/BEX')
+    is_from_bci = fields.Boolean('Est-il venu d\'un bci lors de la facturation de materiel en mauvais etat dans vente', default=False)
     
     justificatif = fields.Text("Justificatif Non prévu/Dépassement")
     state = fields.Selection([
@@ -238,6 +240,7 @@ class PurchaseHeri(models.Model):
     bex_id = fields.One2many('budget.expense.report', string="bex_ids", compute='_compute_bex_lie')
 
     picking_ids_bs = fields.One2many('stock.picking', string="purchase_ids", compute='_compute_bs_lie')
+    picking_bci_id = fields.Many2one('stock.picking', string="purchase_ids")
     bs_lie_count = fields.Integer(compute='_compute_bs_lie')
     all_bex_validated = fields.Boolean('Tout bex est Comptabilisé',compute='_compute_all_validated')   
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie lié", compute='_compute_bs_lie')
@@ -455,27 +458,6 @@ class PurchaseHeri(models.Model):
         
     def action_compute_prix_revient(self):
         if self.purchase_type == 'purchase_import':
-#             total_caf = 0.0
-#             total_cdtd = 0.0
-#             total_breq_additionnel = 0.0
-#             current_amount_untaxed = self.amount_untaxed
-#             for order in self:
-#                 breq_transport = self.env['purchase.order'].search(['&', ('parents_ids','=',order.id), ('service_type','=','transport')])
-#                 breq_assurance = self.env['purchase.order'].search(['&', ('parents_ids','=',order.id), ('service_type','=','assurance')])
-#                 breq_additionnel = self.env['purchase.order'].search(['&', ('parents_ids','=',order.id), ('service_type','=','additionel')])
-#                 total_breq_transport = sum(transport.amount_untaxed for transport in breq_transport)
-#                 total_breq_assurance = sum(assurance.amount_untaxed for assurance in breq_assurance)
-#                 total_breq_additionnel = sum(additionnel.amount_untaxed for additionnel in breq_additionnel)
-#             #Calcul CAF pour chaque article, Cout droit et taxe de douane pour chaque article, total CAF pour un achat(total des articles), total Cout droit et taxe de douane
-#             for line in self.order_line:
-#                 taxe_douane = line.product_id.taxe_douane
-#                 line.caf = line.price_subtotal+((line.price_subtotal*(total_breq_transport+total_breq_assurance))/current_amount_untaxed)
-#                 line.cdtd = line.caf+(((line.caf)*taxe_douane)/100)
-#                 total_caf += line.caf
-#                 total_cdtd += line.cdtd
-#             #Calcul cout de revient pour chaque article
-#             for line in self.order_line:
-#                 line.cout_revient = line.cdtd+(line.cdtd*(total_breq_additionnel)/total_cdtd)
             breq_transport = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
             breq_assurance = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
             breq_additionnel = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
