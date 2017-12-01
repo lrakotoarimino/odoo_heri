@@ -4,11 +4,11 @@
 
 		<!-- Facturation tiers form -->
 		<record model="ir.ui.view" id="facturation_tiers_form_view">
-			<field name="name">sale.facturation.tiers</field>
+			<field name="name">Facturation des ventes par Heri de materiels aux tiers</field>
 			<field name="model">sale.order</field>
 			<field name="mode">primary</field>
 			<field name="inherit_id" ref="sale_order_form_view_advanced"/>
-			<field name="arch" type="xml">
+			<field name="arch" type="xml"> 
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 
 					    name="location_id" />
@@ -21,9 +21,15 @@
 							widget="statusbar" 
 					    	statusbar_visible="draft,breq_stock"/>
 				</xpath>
+				<xpath expr="//field[@name='order_line']" position="attributes">
+					<attribute name="attrs">{'readonly': [('state', 'in', ('breq_stock'))]}</attribute>
+				</xpath>
 				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
 					<field name="qte_prevu" />
 				</xpath>
+				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
 				 <!--bouton pour le workflow facturation tiers -->
 				<xpath expr="//field[@name='state']" position="before">
 					<button 
@@ -57,7 +63,7 @@
                   </button>
                 </xpath>
                 <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
-			      <button name="action_breq_stock_lie_facture"
+			      <button name="action_sale_heri_lie_facture"
                             type="object"
                             class="oe_stat_button"
                             icon="fa-pencil-square-o"
@@ -68,25 +74,8 @@
 
 			</field>
 		</record>
-		<record model="ir.ui.view" id="facturation_aux_tiers_tree">
-         <field name="name">Facturation aux tiers</field>
-         <field name="model">sale.order</field>
-         <field name="arch" type="xml">
-             <tree string="Sales Orders" decoration-bf="message_needaction==True" decoration-muted="state=='cancel'">
-                    <field name="message_needaction" invisible="1"/>
-                    <field name="name" string="Order Number"/>
-                    <field name="date_order"/>
-                    <field name="partner_id"/>
-                    <field name="user_id"/>
-                    <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
-                    <field name="currency_id" invisible="1"/>
-                    <field name="statut_facture"/>
-                    <field name="state" invisible="1"/>
-                </tree>
-         </field>
-     	</record>
 		<record model="ir.actions.act_window" id="action_facturation_tiers">
-	       	<field name="name">Facturation aux tiers</field>
+	       	<field name="name">Facturation des ventes par Heri de materiels aux tiers</field>
 	       	<field name="res_model">sale.order</field>
 			<field name="domain">[('facturation_type','=','facturation_tiers')]</field>  	
 			<field name="context">{'default_facturation_type': 'facturation_tiers'}</field> 
@@ -94,7 +83,7 @@
 	       	<field name="view_mode">tree,form</field>
 	       	<field name="help" type="html">
           	<p class="oe_view_nocontent_create">
-              Cliquer ici pour créer une facturation tiers.
+              Cliquer ici pour créer une facturation aux tiers.
           	</p>
         </field>
 	   	</record>
@@ -102,7 +91,7 @@
 	   	<record id="action_facturation_tiers_tree_view" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="facturation_aux_tiers_tree"/>
+            <field name="view_id" ref="facturation_redevance_tree"/>
             <field name="act_window_id" ref="action_facturation_tiers"/>
         </record>
 
@@ -112,7 +101,6 @@
             <field name="view_id" ref="facturation_tiers_form_view"/>
             <field name="act_window_id" ref="action_facturation_tiers"/>
 		</record>
-		
-		<menuitem id="menu_facture_tiers" name="Facturation materiel aux tiers" parent="sales_team.menu_sales" action="action_facturation_tiers" sequence="2"/>	
+		<menuitem id="menu_facture_tiers" name="Facturation des ventes par Heri de materiels aux tiers" parent="sales_team.menu_sales" action="action_facturation_tiers" sequence="2"/>
 	</data>
 </odoo>

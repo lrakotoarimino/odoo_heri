@@ -202,21 +202,21 @@
 		</record>	
 		
 		<record model="ir.ui.view" id="facturation_redevance_tree">
-	        <field name="name">Facturation redevance</field>
-	        <field name="model">sale.order</field>
-	        <field name="arch" type="xml">
-	            <tree string="Sales Orders" decoration-bf="message_needaction==True" decoration-muted="state=='cancel'">
-	                   <field name="message_needaction" invisible="1"/>
-	                   <field name="name" string="Order Number"/>
-	                   <field name="date_order"/>
-	                   <field name="partner_id"/>
-	                   <field name="user_id"/>
-	                   <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
-	                   <field name="currency_id" invisible="1"/>
-	                   <field name="invoice_status"/>
-	                   <field name="state"/>
-	               </tree>
-	        </field>
+        <field name="name">Facturation redevance</field>
+         <field name="model">sale.order</field>
+         <field name="arch" type="xml">
+             <tree string="Sales Orders" decoration-bf="message_needaction==True" decoration-muted="state=='cancel'">
+                    <field name="message_needaction" invisible="1"/>
+                    <field name="name" string="N° Demande"/>
+                    <field name="date_order"/>
+                    <field name="partner_id"/>
+                    <field name="user_id"/>
+                    <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="invoice_status"/>
+                    <field name="state"/>
+                </tree>
+         </field>
      	</record>
      	
 		<record model="ir.actions.act_window" id="action_facture_redevance">
