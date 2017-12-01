@@ -31,7 +31,7 @@
 				<xpath expr="//field[@name='state']" position="replace">
 					<field name="state"
 							widget="statusbar" 
-					    	statusbar_visible="draft,breq_stock"/>
+					    	statusbar_visible="draft,facture_au_finance,breq_stock"/>
 				</xpath>
 				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
 					<field name="qte_prevu" />
@@ -59,8 +59,8 @@
 			      	    name="generation_breq_stock"
 			      	    type="object"
 			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft')),('sent_finance', '=', False)]}"
-			      	    groups="purchase_heri.group_magasinier_heri"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('facture_au_finance')),('sent_finance', '=', False)]}"
+			      	    groups="purchase_heri.group_call_center_heri"
 			      	 />
 		      	 
 				</xpath>

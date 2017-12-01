@@ -113,6 +113,7 @@ class SaleHeri(models.Model):
         ('observation_dg', 'Observation du DG'),
         ('verif_pec', 'Verification des PEC'),
         ('facture_generer', 'Facture Generée'),
+        ('facture_au_finance', 'Facture Envoyé'),
         ('breq_stock','Budget request stock'),
         ('solvabilite_ok','Contrôle de solvabilité'),
         ('capacite_ok','Contrôle capacité kiosque'),
@@ -317,6 +318,7 @@ class SaleHeri(models.Model):
     def action_au_finance(self):
         self.sent_finance = True
         self.action_invoice_create()
+        self.write({'state':'facture_au_finance'})
         
     
     breq_stock_ids = fields.One2many('purchase.order', string="Breq stock ids", compute='_compute_breq_stock_lie')

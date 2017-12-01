@@ -184,8 +184,8 @@ class BreqStockHeri(models.Model):
         self.write({'state':'test'})  
     def generer_bci_et_bs(self):
         for order in self :
-            order._create_picking_sale()
-            order.create_picking_bs_et_bci()    
+            order.create_picking_bs_et_bci()
+            order._create_picking_sale()    
             order.write({'state':'bonci_et_bons'}) 
             
     def envoyer_pour_la_preparation(self):
