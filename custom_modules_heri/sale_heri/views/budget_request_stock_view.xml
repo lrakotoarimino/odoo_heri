@@ -28,6 +28,9 @@
 				<field name="location_id" position="replace">
 				    <field name="location_id" readonly="1" />  
 				</field>
+				<xpath expr="//field[@name='order_line']" position="attributes">
+					<attribute name="attrs">{'readonly': [('state', 'in', ('bonci_et_bons'))]}</attribute>
+				</xpath>
 				<field name="state" position="before">	
 					<button name="generer_bci_et_bs" 
 							string="Generer le BS et BCI" 
@@ -74,6 +77,9 @@
 				<field name="location_id" position="replace">
 				    <field name="location_id" readonly="1" />  
 				</field>
+				<xpath expr="//field[@name='order_line']" position="attributes">
+					<attribute name="attrs">{'readonly': [('state', 'in', ('bci'))]}</attribute>
+				</xpath>
 				<field name="state" position="before">	
 					<button name="envoyer_pour_la_preparation" 
 							string="Préparation Materiel" 
@@ -157,7 +163,7 @@
 							class="oe_highlight" 
 							groups="purchase_heri.group_magasinier_heri"
                        		attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False),('is_breq_id_sale', '=', False)]}"/>
-					<button name="creer_bs" 
+					<button name="create_bs" 
 							string="Générer le bon de sortie" 
 							type="object"
 							groups="purchase_heri.group_technicien_heri"
@@ -218,6 +224,9 @@
 				    <field name="is_breq_id_sale" invisible="1" />	  
 				    <field name="is_facture_comptabilise" invisible="1" />	  
 				</field>
+				<xpath expr="//field[@name='order_line']" position="attributes">
+					<attribute name="attrs">{'readonly': [('state', 'in', ('bs'))]}</attribute>
+				</xpath>
 				<field name="location_id" position="replace">
 				    <field name="location_id" readonly="1" />  
 				</field>

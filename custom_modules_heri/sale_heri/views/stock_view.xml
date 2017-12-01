@@ -139,7 +139,7 @@
         </record>
 		<!-- action bci et bs lie budget request stock facturation par entrepreneurs -->
 		<record model="ir.actions.act_window" id="action_bon_de_cession_lie_facture_entrepreneurs_1">
-	       	<field name="name">Bon de cession interne lié</field>
+	       	<field name="name">Bon de cession interne et bon de sortie lié</field>
 	       	<field name="res_model">stock.picking</field>
 	       	<field name="domain">['&amp;',('breq_id','=',active_id),('state','!=','draft')]</field>  	
 	       	<field name="view_type">form</field>

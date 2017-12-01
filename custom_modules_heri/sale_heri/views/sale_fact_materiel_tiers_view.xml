@@ -21,6 +21,9 @@
 							widget="statusbar" 
 					    	statusbar_visible="draft,breq_stock"/>
 				</xpath>
+				<xpath expr="//field[@name='order_line']" position="attributes">
+					<attribute name="attrs">{'readonly': [('state', 'in', ('breq_stock'))]}</attribute>
+				</xpath>
 				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
 					<field name="qte_prevu" />
 				</xpath>

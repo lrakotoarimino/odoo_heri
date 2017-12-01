@@ -15,7 +15,7 @@ class StockPickingHeri(models.Model):
         'stock.location', "Destination Location Zone",
         default=lambda self: self.env['stock.picking.type'].browse(self._context.get('default_picking_type_id')).default_location_dest_id,
         readonly=True, required=True,
-        states={'draft': [('readonly', False)],'attente_logistique': [('readonly', False)]})
+        states={'draft': [('readonly', False)],'attente_magasinier': [('readonly', False)]})
     state = fields.Selection([
         ('draft', 'Draft'), ('cancel', 'Cancelled'),
         ('attente_hierarchie','Avis supérieur hierarchique'),

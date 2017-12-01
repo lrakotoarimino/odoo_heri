@@ -26,8 +26,11 @@
 				<xpath expr="//button[@name='action_invoice_open'][1]" position="attributes">
 		    		<attribute name="invisible">1</attribute>
 		    	</xpath>
-		    	<xpath expr="//button[@name='action_invoice_sent']" position="attributes">
+		    	<xpath expr="//button[@name='action_invoice_sent'][1]" position="attributes">
 		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+		    	<xpath expr="//button[@name='action_invoice_sent'][2]" position="attributes">
+		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
 		    	</xpath>
 		    	<xpath expr="//button[@name='action_invoice_cancel']" position="attributes">
 		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
@@ -47,7 +50,7 @@
 		    	<xpath expr="//button[@name='invoice_print'][2]" position="attributes">
 		    		<attribute name="invisible">1</attribute>
 		    	</xpath>
-		    	<xpath expr="//field[@name='state']" position="before">
+		    	<xpath expr="//button[@name='action_invoice_cancel']" position="before">
 		    		<button name="print_duplicata" string="Imprimer" attrs="{'invisible': ['|',('state', 'not in', ('paid'))]}" type="object" class="oe_highlight" />
 		    		<button name="action_pour_visa" string="Pour visa" attrs="{'invisible': ['|',('state', 'not in', ('draft'))]}" groups="purchase_heri.group_finance_heri" type="object" class="oe_highlight" />
 		    	</xpath>

@@ -70,7 +70,7 @@ class SaleHeri(models.Model):
 
             line_invoice_status = [line.invoice_status for line in order.order_line]
 
-            if order.state not in ('sale', 'done','breq_stock','capacite_ok'):
+            if order.state not in ('draft','sale', 'done','breq_stock','capacite_ok'):
                 invoice_status = 'no'
             elif any(invoice_status == 'to invoice' for invoice_status in line_invoice_status):
                 invoice_status = 'to invoice'
@@ -429,8 +429,8 @@ class SaleHeri(models.Model):
                 if line.product_uom_qty <= 0.0:
                     raise UserError("la quantité demandée doit être une valeur positive.")
 
-        self._create_breq_stock()
-        self.write({'state':'breq_stock'}) 
+                order._create_breq_stock()
+                order.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
@@ -511,7 +511,7 @@ class SaleOrderLineHeri(models.Model):
     def onchange_prod_id(self):
         for line in self:
             if not line.location_id and line.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
-                raise UserError("Emplacement Heri ne doit pas être vide")
+                raise UserError("Magasin d'origine ne doit pas être vide")
             #line.qte_prevu = line.product_id.virtual_available
             
             location_src_id = line.location_id
@@ -521,19 +521,18 @@ class SaleOrderLineHeri(models.Model):
             total_reserved = 0.0
             liste_picking_ids = []
             
-            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+            stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
             stock_quant_kiosque_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_kiosque_id.id)])
             line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
-                                                               ('order_id.bs_id.state','not in', ('done','cancel')), \
                                                                ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
                                                                ])
             #recuperer tous les articles reserves dans bci
-            bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+            bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
                                                                    ('picking_id.state','not in', ('done','cancel')), \
                                                                    ('product_id','=', line.product_id.id)
-                                                                   ])  
-            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
-            total_reserved = sum(x.product_qty for x in line_ids)
+                                                                   ])
+            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
+            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id not in ('done','cancel'))
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
             for quant_kiosque in stock_quant_kiosque_ids:
