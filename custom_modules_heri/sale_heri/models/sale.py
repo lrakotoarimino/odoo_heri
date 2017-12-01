@@ -19,6 +19,9 @@ class SaleHeri(models.Model):
     @api.model
     def create(self, vals):
         res = super(SaleHeri, self).create(vals)
+        if self.facturation_type != 'facturation_redevance':
+            if not vals.get('order_line',False):
+                    raise UserError('Veuillez renseigner les lignes de la commande.')
         vals['is_create'] = True
         return res
     #champ pour recupérer le kiosque
