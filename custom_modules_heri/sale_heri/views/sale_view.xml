@@ -291,8 +291,8 @@
 		    		<button name="action_invoice_proforma2" invisible="1" type="object" states="draft" string="PRO-FORMA" groups="account.group_proforma_invoices"/>
 		    	</xpath>
 		    	<xpath expr="//field[@name='state']" position="before">
-		    		<button name="action_aviser_callcenter" string="SMS à envoyer" attrs="{'invisible': ['|',('state', 'not in', ('draft'))]}" groups="purchase_heri.group_finance_heri" type="object" class="oe_highlight" />
-		    		<button name="action_envoi_sms" type="object" string="SMS envoyé" attrs="{'invisible': ['|',('state', 'not in', ('attente_envoi_sms'))]}" groups="purchase_heri.group_call_center_heri" class="oe_highlight" />
+		    		<button name="action_aviser_callcenter" string="SMS à envoyer" attrs="{'invisible': [('state', 'not in', ('draft'))]}" groups="purchase_heri.group_finance_heri" type="object" class="oe_highlight" />
+		    		<button name="action_envoi_sms" string="SMS envoyé" attrs="{'invisible': [('state', 'not in', ('attente_envoi_sms'))]}" groups="purchase_heri.group_call_center_heri" type="object" class="oe_highlight" />
 		    	</xpath>
 			</field>
 		</record>

@@ -488,9 +488,9 @@ class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
      
     date_arrivee = fields.Datetime(string='Date d\'arrivée')
-    nbre_jour_detention = fields.Float(string='Nombre de jour de l\'effet', default=0.0)
+    nbre_jour_detention = fields.Float(string='Durée', default=0.0)
     qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
-    qte_detenu_par_kiosque = fields.Float(compute="onchange_prod_id",string='Quantité detenu par le kiosque', readonly=True)
+    qte_detenu_par_kiosque = fields.Float(compute="onchange_prod_id",string='Quantité detenue par le kiosque', readonly=True)
 
     qte_article = fields.Float(string='Quantité de l\'article', readonly=True)
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
@@ -648,42 +648,6 @@ class SaleOrderLineHeri(models.Model):
             }     
             breq_lines = breq_line.create(vals)
         return True
-     
-class AccountInvoiceHeri(models.Model):
-    _inherit = "account.invoice"
-    
-    state = fields.Selection([
-            ('draft','Draft'),
-            ('proforma', 'Pro-forma'),
-            ('proforma2', 'Pro-forma'),
-            ('attente_envoi_sms', 'Attente d\'envoi SMS'),
-            ('pour_visa','Visa'),
-            ('open', 'Open'),
-            ('paid', 'Paid'),
-            ('cancel', 'Cancelled'),
-        ], string='Status', index=True, readonly=True, default='draft',
-        track_visibility='onchange', copy=False,
-        help=" * The 'Draft' status is used when a user is encoding a new and unconfirmed Invoice.\n"
-             " * The 'Pro-forma' status is used when the invoice does not have an invoice number.\n"
-             " * The 'Open' status is used when user creates invoice, an invoice number is generated. It stays in the open status till the user pays the invoice.\n"
-             " * The 'Paid' status is set automatically when the invoice is paid. Its related journal entries may or may not be reconciled.\n"
-             " * The 'Cancelled' status is used when user cancel invoice.")
-
-    def action_aviser_callcenter(self):
-        self.write({'state':'attente_envoi_sms'})
-    def action_envoi_sms(self):
-        to_open_invoices = self.filtered(lambda inv: inv.state != 'open')
-        if to_open_invoices.filtered(lambda inv: inv.state not in ['proforma2', 'draft', 'attente_envoi_sms']):
-            raise UserError(_("Invoice must be in draft or Pro-forma state in order to validate it."))
-        to_open_invoices.action_date_assign()
-        to_open_invoices.action_move_create()
-        to_open_invoices.invoice_validate()
-        self.write({'state':'open'})
-    def action_pour_visa(self):
-        self.action_invoice_open()
-        self.write({'state':'open'})
-    def imprimer_facture_redevance_duplicata(self):
-        self.print_duplicata()
     
 class SaleAdvancePaymentInvHeri(models.TransientModel):
     _inherit = "sale.advance.payment.inv"

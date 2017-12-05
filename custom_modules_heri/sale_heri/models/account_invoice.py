@@ -11,7 +11,8 @@ class AccountInvoiceHeri(models.Model):
             ('proforma', 'Pro-forma'),
             ('proforma2', 'Pro-forma'),
             ('attente_envoi_sms', 'Attente d\'envoi SMS'),
-            ('open', 'Ouvert'),
+            ('pour_visa','Visa'),
+            ('open', 'Open'),
             ('paid', 'Paid'),
             ('cancel', 'Cancelled'),
         ], string='Status', index=True, readonly=True, default='draft',
@@ -24,11 +25,30 @@ class AccountInvoiceHeri(models.Model):
 
     def action_aviser_callcenter(self):
         self.write({'state':'attente_envoi_sms'})
+    
     def action_envoi_sms(self):
         self.write({'state':'open'})
+    
     def action_pour_visa(self):
         self.action_invoice_open()
         self.write({'state':'open'})
+    
+    def action_envoi_sms(self):
+#         to_open_invoices = self.filtered(lambda inv: inv.state != 'open')
+#         if to_open_invoices.filtered(lambda inv: inv.state not in ['proforma2', 'draft', 'attente_envoi_sms']):
+#             raise UserError(_("Invoice must be in draft or Pro-forma state in order to validate it."))
+#         to_open_invoices.action_date_assign()
+#         to_open_invoices.action_move_create()
+#         to_open_invoices.invoice_validate()
+#         self.write({'state':'open'})
+    
+        # lots of duplicate calls to action_invoice_open, so we remove those already open
+        to_open_invoices = self.filtered(lambda inv: inv.state != 'open')
+        to_open_invoices.write({'state':'draft'})
+        return self.action_invoice_open()
+
+    def imprimer_facture_redevance_duplicata(self):
+        self.print_duplicata()
             
     def print_duplicata(self):
         return self.env["report"].get_action(self, 'account.account_invoice_report_duplicate_main')
