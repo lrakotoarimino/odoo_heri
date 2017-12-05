@@ -443,12 +443,13 @@ class SaleHeri(models.Model):
     @api.multi
     def _compute_facture_impayee(self):
         for order in self:
-            facture_impayee = order.env['account.invoice'].search([('partner_id','=',order.partner_id.id),('state','!=','paid')])
+            facture_impayee = order.env['account.invoice'].search([('partner_id','=',order.partner_id.id),('state','not in',('paid','cancel'))])
             if facture_impayee:
                 order.impayee_count = len(facture_impayee)
     @api.multi
     def action_impayee_facture(self):
-        action = self.env.ref('account.action_invoice_tree1').read()[0]
+        action = self.env.ref('sale_heri.action_sale_heri_lie_facture').read()[0]
+        action['domain'] = [('partner_id', '=', self.partner_id.id),('state','not in',('paid','cancel'))]
         return action
                 
     @api.multi
@@ -480,8 +481,8 @@ class SaleHeri(models.Model):
                 if line.product_uom_qty <= 0.0:
                     raise UserError("la quantité demandée doit être une valeur positive.")
 
-                order._create_breq_stock()
-                order.write({'state':'breq_stock'}) 
+            order._create_breq_stock()
+            order.write({'state':'breq_stock'}) 
      
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
@@ -561,16 +562,17 @@ class SaleOrderLineHeri(models.Model):
  
     @api.onchange('product_id')
     def onchange_prod_id(self):
-        if self.order_id.facturation_type == 'facturation_mat_mauvais_etat':
-            location_src_id = self.order_id.kiosque_id
-        else:
-            location_src_id = self.location_id
+        for order in self:
+            if order.order_id.facturation_type == 'facturation_mat_mauvais_etat' and order.order_id.facturation_type == 'facturation_entrepreneurs':
+                location_src_emp_id = order.location_kiosque_id
+            else:
+                location_src_emp_id = order.location_id
+            
         for line in self:
             if not line.location_id and line.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
                 raise UserError("Magasin d'origine ne doit pas être vide")
-            #line.qte_prevu = line.product_id.virtual_available
-            
-            location_src_id = line.location_id
+
+            location_src_id = location_src_emp_id
             location_kiosque_id = line.location_kiosque_id
             total_qty_available = 0.0
             total_qty_available_kiosque = 0.0
@@ -588,7 +590,7 @@ class SaleOrderLineHeri(models.Model):
                                                                    ('product_id','=', line.product_id.id)
                                                                    ])
             total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
-            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id not in ('done','cancel'))
+            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id.state not in ('done','cancel'))
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
             for quant_kiosque in stock_quant_kiosque_ids:

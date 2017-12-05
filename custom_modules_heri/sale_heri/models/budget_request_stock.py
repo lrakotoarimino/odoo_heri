@@ -14,14 +14,6 @@ from odoo.tools import float_is_zero
 class BreqStockHeri(models.Model):
     _inherit = "purchase.order"
     
-    @api.model
-    def create(self, values):
-        order = super(BreqStockHeri,self).create(values)
-        if not values.get('is_breq_id_sale',False):
-            if not values['order_line']:
-                raise UserError('Veuillez renseigner les lignes de la commande.')
-        return order 
-    
     breq_id_sale = fields.Many2one("sale.order")
     is_facture_comptabilise = fields.Boolean('Est comptabilise',compute="_compute_all_comptabilise")
     kiosque_id = fields.Many2one('stock.location', string='Kiosque Client') 
@@ -74,7 +66,7 @@ class BreqStockHeri(models.Model):
                         'is_bs': True,
                         'mouvement_type' : order.mouvement_type,
                         }
-            if order.facturation_type == 'facturation_heri_entrepreneurs' or order.facturation_type == 'facturation_entrepreneurs' :
+            if order.facturation_type == 'facturation_heri_entrepreneurs':
                 vals = {
                         'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
                         'partner_id': order.partner_id.id,
@@ -93,7 +85,7 @@ class BreqStockHeri(models.Model):
             picking_type_id = order.env.ref('purchase_heri.type_preparation_heri').id
             move = StockPickingHeri.create(vals)
             move_lines = order.order_line._create_stock_moves(move)
-            if order.facturation_type == 'facturation_heri_entrepreneurs' or order.facturation_type == 'facturation_entrepreneurs' :
+            if order.facturation_type == 'facturation_heri_entrepreneurs':
                 res = re.findall("\d+", move.name)
                 longeur_res = len(res)
                 res_final = res[longeur_res-1]
@@ -110,14 +102,15 @@ class BreqStockHeri(models.Model):
     
     def create_picking_bs_et_bci(self):
         StockPickingHeri = self.env['stock.picking']
+        move_lines = self.env['stock.move']
         for order in self:
-                vals = {
+                vals_bs = {
     
                         'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
                         'partner_id': order.partner_id.id,
                         'date': order.date_order,
                         'origin': order.breq_id_sale.name,
-                        'location_dest_id': order.kiosque_id.id,
+                        'location_dest_id': order.env.ref('purchase_heri.stock_location_virtual_heri').id,
                         'location_id': order.location_id.id,
                         'company_id': order.company_id.id,
                         'move_type': 'direct',
@@ -129,11 +122,54 @@ class BreqStockHeri(models.Model):
                         'is_bs': True,
                         'mouvement_type' : order.mouvement_type,
                         }
-                move = StockPickingHeri.create(vals)
-                move_lines = order.order_line._create_stock_moves2(move)
-                move_lines = move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
-                move_lines.action_assign()
-                move.aviser_magasinier_tiers()
+                vals_bci = {
+                        'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                        'partner_id': order.partner_id.id,
+                        'date': order.date_order,
+                        'origin': order.breq_id_sale.name,
+                        'location_dest_id':  order.env.ref('purchase_heri.stock_location_virtual_heri').id,
+                        'location_id': order.location_id.id,
+                        'company_id': order.company_id.id,
+                        'move_type': 'direct',
+                        'employee_id': order.employee_id.id,
+                        'breq_id' : order.id,
+                        'section' : order.section,
+                        'amount_untaxed' : order.amount_untaxed,
+                        'mouvement_type' :'bci',
+                        }
+                #création bci
+                bci = StockPickingHeri.create(vals_bci)
+                res = re.findall("\d+", bci.name)
+                longeur_res = len(res)
+                res_final = res[longeur_res-1]
+                bci_name = "BCI" + "".join(res_final)
+                bci.update({'name': bci_name})
+                for line in order.order_line:
+                    template = {
+                                'name': line.name or '',
+                                'product_id': line.product_id.id,
+                                'product_uom': line.product_uom.id,
+                                'product_uom_qty': line.product_qty,
+                                'price_unit': line.price_unit,
+                                'location_dest_id': order.kiosque_id.id,
+                                'location_id': order.location_id.id,
+                                'picking_id': bci.id,
+                                'company_id': order.company_id.id,
+                                'procurement_id': False,
+                                'origin': order.name,
+                                }
+                    move_lines.create(template)
+                    move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
+                    move_lines.action_assign()
+                bci.aviser_magasinier_tiers()
+                #création bs
+                bs = StockPickingHeri.create(vals_bs)
+                move_test = order.order_line._create_stock_moves(bs)
+                move_test = move_test.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
+                move_test.action_assign()
+                bs.aviser_magasinier_tiers()
+        return True       
+        
     #test
     state = fields.Selection([
         ('nouveau', 'Nouveau'),
@@ -184,8 +220,7 @@ class BreqStockHeri(models.Model):
         self.write({'state':'test'})  
     def generer_bci_et_bs(self):
         for order in self :
-            order.create_picking_bs_et_bci()
-            order._create_picking_sale()    
+            order.create_picking_bs_et_bci()  
             order.write({'state':'bonci_et_bons'}) 
             
     def envoyer_pour_la_preparation(self):
@@ -359,62 +394,3 @@ class BreqStockHeri(models.Model):
         action = self.env.ref('sale_heri.action_bon_de_cession_lie_facture_entrepreneurs_1')
         result = action.read()[0]
         return result  
-
-class BreqstockLine(models.Model):
-    _inherit='purchase.order.line'
-    
-    @api.multi
-    def _create_stock_moves2(self, picking):
-        moves = self.env['stock.move']
-        done = self.env['stock.move'].browse()
-        for line in self:
-            if line.product_id.type not in ['product', 'consu', 'service']:
-                continue
-            qty = 0.0
-            price_unit = line._get_stock_move_price_unit()
-            for move in line.move_ids.filtered(lambda x: x.state != 'cancel'):
-                qty += move.product_qty
-            template = {
-                'name': line.name or '',
-                'product_id': line.product_id.id,
-                'product_uom': line.product_uom.id,
-                'product_uom_qty': line.product_qty,
-                'date': line.order_id.date_order,
-                'date_expected': line.date_planned,
-                'location_dest_id': line.env.ref('purchase_heri.stock_location_virtual_heri').id,
-                'location_id': line.order_id.location_id.id,
-                'picking_id': picking.id,
-                'partner_id': line.order_id.dest_address_id.id,
-                'move_dest_id': False,
-                'state': 'draft',
-                'purchase_line_id': line.id,
-                'company_id': line.order_id.company_id.id,
-                'price_unit': price_unit,
-                'picking_type_id': line.env.ref('purchase_heri.type_preparation_heri').id,
-                'group_id': line.order_id.group_id.id,
-                'procurement_id': False,
-                'origin': line.order_id.name,
-                'route_ids': line.order_id.picking_type_id.warehouse_id and [(6, 0, [x.id for x in line.order_id.picking_type_id.warehouse_id.route_ids])] or [],
-                'warehouse_id':line.order_id.picking_type_id.warehouse_id.id,
-            }
-            
-            diff_quantity = line.product_qty - qty
-            for procurement in line.procurement_ids:
-                # If the procurement has some moves already, we should deduct their quantity
-                sum_existing_moves = sum(x.product_qty for x in procurement.move_ids if x.state != 'cancel')
-                existing_proc_qty = procurement.product_id.uom_id._compute_quantity(sum_existing_moves, procurement.product_uom)
-                procurement_qty = procurement.product_uom._compute_quantity(procurement.product_qty, line.product_uom) - existing_proc_qty
-                if float_compare(procurement_qty, 0.0, precision_rounding=procurement.product_uom.rounding) > 0 and float_compare(diff_quantity, 0.0, precision_rounding=line.product_uom.rounding) > 0:
-                    tmp = template.copy()
-                    tmp.update({
-                        'product_uom_qty': min(procurement_qty, diff_quantity),
-                        'move_dest_id': procurement.move_dest_id.id,  #move destination is same as procurement destination
-                        'procurement_id': procurement.id,
-                        'propagate': procurement.rule_id.propagate,
-                    })
-                    done += moves.create(tmp)
-                    diff_quantity -= min(procurement_qty, diff_quantity)
-            if float_compare(diff_quantity, 0.0, precision_rounding=line.product_uom.rounding) > 0:
-                template['product_uom_qty'] = diff_quantity
-                done += moves.create(template)
-        return done

@@ -121,8 +121,11 @@
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
 					<attribute name="invisible">1</attribute>
 				</xpath>
+				<xpath expr="//field[@name='min_date']" position="after">
+					<field name="date_arrivee_reelle" attrs="{'invisible': [('mouvement_type', '!=', 'bs')]}"/>
+				</xpath>
 				<xpath expr="//field[@name='location_id']" position="replace">
-					<field name="location_id" attrs="{'readonly': [('mouvement_type','in',('bs'))]}" groups="purchase_heri.attente_logistique" string="Magasin d'Origine"/>
+					<field name="location_id" attrs="{'readonly': [('mouvement_type','in',('bs'))]}" string="Magasin d'Origine"/>
 				</xpath>
 				<xpath expr="//button[@name='action_cancel']" position="attributes">
 					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
@@ -141,7 +144,7 @@
 		<record model="ir.actions.act_window" id="action_bon_de_cession_lie_facture_entrepreneurs_1">
 	       	<field name="name">Bon de cession interne et bon de sortie lié</field>
 	       	<field name="res_model">stock.picking</field>
-	       	<field name="domain">['&amp;',('breq_id','=',active_id),('state','!=','draft')]</field>  	
+	       	<field name="domain">[('breq_id','=',active_id)]</field>  	
 	       	<field name="view_type">form</field>
 	       	<field name="view_mode">tree,form</field>
 	   	</record> 
