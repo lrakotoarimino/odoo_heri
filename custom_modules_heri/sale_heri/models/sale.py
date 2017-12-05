@@ -157,7 +157,16 @@ class SaleHeri(models.Model):
             self.partner_id = partner_id.id
         else: 
             self.partner_id = False
-            
+    
+    @api.onchange('partner_id')
+    def onchange_partner_id_kiosque_id(self):
+        if not self.partner_id:
+            self.kiosque_id = False
+            return
+        
+        if self.partner_id.kiosque_id:
+            self.kiosque_id = self.partner_id.kiosque_id.id
+                
     @api.multi       
     def action_generer_redevance(self):
         quant_obj = self.env['stock.quant']
