@@ -293,7 +293,7 @@
 		<!-- End action ouvrir Breq stock lie pour les materiels retournes en mauvais etat lors d'une demande de retour de materiel par l'entrepreneur -->
 		
 		<menuitem 
-		    id="menu_ajout_materiel_entrepreneur" 
+		    id="menu_mauvais_etat_materiel_entrepreneur" 
 		    name="Demande de retour de matériels" 
 		    parent="sales_team.menu_sales" 
 		    action="action_demande_retour_materiel" 

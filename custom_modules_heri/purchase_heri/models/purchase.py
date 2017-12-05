@@ -22,15 +22,32 @@ class PurchaseHeri(models.Model):
     def create(self, values):
         order = super(PurchaseHeri,self).create(values)
         if not values.get('is_breq_id_sale',False):
-                                                    #S'il ne provient pas d'un BCI dans la facturation des materiels en mauvais etat
+            #S'il ne provient pas d'un BCI dans la facturation des materiels en mauvais etat
             if not values.get('order_line',False) and not values.get('is_from_bci',False):
                 raise UserError('Veuillez renseigner les lignes de la commande.')
         
-        #A executer dans un breq stock uniquement
-        if order.is_breq_stock and not values.get('is_from_bci',False):
-            order._create_picking2()
         return order 
     
+    @api.model
+    def _prepare_picking(self):
+        res = super(PurchaseHeri,self)._prepare_picking()
+        
+        #Modifier type de preparation
+        if self.is_breq_stock :
+            picking_type_id = self.env.ref('purchase_heri.type_preparation_heri')
+            picking_type_id.write({'default_location_src_id': self.location_id.id})
+            
+            res['picking_type_id'] = picking_type_id.id
+            res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
+            res['location_id'] = self.location_id.id
+            res['move_type'] = 'direct'
+            res['employee_id'] = self.employee_id.id
+            res['breq_id'] = self.id
+            res['amount_untaxed'] = self.amount_untaxed
+            res['is_bs'] = True
+            res['mouvement_type'] = self.mouvement_type
+        
+        return res
     #creation bon de sortie (budget request stock)
     @api.multi
     def _create_picking2(self):
@@ -40,6 +57,7 @@ class PurchaseHeri(models.Model):
             picking_type_id = order.env.ref('purchase_heri.type_preparation_heri')
             picking_type_id.write({'default_location_src_id': order.location_id.id})
             
+            self._prepare_picking()
             vals = {
                     'picking_type_id': picking_type_id.id,
                     'partner_id': order.partner_id.id,
@@ -58,6 +76,8 @@ class PurchaseHeri(models.Model):
                     }
             picking_id = picking_obj.create(vals)
             move_lines = order.order_line._create_stock_moves(picking_id)
+            if not move_lines:
+                raise UserError('Mouvement de stock non créé')
             move_lines = move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
             move_lines.action_assign()
 
@@ -523,9 +543,12 @@ class PurchaseHeri(models.Model):
     def action_br_lie_draft(self):
         self.write({'state':'br_lie', 'change_state_date': fields.Datetime.now()})
     
-    #Breq stock
+    #Fonction pour budget request stock
+    @api.multi
     def creer_bs(self):
-        self.write({'state':'bs', 'change_state_date': fields.Datetime.now()})
+        for order in self:
+            order._create_picking()
+            order.write({'state':'bs', 'change_state_date': fields.Datetime.now()})
 
     def envoyer_a_approuver(self):
         self.write({'state':'a_approuver', 'change_state_date': fields.Datetime.now()})

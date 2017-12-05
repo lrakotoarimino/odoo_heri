@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 	<data>
-         
-    	
         <record id="res_calendar_form_view" model="ir.ui.view">
             <field name="name">res.calendar.form</field>
             <field name="model">res.calendar</field>
@@ -25,7 +23,7 @@
 	        <field name="name">res.calendar.tree</field>
 	        <field name="model">res.calendar</field>
 	        <field name="arch" type="xml">
-	            <tree>
+	            <tree editable="bottom">
 	                <field name="name"/>
 	            	<field name="last_month"/>
 	            	<field name="current_month"/>

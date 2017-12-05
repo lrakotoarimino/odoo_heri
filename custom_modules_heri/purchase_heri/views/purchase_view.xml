@@ -503,6 +503,7 @@
                         <page string="Deliveries &amp; Invoices">
                             <group>
                                 <group>
+                                    <label for="date_planned" invisible="1"/>
                                     <div>
                                         <field name="date_planned" required="1" attrs="{'readonly': [('state', 'not in', ('draft', 'sent'))]}" invisible="1"/>
                                         <button name="action_set_date_planned" type="object"
