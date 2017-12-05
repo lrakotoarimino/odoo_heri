@@ -22,6 +22,10 @@
 				<xpath expr="//button[@name='action_confirm'][2]" position="replace">
 					<button name="action_confirm" invisible="1"/>
 				</xpath>
+				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d'][2]" position="attributes">
+					<attribute name="invisible">1</attribute>
+		    		<attribute name="attrs"></attribute>
+				</xpath>
 			</field>
 		</record>
 		
@@ -84,6 +88,7 @@
 				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d']" position="attributes">
 		    		<attribute name="string">Générer une facture SMS</attribute>
 		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
+		    		<attribute name="attrs">{'invisible': [('state', '!=', 'verif_pec')]}</attribute>
 		    	</xpath>
 		    	<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="before">
 					<field name="qte_article"/>
@@ -156,13 +161,6 @@
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
 			      	    groups="purchase_heri.group_dg_heri"
 			      	 />
-					<button 
-			      	    string="Generer la facture SMS" 
-			      	    name="action_generation_facture_sms"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('verif_pec'))]}"
-			      	    groups="purchase_heri.group_finance_heri"
-			      	 />
 			      	 <button 
 			      	    string="A revoir" 
 			      	    name="action_annul_verif_pec"
@@ -172,10 +170,6 @@
 			      	 <!--End bouton pour le workflow facturation redevance -->
 			      	 
 				</xpath>
-				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d'][1]" position="attributes">
-					<attributes name="string">Generer Facture</attributes>
-					<attributes name="attrs">{'invisible': ['|',('state', 'not in', ('verif_pec','correction_et_motif_finance'))]}</attributes>
-                </xpath>
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
 				 	<button type="object"
 				 				string="Facture d'Avoir"

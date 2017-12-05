@@ -62,16 +62,18 @@
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
 				 	<button type="object"
 	                            name="action_bci_lie_materiel_bon_etat"
-	                            attrs="{'invisible': ['|',('state', 'not in', ('materiel_bon_etat'))]}"
+	                            attrs="{'invisible': [('state', 'not in', ('materiel_bon_etat'))]}"
 	                            class="oe_stat_button"
-	                            icon="fa-check">
+	                            icon="fa-check"
+	                            groups="purchase_heri.group_magasinier_heri">
 	                            <field name="bci_count"  widget="statinfo" string="Bon de cession interne" help="Bon de cession interne lié"/>
 	                </button>
 	                <button type="object"
 	                            name="action_bci_lie_materiel_mauvais_etat"
-	                            attrs="{'invisible': ['|',('state', 'not in', ('materiel_mauvais_etat'))]}"
+	                            attrs="{'invisible': [('state', 'not in', ('materiel_mauvais_etat'))]}"
 	                            class="oe_stat_button"
-	                            icon="fa-close">
+	                            icon="fa-close"
+	                            groups="purchase_heri.group_logistique_heri">
 	                            <field name="bci_count"  widget="statinfo" string="Bon de cession interne" help="Bon de cession interne lié"/>
 	                </button>
                 </xpath>
@@ -127,7 +129,7 @@
 		<!-- Fin demande de retour de materiels par les entrepreneurs form -->
 		
 		<!-- Ouvrir BCI lie pour les materiels retournes lors d'une demande de retour de materiel par l'entrepreneur -->
-		<record id="bci_retour_materiel_form" model="ir.ui.view">
+		<record id="bci_retour_materiel_bon_etat_form" model="ir.ui.view">
             <field name="name">bon.cession.interne.form</field>
             <field name="model">stock.picking</field>
             <field name="mode">primary</field>
@@ -212,10 +214,56 @@
 	   	<record id="action_bci_retour_mat_bon_etat_lie_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="bci_retour_materiel_form"/>
+            <field name="view_id" ref="bci_retour_materiel_bon_etat_form"/>
             <field name="act_window_id" ref="action_bci_retour_mat_bon_etat"/>
 		</record>
 		<!-- End action ouvrir BCI lie pour les materiels retournes en bon etat lors d'une demande de retour de materiel par l'entrepreneur -->
+		
+		<record id="bci_retour_materiel_mauvais_etat_form" model="ir.ui.view">
+            <field name="name">bon.cession.interne.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="arch" type="xml">
+            	<field name="state" position="replace">
+				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,done" />
+				</field>
+				<xpath expr="//field[@name='picking_type_id']" position="attributes">
+				    <attribute name="domain">[('code','=','internal')]</attribute>
+				</xpath> 
+			    
+ 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
+					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
+					<attribute name="attrs">{'invisible': [('state','not in',('attente_magasinier'))]}</attribute>
+				</xpath>
+				<xpath expr="//button[@name='action_cancel']" position="attributes">
+					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
+					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>
+				</xpath>
+				<xpath expr="//header" position="inside">
+				    <button name="action_aviser_logistique" string="Envoyer au logistique" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('draft')),('mouvement_type','not in',('bci'))]}" type="object"/>
+				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_logistique')), ('mouvement_type','not in',('bci'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
+				</xpath>
+				
+				<field name="location_dest_id" position="attributes">
+                    <attribute name="domain">[('is_kiosque','=',False)]</attribute>
+                    <attribute name="readonly">1</attribute>
+				</field>
+				<field name="location_id" position="attributes">
+				    <attribute name="domain">[('is_kiosque','=',True)]</attribute>
+				</field>
+				<xpath expr="//div[@name='button_box']/button[@name='action_see_move_scrap']" position="after">
+					<button type="object"
+	                            name="action_breq_stock_lie_materiel_mauvais_etat"
+	                            attrs="{'invisible': ['|',('state', 'not in', ('done'))]}"
+	                            class="oe_stat_button"
+	                            icon="fa-folder">
+	                            <field name="breq_stock_count"  widget="statinfo" string="Budget Request Stock" help="Budget Request Stock lié"/>
+	                </button>
+ 				</xpath>
+            </field>
+        </record>
+		
 		<!-- Action ouvrir BCI lie pour les materiels retournes en mauvais etat lors d'une demande de retour de materiel par l'entrepreneur -->
         <record model="ir.actions.act_window" id="action_bci_retour_mat_mauvais_etat">
 	       	<field name="name">Bon de cession interne</field>
@@ -236,7 +284,7 @@
 	   	<record id="action_bci_retour_mat_mauvais_etat_lie_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="bci_retour_materiel_form"/>
+            <field name="view_id" ref="bci_retour_materiel_mauvais_etat_form"/>
             <field name="act_window_id" ref="action_bci_retour_mat_mauvais_etat"/>
 		</record>
 		<!-- End action ouvrir BCI lie pour les materiels retournes en mauvais etat lors d'une demande de retour de materiel par l'entrepreneur -->

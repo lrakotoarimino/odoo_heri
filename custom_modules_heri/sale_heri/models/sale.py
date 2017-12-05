@@ -71,7 +71,7 @@ class SaleHeri(models.Model):
 
             line_invoice_status = [line.invoice_status for line in order.order_line]
 
-            if order.state not in ('draft','sale', 'done','breq_stock','capacite_ok'):
+            if order.state not in ('draft','sale', 'done','breq_stock','capacite_ok','verif_pec'):
                 invoice_status = 'no'
             elif any(invoice_status == 'to invoice' for invoice_status in line_invoice_status):
                 invoice_status = 'to invoice'
@@ -541,11 +541,11 @@ class SaleOrderLineHeri(models.Model):
         """
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for line in self:
-            if line.state not in ('sale','draft', 'done','breq_stock','capacite_ok'):
+            if line.state not in ('sale','draft', 'done','breq_stock','capacite_ok','verif_pec'):
                 line.invoice_status = 'no'
             elif not float_is_zero(line.qty_to_invoice, precision_digits=precision):
                 line.invoice_status = 'to invoice'
-            elif line.state in ('sale','draft','breq_stock','capacite_ok') and line.product_id.invoice_policy == 'order' and\
+            elif line.state in ('sale','draft','breq_stock','capacite_ok','verif_pec') and line.product_id.invoice_policy == 'order' and\
                     float_compare(line.qty_delivered, line.product_uom_qty, precision_digits=precision) == 1:
                 line.invoice_status = 'upselling'
             elif float_compare(line.qty_invoiced, line.product_uom_qty, precision_digits=precision) >= 0:
@@ -560,7 +560,7 @@ class SaleOrderLineHeri(models.Model):
         calculated from the ordered quantity. Otherwise, the quantity delivered is used.
         """
         for line in self:
-            if line.order_id.state in ['draft','sale', 'done','breq_stock','capacite_ok']:
+            if line.order_id.state in ['draft','sale', 'done','breq_stock','capacite_ok','verif_pec']:
                 if line.product_id.invoice_policy == 'order':
                     line.qty_to_invoice = line.product_uom_qty - line.qty_invoiced
                 else:

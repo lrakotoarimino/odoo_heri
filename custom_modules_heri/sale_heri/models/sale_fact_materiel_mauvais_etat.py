@@ -16,12 +16,12 @@ class SaleHeri(models.Model):
     _inherit = "sale.order"
     _description = "Facturation des materiels retournes en mauvais etat"
     
-    bci_count = fields.Integer(compute='_compute_bci_lie') 
+    bci_count = fields.Integer(compute='_compute_bci_lie', string="Nombre de bci lié") 
     
     @api.multi
     def _compute_bci_lie(self):
         for order in self:
-            bci_child= order.env['stock.picking'].search([('sale_order_id','=',order.id),('is_bci_sale_id','=',True)],limit=1)
+            bci_child= order.env['stock.picking'].search([('sale_order_id','=',order.id),('mouvement_type','=','bci')],limit=1)
             if bci_child:
                 order.bci_count = len(bci_child)
     
@@ -104,14 +104,13 @@ class SaleHeri(models.Model):
  
     #action ouvrir BCI pour retourner les materiels en bon etat lors d'une demande de retour
     @api.multi
-    def action_retour_mat_bci_lie(self):
+    def action_bci_lie_materiel_bon_etat(self):
         action = self.env.ref('sale_heri.action_bci_retour_mat_bon_etat')
         result = action.read()[0]
         return result
     #action ouvrir BCI pour retourner les materiels en mauvais etat lors d'une demande de retour
     @api.multi
     def action_bci_lie_materiel_mauvais_etat(self):
-        self.action_retour_mat_bci_lie()
         action = self.env.ref('sale_heri.action_bci_retour_mat_mauvais_etat')
         result = action.read()[0]
         return result
