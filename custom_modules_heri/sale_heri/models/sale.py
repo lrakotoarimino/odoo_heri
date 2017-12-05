@@ -204,7 +204,7 @@ class SaleHeri(models.Model):
                 
                 #date aujourd'hui <= Fin date calendrier    
                 elif datetime.now() <= date_end:
-                    raise UserError(u'ERREUR 1 : La date d\'etablissement de la facture redevance serait après le %s du mois en cours ' % (date_end))
+                    raise UserError(u'ERREUR 1 : La date d\'établissement de la facture redevance serait après le %s du mois en cours ' % (date_end))
                 
                 elif date_contrat >= date_end:
                     raise UserError(u'ERREUR 2 : La date du contrat devrait être compris dans le calendrier de facturation.')
