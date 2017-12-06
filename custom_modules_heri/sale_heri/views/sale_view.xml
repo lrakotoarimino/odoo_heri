@@ -90,6 +90,15 @@
 		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
 		    		<attribute name="attrs">{'invisible': [('state', '!=', 'verif_pec')]}</attribute>
 		    	</xpath>
+		    	<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="before">
+			      <button name="action_impayee_facture"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            >
+                            <field name="impayee_count" widget="statinfo" string="Impayées"/>
+                  </button>
+                </xpath>
 		    	<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="before">
 					<field name="qte_article"/>
 				</xpath>

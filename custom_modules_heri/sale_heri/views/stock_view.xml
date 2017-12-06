@@ -74,6 +74,12 @@
 				<xpath expr="//field[@name='location_id']" position="replace">
 					<field name="location_id" string="Magasin d'Origine"/>
 				</xpath>
+				<xpath expr="//page[1]" position="attributes">
+					<attribute name="invisible">1</attribute>
+				</xpath>
+				<xpath expr="//field[@name='pack_operation_product_ids']" position="attributes">
+						<attributes name="invisible">1</attributes>
+                </xpath>
 				<xpath expr="//button[@name='action_cancel']" position="attributes">
 					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
 					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>

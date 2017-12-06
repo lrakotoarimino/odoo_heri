@@ -351,7 +351,7 @@ class SaleHeri(models.Model):
     def action_solvabilite_ok(self):
         self.write({'state':'solvabilite_ok'})
     def action_capacite_ok(self):
-        self._create_breq_stock()
+        self.generation_breq_stock()
         self.write({'state':'capacite_ok'})
     def action_preparation_materiel_ok(self):
         self.write({'state':'preparation_test'})
@@ -570,18 +570,12 @@ class SaleOrderLineHeri(models.Model):
 
  
     @api.onchange('product_id')
-    def onchange_prod_id(self):
-        for order in self:
-            if order.order_id.facturation_type == 'facturation_mat_mauvais_etat' and order.order_id.facturation_type == 'facturation_entrepreneurs':
-                location_src_emp_id = order.location_kiosque_id
-            else:
-                location_src_emp_id = order.location_id
-            
+    def onchange_prod_id(self):          
         for line in self:
-            if not line.location_id and line.order_id.facturation_type in ('facturation_tiers','materiel_loue'):
+            if not line.location_id and line.order_id.facturation_type in ('facturation_tiers','materiel_loue','facturation_entrepreneurs'):
                 raise UserError("Magasin d'origine ne doit pas être vide")
 
-            location_src_id = location_src_emp_id
+            location_src_id = line.location_id
             location_kiosque_id = line.location_kiosque_id
             total_qty_available = 0.0
             total_qty_available_kiosque = 0.0
@@ -595,9 +589,9 @@ class SaleOrderLineHeri(models.Model):
                                                                ])
             #recuperer tous les articles reserves dans bci
             bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
-                                                                   ('picking_id.state','not in', ('done','cancel')), \
-                                                                   ('product_id','=', line.product_id.id)
-                                                                   ])
+                                                               ('picking_id.state','not in', ('done','cancel')), \
+                                                               ('product_id','=', line.product_id.id)
+                                                               ])
             total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
             total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id.state not in ('done','cancel'))
             for quant in stock_quant_ids:
