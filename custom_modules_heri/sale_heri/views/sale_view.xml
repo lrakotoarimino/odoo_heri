@@ -59,8 +59,8 @@
 					<field name="correction_et_motif" attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"/>
 				</xpath>
 				<xpath expr="//field[@name='date_order']" position="after">
-					<field name="date_debut_facturation" readonly="1"/>
-					<field name="date_fin_facturation" readonly="1"/>
+					<field name="date_debut_facturation" attrs="{'required': [('facturation_type', '=', 'facturation_redevance')]}"/>
+					<field name="date_fin_facturation" attrs="{'required': [('facturation_type', '=', 'facturation_redevance')]}"/>
 				</xpath>
 				<xpath expr="//field[@name='state']" position="replace">
 					<field 	name="state"

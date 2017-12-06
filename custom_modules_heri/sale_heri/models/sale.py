@@ -89,23 +89,23 @@ class SaleHeri(models.Model):
             })
             
     def _get_date_debut_facturation(self):
-        if self.facturation_type == 'facturation_redevance':
+        facturation_type = self._context.get('default_facturation_type')
+        if facturation_type == 'facturation_redevance':
             calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
             if not calendar.last_month:
                 return False
-            else:
-                return calendar.last_month
+            return calendar.last_month
     
     def _get_date_fin_facturation(self):
-        if self.facturation_type == 'facturation_redevance':
+        facturation_type = self._context.get('default_facturation_type')
+        if facturation_type == 'facturation_redevance':
             calendar = self.env.ref('sale_heri.calendrier_facturation_redevance')
             if not calendar.current_month:
                 return False
-            else:
-                return calendar.current_month
+            return calendar.current_month
         
-    date_debut_facturation = fields.Datetime(string="Date debut de la facturation", default=_get_date_debut_facturation, help="Date debut de la facturation") 
-    date_fin_facturation = fields.Datetime(string="Date fin de la facturation", default=_get_date_fin_facturation, help="Date fin de la facturation") 
+    date_debut_facturation = fields.Datetime(string="Date debut facturation", default=_get_date_debut_facturation, help="Date debut de la facturation") 
+    date_fin_facturation = fields.Datetime(string="Date fin facturation", default=_get_date_fin_facturation, help="Date fin de la facturation") 
     
     state = fields.Selection([
         ('draft', 'Nouveau'),
@@ -175,148 +175,156 @@ class SaleHeri(models.Model):
             calendar = order.env.ref('sale_heri.calendrier_facturation_redevance')   
             if not calendar.last_month and not calendar.current_month:
                 raise UserError('Veuillez renseigner le calendrier de la facturation !')
-            else:
-                for line in order:
-                    line.order_line.unlink()
-                #implementation frais de base du kiosque par mois
-                order_line = self.env['sale.order.line']
-                product_frais_base_id = order.env.ref('sale_heri.product_frais_base')
-                date_contrat = datetime.strptime(order.kiosque_id.date_contrat, "%Y-%m-%d %H:%M:%S")
-                date_start = datetime.strptime(calendar.last_month, "%Y-%m-%d %H:%M:%S")
-                date_end = datetime.strptime(calendar.current_month, "%Y-%m-%d %H:%M:%S")
-                if not date_contrat:
-                    raise UserError('Veuillez renseigner la date du debut du contrat !')
+            
+            if not order.date_debut_facturation and not order.date_fin_facturation:
+                raise UserError('Veuillez renseigner les dates de facturation !')
+            
+            for line in order:
+                line.order_line.unlink()
+            
+            #implementation frais de base du kiosque par mois
+            order_line = self.env['sale.order.line']
+            product_frais_base_id = order.env.ref('sale_heri.product_frais_base')
+            date_contrat = datetime.strptime(order.kiosque_id.date_contrat, "%Y-%m-%d %H:%M:%S")
+            
+#                 date_start = datetime.strptime(calendar.last_month, "%Y-%m-%d %H:%M:%S")
+#                 date_end = datetime.strptime(calendar.current_month, "%Y-%m-%d %H:%M:%S")
+            
+            date_start = datetime.strptime(order.date_debut_facturation, "%Y-%m-%d %H:%M:%S")
+            date_end = datetime.strptime(order.date_fin_facturation, "%Y-%m-%d %H:%M:%S")
+            if not date_contrat:
+                raise UserError('Veuillez renseigner la date du debut du contrat !')
+            
+            # debut date calendrier < date du contrat < Fin date calendrier et date aujourd'hui >= Fin date calendrier  
+            if date_contrat > date_start and date_contrat < date_end and datetime.now() >= date_end:
+                effet = (date_end - date_contrat).days
+                nbr_jour_frais_base = float(effet)/31
                 
-                # debut date calendrier < date du contrat < Fin date calendrier et date aujourd'hui >= Fin date calendrier  
-                if date_contrat > date_start and date_contrat < date_end and datetime.now() >= date_end:
-                    effet = (date_end - date_contrat).days
-                    nbr_jour_frais_base = float(effet)/31
+            # date du contrat < Debut date calendrier et est une première facture redevance et date aujourd'hui >= Fin date calendrier      
+            elif date_contrat < date_start and order.kiosque_id.premiere_redevance and datetime.now() >= date_end:
+                effet = (date_end - date_start).days
+                nbr_jour_frais_base = float(effet)/31
+            
+            # date du contrat < Debut date calendrier et n'est pas une première facture redevance et date aujourd'hui >= Fin date calendrier    
+            elif date_contrat < date_start and not order.kiosque_id.premiere_redevance and datetime.now() >= date_end:
+                effet = (date_end - date_contrat).days
+                nbr_jour_frais_base = float(effet)/31
+            
+            #date aujourd'hui <= Fin date calendrier    
+            elif datetime.now() <= date_end:
+                raise UserError(u'ERREUR 1 : La date d\'établissement de la facture redevance serait après le %s du mois en cours ' % (date_end))
+            
+            elif date_contrat >= date_end:
+                raise UserError(u'ERREUR 2 : La date du contrat devrait être compris dans le calendrier de facturation.')
+            
+            vals = {
+                'name': 'Frais de base du kiosque ' + order.partner_id.name,
+                'product_id': product_frais_base_id.id,
+                'product_uom': product_frais_base_id.uom_id.id,
+                'qte_article': 1,
+                'product_uom_qty': nbr_jour_frais_base,
+                'order_id': order.id,
+                'price_unit': order.kiosque_id.region_id.frais_base,
+                'date_arrivee': date_contrat,
+                'nbre_jour_detention': nbr_jour_frais_base,
+            }
+            order.order_line.create(vals)
+            stock_quant_ids = quant_obj.search([('location_id','=',order.kiosque_id.id), ('date_arrivee_reelle','!=',False)])
+            
+            #Trier les stock quant par date d'arrivee du materiel
+            #Stocker toutes les dates d'arrivées des materiels du kiosque dans une liste brute
+            in_date_list_brut = []
+            for quant in stock_quant_ids:
+                if quant.date_arrivee_reelle:
+                    in_date_list_brut.append(quant.date_arrivee_reelle)
+                     
+            #Trier ces dates de façon a ce qu'il n'y a plus de redondance
+            in_date_list = []
+            for date_final in in_date_list_brut:
+                if date_final not in in_date_list:
+                    in_date_list.append(date_final) 
+           
+            for date in in_date_list:
+                quants = quant_obj.search(['&', ('date_arrivee_reelle','=',date), ('location_id','=',order.kiosque_id.id)])
+                product_redevance_list = []
+                product_location_list = []
+                for quant in quants:
+                    if quant.product_id not in product_redevance_list and quant.product_id.frais_type == 'redevance':
+                        product_redevance_list.append(quant.product_id)
+                    elif quant.product_id not in product_location_list and quant.product_id.frais_type == 'location':
+                        product_location_list.append(quant.product_id)
+                #Implementation redevance fixe pour les materiels productifs dans les lignes des articles
+                for p in product_redevance_list:
+                    nbre_jour_detention_materiel_prod = 0.0
+                    product_quant = quant_obj.search(['&', ('product_id','=',p.id), '&', ('date_arrivee_reelle','=',date), ('location_id','=',order.kiosque_id.id)])
+                    date_arrivee = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                    if not date_arrivee:
+                        raise UserError(u'ERREUR 3 : Veuillez renseigner la date d\'arrivée du materiel!')
                     
-                # date du contrat < Debut date calendrier et est une première facture redevance et date aujourd'hui >= Fin date calendrier      
-                elif date_contrat < date_start and order.kiosque_id.premiere_redevance and datetime.now() >= date_end:
-                    effet = (date_end - date_start).days
-                    nbr_jour_frais_base = float(effet)/31
-                
-                # date du contrat < Debut date calendrier et n'est pas une première facture redevance et date aujourd'hui >= Fin date calendrier    
-                elif date_contrat < date_start and not order.kiosque_id.premiere_redevance and datetime.now() >= date_end:
-                    effet = (date_end - date_contrat).days
-                    nbr_jour_frais_base = float(effet)/31
-                
-                #date aujourd'hui <= Fin date calendrier    
-                elif datetime.now() <= date_end:
-                    raise UserError(u'ERREUR 1 : La date d\'établissement de la facture redevance serait après le %s du mois en cours ' % (date_end))
-                
-                elif date_contrat >= date_end:
-                    raise UserError(u'ERREUR 2 : La date du contrat devrait être compris dans le calendrier de facturation.')
-                
-                vals = {
-                    'name': 'Frais de base du kiosque ' + order.partner_id.name,
-                    'product_id': product_frais_base_id.id,
-                    'product_uom': product_frais_base_id.uom_id.id,
-                    'qte_article': 1,
-                    'product_uom_qty': nbr_jour_frais_base,
-                    'order_id': order.id,
-                    'price_unit': order.kiosque_id.region_id.frais_base,
-                    'date_arrivee': date_contrat,
-                    'nbre_jour_detention': nbr_jour_frais_base,
-                }
-                order.order_line.create(vals)
-                stock_quant_ids = quant_obj.search([('location_id','=',order.kiosque_id.id), ('date_arrivee_reelle','!=',False)])
-                
-                #Trier les stock quant par date d'arrivee du materiel
-                #Stocker toutes les dates d'arrivées des materiels du kiosque dans une liste brute
-                in_date_list_brut = []
-                for quant in stock_quant_ids:
-                    if quant.date_arrivee_reelle:
-                        in_date_list_brut.append(quant.date_arrivee_reelle)
-                         
-                #Trier ces dates de façon a ce qu'il n'y a plus de redondance
-                in_date_list = []
-                for date_final in in_date_list_brut:
-                    if date_final not in in_date_list:
-                        in_date_list.append(date_final) 
-               
-                for date in in_date_list:
-                    quants = quant_obj.search(['&', ('date_arrivee_reelle','=',date), ('location_id','=',order.kiosque_id.id)])
-                    product_redevance_list = []
-                    product_location_list = []
-                    for quant in quants:
-                        if quant.product_id not in product_redevance_list and quant.product_id.frais_type == 'redevance':
-                            product_redevance_list.append(quant.product_id)
-                        elif quant.product_id not in product_location_list and quant.product_id.frais_type == 'location':
-                            product_location_list.append(quant.product_id)
-                    #Implementation redevance fixe pour les materiels productifs dans les lignes des articles
-                    for p in product_redevance_list:
-                        nbre_jour_detention_materiel_prod = 0.0
-                        product_quant = quant_obj.search(['&', ('product_id','=',p.id), '&', ('date_arrivee_reelle','=',date), ('location_id','=',order.kiosque_id.id)])
-                        date_arrivee = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-                        if not date_arrivee:
-                            raise UserError(u'ERREUR 3 : Veuillez renseigner la date d\'arrivée du materiel!')
-                        
-                        if date_arrivee > date_start and date_arrivee < date_end and datetime.now() >= date_end:
-                            effet = (date_end - date_arrivee).days
-                            nbre_jour_detention_materiel_prod = float(effet)/31
-                        
-                        elif date_arrivee <= date_start and datetime.now() >= date_end:
-                            effet = (date_end - date_start).days
-                            nbre_jour_detention_materiel_prod = float(effet)/31
-                        
-                        elif datetime.now() < date_end:
-                            raise UserError(u'ERREUR 4 : La date d\'etablissement de la facture redevance doit être après le %s' % (date_end))
-                        
-                        elif date_arrivee >= date_end:
-                            raise UserError(u'ERREUR 5 : La date d\'arrivée réelle de la facture redevance doit être avant le %s' % (date_end))
-                        
-                        qte_article = 0.0
-                        for quant in product_quant:
-                            qte_article += quant.qty
-                        
-                        #La quantite de la commande = nombre jour d'effet x quantite de l'article
-                        product_qty = qte_article*nbre_jour_detention_materiel_prod
-                        vals = {
-                            'name': 'Redevance fixe pour materiels productifs / mois',
-                            'product_id': p.id,
-                            'product_uom': p.uom_id.id,
-                            'qte_article': qte_article,
-                            'product_uom_qty': product_qty,
-                            'order_id': order.id,
-                            'price_unit': p.lst_price,
-                            'date_arrivee': date,
-                            'nbre_jour_detention': nbre_jour_detention_materiel_prod,
-                        }
-                        order.order_line.create(vals)   
-                    #Implementation frais de location par jour dans les lignes des articles
-                    for p in product_location_list:
-                        nbre_jour_detention_lampe = 0.0
-                        product_quant = quant_obj.search(['&', ('product_id','=',p.id), '&', ('date_arrivee_reelle','=',date), ('location_id','=',order.kiosque_id.id)])
-                        date_arrivee = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-                        if not date_arrivee:
-                            raise UserError(u'Veuillez renseigner la date d\'arrivée du materiel!')
-                        if date_arrivee > date_start and date_arrivee < date_end and datetime.now() >= date_end:
-                            nbre_jour_detention_lampe = float((date_end - date_arrivee).days)
-                        elif date_arrivee <= date_start and datetime.now() >= date_end:
-                            nbre_jour_detention_lampe = float((date_end - date_start).days)
-                        elif datetime.now() < date_end:
-                            raise UserError(u'La date d\'etablissement de la facture redevance serait après le %s' % (date_end))
-                        elif date_arrivee >= date_end:
-                            raise UserError(u'La date d\'arrivée des articles doit être avant le %s' % (date_end))
-                        qte_article = 0.0
-                        for quant in product_quant:
-                            qte_article += quant.qty
-                        #La quantite de la commande = nombre jour d'effet x quantite de l'article
-                        product_qty = qte_article*nbre_jour_detention_lampe
-                        vals = {
-                            'name': 'Frais de location / jour',
-                            'product_id': p.id,
-                            'product_uom': p.uom_id.id,
-                            'qte_article': qte_article,
-                            'product_uom_qty': product_qty,
-                            'order_id': order.id,
-                            'price_unit': p.lst_price,
-                            'date_arrivee': date,
-                            'nbre_jour_detention': nbre_jour_detention_lampe,
-                        }
-                        order.order_line.create(vals)   
+                    if date_arrivee > date_start and date_arrivee < date_end and datetime.now() >= date_end:
+                        effet = (date_end - date_arrivee).days
+                        nbre_jour_detention_materiel_prod = float(effet)/31
+                    
+                    elif date_arrivee <= date_start and datetime.now() >= date_end:
+                        effet = (date_end - date_start).days
+                        nbre_jour_detention_materiel_prod = float(effet)/31
+                    
+                    elif datetime.now() < date_end:
+                        raise UserError(u'ERREUR 4 : La date d\'etablissement de la facture redevance doit être après le %s' % (date_end))
+                    
+                    elif date_arrivee >= date_end:
+                        raise UserError(u'ERREUR 5 : La date d\'arrivée réelle de la facture redevance doit être avant le %s' % (date_end))
+                    
+                    qte_article = 0.0
+                    for quant in product_quant:
+                        qte_article += quant.qty
+                    
+                    #La quantite de la commande = nombre jour d'effet x quantite de l'article
+                    product_qty = qte_article*nbre_jour_detention_materiel_prod
+                    vals = {
+                        'name': 'Redevance fixe pour materiels productifs / mois',
+                        'product_id': p.id,
+                        'product_uom': p.uom_id.id,
+                        'qte_article': qte_article,
+                        'product_uom_qty': product_qty,
+                        'order_id': order.id,
+                        'price_unit': p.lst_price,
+                        'date_arrivee': date,
+                        'nbre_jour_detention': nbre_jour_detention_materiel_prod,
+                    }
+                    order.order_line.create(vals)   
+                #Implementation frais de location par jour dans les lignes des articles
+                for p in product_location_list:
+                    nbre_jour_detention_lampe = 0.0
+                    product_quant = quant_obj.search(['&', ('product_id','=',p.id), '&', ('date_arrivee_reelle','=',date), ('location_id','=',order.kiosque_id.id)])
+                    date_arrivee = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                    if not date_arrivee:
+                        raise UserError(u'Veuillez renseigner la date d\'arrivée du materiel!')
+                    if date_arrivee > date_start and date_arrivee < date_end and datetime.now() >= date_end:
+                        nbre_jour_detention_lampe = float((date_end - date_arrivee).days)
+                    elif date_arrivee <= date_start and datetime.now() >= date_end:
+                        nbre_jour_detention_lampe = float((date_end - date_start).days)
+                    elif datetime.now() < date_end:
+                        raise UserError(u'La date d\'etablissement de la facture redevance serait après le %s' % (date_end))
+                    elif date_arrivee >= date_end:
+                        raise UserError(u'La date d\'arrivée des articles doit être avant le %s' % (date_end))
+                    qte_article = 0.0
+                    for quant in product_quant:
+                        qte_article += quant.qty
+                    #La quantite de la commande = nombre jour d'effet x quantite de l'article
+                    product_qty = qte_article*nbre_jour_detention_lampe
+                    vals = {
+                        'name': 'Frais de location / jour',
+                        'product_id': p.id,
+                        'product_uom': p.uom_id.id,
+                        'qte_article': qte_article,
+                        'product_uom_qty': product_qty,
+                        'order_id': order.id,
+                        'price_unit': p.lst_price,
+                        'date_arrivee': date,
+                        'nbre_jour_detention': nbre_jour_detention_lampe,
+                    }
+                    order.order_line.create(vals)   
                                 
     #facturation redevance
     def generation_list(self):
@@ -501,7 +509,7 @@ class SaleOrderLineHeri(models.Model):
     qte_prevu = fields.Float(compute="onchange_prod_id",string='Quantité disponible', readonly=True)
     qte_detenu_par_kiosque = fields.Float(compute="onchange_prod_id",string='Quantité detenue par le kiosque', readonly=True)
 
-    qte_article = fields.Float(string='Quantité de l\'article', readonly=True)
+    qte_article = fields.Float(string='Quantité de l\'article')
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
     location_kiosque_id = fields.Many2one('stock.location', related='order_id.kiosque_id', readonly=True)
     product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
@@ -628,8 +636,43 @@ class SaleOrderLineHeri(models.Model):
                                 }
                         }
         return
-     
-     
+    
+    #Redefinition pour supprimer la modification du prix unitaire à 1.0
+    @api.onchange('product_uom', 'product_uom_qty')
+    def product_uom_change(self):
+        if not self.product_uom:
+            self.price_unit = 0.0
+            return
+        if self.order_id.pricelist_id and self.order_id.partner_id:
+            product = self.product_id.with_context(
+                lang=self.order_id.partner_id.lang,
+                partner=self.order_id.partner_id.id,
+                quantity=self.product_uom_qty,
+                date_order=self.order_id.date_order,
+                pricelist=self.order_id.pricelist_id.id,
+                uom=self.product_uom.id,
+                fiscal_position=self.env.context.get('fiscal_position')
+            )
+            
+            #A ne pas lors d'une redevance
+            if self.order_id.facturation_type != 'facturation_redevance':
+                self.price_unit = self.env['account.tax']._fix_tax_included_price(self._get_display_price(product), product.taxes_id, self.tax_id)
+                
+    #Re-Calcul lors d'une correction manuelle 
+    @api.onchange('qte_article','nbre_jour_detention')
+    def onchange_correction_qte_article(self):
+        self.product_uom_qty = self.qte_article*self.nbre_jour_detention
+    
+    @api.onchange('date_arrivee')
+    def onchange_correction_date_arrivee(self):
+        date_start = datetime.strptime(self.order_id.date_debut_facturation, "%Y-%m-%d %H:%M:%S")
+        date_end = datetime.strptime(self.order_id.date_fin_facturation, "%Y-%m-%d %H:%M:%S")
+        date_arrivee = datetime.strptime(self.date_arrivee, "%Y-%m-%d %H:%M:%S")
+        if date_arrivee > date_end:
+            raise UserError("ERREUR : La date d'arrivée doit être compris inférieur à la date de fin de facturation ")
+        nbr_days =  (date_end - date_arrivee).days
+        self.nbre_jour_detention = nbr_days
+        
     @api.multi
     def _create_breq_lines(self, breq_id):
         breq_line = self.env['purchase.order.line']
