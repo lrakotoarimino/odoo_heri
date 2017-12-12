@@ -186,6 +186,7 @@ class BreqStockHeri(models.Model):
         ('non_prevue', 'En vérification compta'),
         ('attente_validation', 'En attente validation DG'),
         ('wait_mode', 'En attente paiement finance'),
+        ('mode_de_paiment_valide', 'Mode de paiement Validé'),
         ('purchase', 'BEX'),
         ('refuse', 'Refusé'),
         ('done', 'Terminé'),

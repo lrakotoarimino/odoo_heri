@@ -121,7 +121,18 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _create_bex(self):
         bex_obj = self.env['budget.expense.report']
+        attachment_obj = self.env['ir.attachment']
+        
         for order in self:
+            attachment_ids = attachment_obj.search([('res_model','=','purchase.order'),('res_id','=',order.id)])
+            len_attachment = len(attachment_ids)
+            if order.purchase_type == 'purchase_import':
+                if len_attachment < 1:
+                    raise UserError("Veuillez d'abord insérer une pièce jointe dans le document.")
+            elif order.purchase_type in ('purchase_stored', 'purchase_stored'):
+                if len_attachment < 3:
+                    raise UserError("Veuillez d'abord insérer au moins trois (3) pièces jointes dans le document.")
+                
             vals = {
 #                     'partner_id': order.partner_id.id,
                     'origin': order.name,
