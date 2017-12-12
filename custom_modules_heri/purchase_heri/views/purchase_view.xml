@@ -33,7 +33,7 @@
 					<field 
 					    name="state" 
 					    widget="statusbar" 
-					    statusbar_visible="nouveau,a_approuver,non_prevue,attente_validation,wait_mode,purchase"/>
+					    statusbar_visible="nouveau,a_approuver,non_prevue,attente_validation,wait_mode,mode_de_paiment_valide,purchase"/>
 					    <field name="is_creator" invisible="1" />
 				</xpath>
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_picking']" position="after">
@@ -181,6 +181,12 @@
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('wait_mode'))]}"
 			      	    groups="purchase_heri.group_finance_heri"
 			      	    type="object"
+			      	 />
+			      	 <button 
+			      	    string="Créer BEX" 
+			      	    name="valider_mode"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('mode_de_paiment_valide')),('is_creator', '=',False)]}"
 			      	 />
 			      	 <!-- bouton pour le workflow achat import -->
 			      	 

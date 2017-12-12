@@ -206,6 +206,7 @@ class PurchaseHeri(models.Model):
         ('non_prevue', 'En vérification compta'),
         ('attente_validation', 'En attente validation DG'),
         ('wait_mode', 'En attente paiement finance'),
+        ('mode_de_paiment_valide', 'Mode de paiement Validé'),
         ('purchase', 'BEX'),
         ('refuse', 'Refusé'),
         ('done', 'Terminé'),
@@ -503,6 +504,8 @@ class PurchaseHeri(models.Model):
         self._create_bex()
     def action_annuler(self):
         self.write({'state': 'cancel', 'change_state_date': fields.Datetime.now()})
+    def action_paiement_valider(self):
+        self.write({'state': 'mode_de_paiment_valide', 'change_state_date': fields.Datetime.now()})
         
     def action_compute_prix_revient(self):
 #         if self.purchase_type == 'purchase_import':
