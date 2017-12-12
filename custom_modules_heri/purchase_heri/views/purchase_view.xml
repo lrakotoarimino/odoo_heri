@@ -28,7 +28,25 @@
                 <xpath expr="//button[@name='action_rfq_send'][3]" position="replace">
                     <button name="action_rfq_send" invisible="1"/>
                 </xpath>
-                
+                <xpath expr="//field[@name='picking_type_id']" position="replace">
+
+                </xpath>
+                <xpath expr="//field[@name='incoterm_id']" position="replace">
+
+                </xpath>
+                <xpath expr="//field[@name='payment_term_id']" position="replace">
+
+                </xpath>
+                <xpath expr="//field[@name='fiscal_position_id']" position="replace">
+
+                </xpath>
+                <xpath expr="//field[@name='currency_id']" position="after">
+                	<field name="picking_type_id" />
+                </xpath>
+                <xpath expr="//field[@name='picking_type_id']" position="after">
+                	<field name="incoterm_id" />
+                </xpath>
+               
 				<xpath expr="//field[@name='state']" position="replace">
 					<field 
 					    name="state" 
@@ -78,8 +96,16 @@
 					<field name="journal_id" widget="selection"/>
 					<field name="modalite_paiement" invisible="1"/>
 					<field name="statut_bex"/>
-				</xpath>                    
-				
+					
+				</xpath>       
+				             
+				<xpath expr="//field[@name='statut_bex']" position="after">
+                	<field name="payment_term_id" />
+                </xpath>
+                <xpath expr="//field[@name='payment_term_id']" position="after">
+                	<field name="fiscal_position_id" />
+                </xpath>
+                
 				<field name="date_order" position="attributes">
 			    	<attribute name="readonly">1</attribute>
 			    </field>
@@ -349,6 +375,12 @@
                             invisible="1">
                             <field name='purchase_ids' invisible="1"/>
                     </button>
+                <xpath expr="//field[@name='currency_id']" position="after">
+                	<field name="picking_type_id" />
+                </xpath>
+                <xpath expr="//field[@name='picking_type_id']" position="after">
+                	<field name="incoterm_id" />
+                </xpath>
                     <field name="state" widget="statusbar" statusbar_visible="nouveau,confirmation_dg,aviser_finance,ov_to_bank,br_lie,purchase" readonly="1"/>
                 </header>
                 <sheet>
@@ -426,6 +458,8 @@
                                 attrs="{'required': [('purchase_type','=','purchase_import')]}"
                                 widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
                             <field name="is_shipped" invisible="1"/>
+                            <field name="picking_type_id" domain="[('code','=','incoming')]" options="{'no_create': True}" groups="stock.group_stock_multi_locations"/>
+                            <field name="incoterm_id"/>                       
                         </group>
                         <group>
                             <field name="date_order" readonly="1"/>
@@ -438,6 +472,8 @@
                             <field name="journal_id" widget="selection"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                            <field name="payment_term_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"/>
+                            <field name="fiscal_position_id" attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"/>
                         </group>
                     </group>
                     <notebook>
@@ -522,15 +558,11 @@
                                             help="This changes the scheduled date of all order lines to the given date"
                                             class="fa fa-calendar o_icon_button oe_edit_only"/>
                                     </div>
-                                    <field name="picking_type_id" domain="[('code','=','incoming')]" options="{'no_create': True}" groups="stock.group_stock_multi_locations"/>
                                     <field name="dest_address_id" groups="stock.group_stock_multi_locations" attrs="{'invisible': [('default_location_dest_id_usage', '!=', 'customer')], 'required': [('default_location_dest_id_usage', '=', 'customer')]}"/>
                                     <field name="default_location_dest_id_usage" invisible="1"/>
-                                    <field name="incoterm_id"/>
                                 </group>
                                 <group>
                                     <field name="invoice_status"/>
-                                    <field name="payment_term_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"/>
-                                    <field name="fiscal_position_id" attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"/>
                                     <field name="date_approve" groups="base.group_no_one"/>
                                 </group>
                             </group>
