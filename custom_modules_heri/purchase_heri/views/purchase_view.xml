@@ -375,12 +375,6 @@
                             invisible="1">
                             <field name='purchase_ids' invisible="1"/>
                     </button>
-                <xpath expr="//field[@name='currency_id']" position="after">
-                	<field name="picking_type_id" />
-                </xpath>
-                <xpath expr="//field[@name='picking_type_id']" position="after">
-                	<field name="incoterm_id" />
-                </xpath>
                     <field name="state" widget="statusbar" statusbar_visible="nouveau,confirmation_dg,aviser_finance,ov_to_bank,br_lie,purchase" readonly="1"/>
                 </header>
                 <sheet>
