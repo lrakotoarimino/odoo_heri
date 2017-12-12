@@ -117,9 +117,18 @@
 				
 				<xpath expr="//field[@name='product_id']" position="after">
 					<field name="designation_frns" />
+					<field name="currency_id" invisible="1"/>
 				</xpath>
 				
-				<xpath expr="//field[@name='order_line']//field[@name='name']" position="attributes">
+				<!-- <xpath expr="//field[@name='price_unit']" position="attributes">
+					<attribute name="options">{'currency_field': 'currency_id'}</attribute>
+				</xpath> -->
+				
+				<xpath expr="//field[@name='price_unit']" position="replace">
+					<field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+				</xpath>
+				
+                <xpath expr="//field[@name='order_line']//field[@name='name']" position="attributes">
 					<attribute name="invisible">1</attribute>
 				</xpath>
 				
@@ -492,8 +501,9 @@
                                     <field name="qty_received" invisible="not context.get('show_purchase', False)"/>
                                     <field name="qty_invoiced" invisible="not context.get('show_purchase', False)"/>
                                     <field name="product_uom" groups="product.group_uom" attrs="{'readonly': [('state', 'in', ('purchase', 'done', 'cancel'))]}"/>
-                                    <field name="price_unit"/>
-                                    <field name="cout_revient"/>
+                                    <field name="currency_id" invisible="1"/>
+                                    <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="cout_revient" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                     <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase')]" context="{'default_type_tax_use': 'purchase'}"/>
                                     <field name="price_subtotal" widget="monetary"/>
                                 </tree>
