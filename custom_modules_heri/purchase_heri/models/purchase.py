@@ -696,7 +696,8 @@ class PurchaseOrderLine(models.Model):
                                                                    ('product_id','=', line.product_id.id)
                                                                    ])  
             total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
-            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id.state not in ('done','cancel'))
+#             total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id.state not in ('done','cancel'))
+            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel'))
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
             line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
