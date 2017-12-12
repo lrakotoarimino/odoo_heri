@@ -9,6 +9,8 @@
             <field name="arch" type="xml">
                 <form string="Budget Expensive Report Achat">
                 <header>
+                    <button name="calculer_prix_revient" string="Calculer les prix de revient" type="object" class="oe_highlight"
+			    	    attrs="{'invisible': ['|',('state', 'not in', ('draft')),'|', ('is_creator', '=', False), ('purchase_type', '!=', 'purchase_import')]}"/>
                     <button name="attente_hierarchie" string="Envoyer au supérieur hiérarchique" type="object" class="oe_highlight"
 			    	    attrs="{'invisible': ['|',('state', 'not in', ('draft')), ('is_creator', '=', False)]}"/>
 			    	<button name="annuler_attente_hierarchie" string="Annuler" type="object" class="oe_highlight"
@@ -53,7 +55,8 @@
 							<field name="nature" />
 							<field name="manager_id" invisible="1"/>
 							<field name="is_manager" invisible="1"/>
-							<field name="currency_id" />
+							<field name="currency_id" invisible="1"/>
+							<field name="taux_change" attrs="{'invisible': [('purchase_type','!=', 'purchase_import')]}"/>
 							<field name="is_creator" invisible="1"/>
                         </group>
                         <group>
@@ -79,6 +82,7 @@
 		                    	    <field name="product_id"/>
 		                    	    <field name="product_qty"/>
 		                    	    <field name="qty_done" string="Qté Reçue"/>
+		                    	    <field name="price_unit" readonly="1"/>
 		                    	    <field name="prix_unitaire" readonly="1"/>
 						    		<field name="montant_br" />
 						    		<field 
@@ -102,21 +106,21 @@
                         </page>
                     </notebook>
 					<group>
-						 <group class="oe_subtotal_footer oe_right" string="Montant En Ar" attrs="{'invisible': [('purchase_type', 'not in', ('purchase_import'))],'readonly': [('state', 'in', ('comptabilise'))]}">	        	    	
+					 	<!-- <group class="oe_subtotal_footer oe_right" string="Montant En Ar" attrs="{'invisible': [('purchase_type', 'not in', ('purchase_import'))],'readonly': [('state', 'in', ('comptabilise'))]}">	        	    	
 		                   <field name="amount_untaxed_en_ar" widget="monetary" options="{'currency_field': 'currency_en_ar'}" attrs="{'readonly': [('state', 'in', ('comptabilise'))]}"/>
 		                   <field name="amount_tax_en_ar" widget="monetary" options="{'currency_field': 'currency_en_ar'}" readonly="1"/>
 		                   <div class="oe_subtotal_footer_separator oe_inline">
 		                       <label for="amount_total_en_ar"/>
 		                   </div>
 		                   <field name="amount_total_en_ar" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
-		                </group>
+		                </group> -->
 				        <group class="oe_subtotal_footer oe_right" string="BEX">	        	    	
-		                   <field name="amount_untaxed_bex" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-		                   <field name="amount_tax_bex" widget="monetary" options="{'currency_field': 'currency_id'}" />
+		                   <field name="amount_untaxed_bex" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
+		                   <field name="amount_tax_bex" widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
 		                   <div class="oe_subtotal_footer_separator oe_inline">
 		                       <label for="amount_total_bex"/>
 		                   </div>
-		                   <field name="amount_total_bex" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+		                   <field name="amount_total_bex" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
 		                </group>
 				        <group class="oe_subtotal_footer oe_right" string="BReq">	        	    	
 		                   <field name="amount_untaxed_breq" widget="monetary" options="{'currency_field': 'currency_id'}"/>

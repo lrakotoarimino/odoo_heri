@@ -16,6 +16,41 @@ class Bex(models.Model):
     be_lie_count = fields.Integer(compute='_compute_be_lie')
     be_ids = fields.One2many('stock.picking', string="be_ids", compute='_compute_be_lie')
     
+    def calculer_prix_revient(self):
+        if self.taux_change == 0.0:
+            raise UserError(u'Le taux de change doit être non nul')
+        purchase_obj = self.env['purchase.order']
+        purchase_line_obj = self.env['purchase.order.line']
+        bex_obj = self.env['budget.expense.report']
+        bex_line_obj = self.env['bex.line']
+        
+        if self.purchase_type == 'purchase_import':
+            
+            breq_transport = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','transport')])
+            breq_assurance = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','assurance')])
+            breq_additionnel = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','additionel')])
+            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','douane')])[0]
+            
+            bex_transport = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
+            bex_assurance = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
+            bex_additionnel = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
+            bex_droit_douane = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_droit_douane]))])
+
+            total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
+            cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
+            fob_total = sum(line.qty_done*line.price_unit for line in self.bex_lines)
+            caf_total = (fob_total + total_assurance_fret) * self.taux_change
+            
+            for line in self.bex_lines:
+                if fob_total == 0.0:
+                    raise UserError(u'FOB total ne devrait pas être nulle')
+                elif line.qty_done <= 0.0:
+                    raise UserError(u'La quantité des articles devrait être un nombre positif non nulle')
+                else:
+                    bex_line_id = bex_line_obj.search([('bex_id','=', bex_droit_douane.id),('purchase_line_id.purchase_line_id','=', line.purchase_line_id.id)], limit=1)
+                    droit_douane = bex_line_id.montant_realise
+                    line.prix_unitaire = (((caf_total + cLocTotal) * ((line.price_unit) / fob_total)) + droit_douane) / (line.qty_done)
+    
     @api.multi
     def _compute_be_lie(self):
         for bex in self:
@@ -100,8 +135,8 @@ class Bex(models.Model):
         self.change_state_date = fields.Datetime.now()
             
     def comptabiliser(self):
-        if self.breq_id and self.breq_id.purchase_type == 'purchase_import' and self.state == 'hierarchie_ok' and self.amount_untaxed_en_ar == 0.0:
-            raise UserError("Merci de remplir le Montant Hors Taxes en Ar!")
+#         if self.breq_id and self.breq_id.purchase_type == 'purchase_import' and self.state == 'hierarchie_ok' and self.amount_untaxed_en_ar == 0.0:
+#             raise UserError("Merci de remplir le Montant Hors Taxes en Ar!")
         if self.breq_id and self.breq_id.purchase_type != 'purchase_not_stored':
             self.create_be() 
         self.state = 'comptabilise'
@@ -187,7 +222,8 @@ class Bex(models.Model):
     picking_type_id = fields.Many2one('stock.picking.type', 'Type de préparation', readonly=True)
     company_id = fields.Many2one('res.company', 'Company', readonly=True)
     group_id = fields.Many2one('procurement.group', 'Procurement Group', readonly=True)
-
+    
+    taux_change = fields.Float(string='Taux de change')
     
     
     #Fonction dans achat
@@ -237,9 +273,10 @@ class BexLine(models.Model):
     qty_done = fields.Float('Quantité reçue')
     prix_unitaire = fields.Float('PUMP', readonly=True)
     montant_br = fields.Float('Montant BReq HT',readonly=True)
-    montant_realise = fields.Float(compute='_compute_amount', string='Montant HT', readonly=True, store=True)
-    montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant TTC', readonly=True, store=True)
+    montant_realise = fields.Float(compute='_compute_amount', string='Montant Bex HT', readonly=True, store=True)
+    montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant Bex TTC', readonly=True, store=True)
     taxes_id = fields.Many2many('account.tax', string='Taxes', domain=['|', ('active', '=', False), ('active', '=', True)])
+    price_unit = fields.Float('PU BReq')
     
     purchase_type = fields.Selection([
         ('purchase_stored', 'Achats locaux stockés'),
@@ -251,7 +288,7 @@ class BexLine(models.Model):
     purchase_line_id = fields.Many2one('purchase.order.line', string='ID ligne de commande')
     product_uom = fields.Many2one('product.uom', string='Unité de mesure')
     
-    @api.depends('qty_done', 'taxes_id')
+    @api.depends('qty_done', 'prix_unitaire', 'taxes_id')
     def _compute_amount(self):
         for line in self:
             if line.qty_done > line.product_qty or line.qty_done < 0.0:

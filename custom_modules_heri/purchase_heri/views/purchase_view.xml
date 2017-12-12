@@ -219,6 +219,9 @@
 				<xpath expr="//field[@name='product_id']" position="attributes">
 					<attribute name="domain">[('type','=','service')]</attribute>
 				</xpath>
+				<xpath expr="//field[@name='product_id']" position="before">
+					<field name="purchase_line_id" invisible="1"/>
+				</xpath>
 		    </field>
 	    </record>
 		<!-- End Budget request form service-->
@@ -292,6 +295,7 @@
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('aviser_finance'))]}"
 			      	    groups="purchase_heri.group_finance_heri"
 			      	    type="object"
+			      	    invisible="1"
 			      	 />
  					<button 
                         string="A revoir" 
@@ -301,7 +305,7 @@
                         attrs="{'invisible': ['|',('state', 'not in', ('aviser_finance')), ('purchase_type', 'not in', ('purchase_import'))]}"
                      />
                      <button 
-                        string="Calculer prix de revient" 
+                        string="Calculer prix de revient estimatif" 
                         name="action_compute_prix_revient"
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', '!=', 'ov_to_bank'),'|',('all_bex_validated', '!=',True),'|',('purchase_type', '!=', 'purchase_import'),('is_creator', '=',False)]}"
@@ -424,7 +428,7 @@
                             <field name="budgetise" invisible="1"/>
                             <field name="cumul" invisible="1"/>
                             <field name="solde" invisible="1"/>
-                            <field name="statut_budget" string="STATUT BUDGET"/>
+                            <field name="statut_budget" string="STATUT BUDGET" invisible="1"/>
                             <field name="journal_id" widget="selection"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>

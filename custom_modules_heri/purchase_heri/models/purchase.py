@@ -5,6 +5,8 @@ from odoo.exceptions import UserError
 from odoo.tools import float_compare, float_round
 from collections import namedtuple
 from odoo.api import onchange
+from datetime import datetime
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 #Region
 class ResRegion(models.Model):
@@ -17,6 +19,33 @@ class ResRegion(models.Model):
 class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
     _description = "Budget Request"
+    
+    def _prepare_order_line_from_po_line(self, line):
+        vals = {
+                'product_id': line.product_id,
+                'name': line.product_id.name,
+                'designation_frns': 'Droit de douane %s' % (line.product_id.name),
+                'product_qty': 1.0,
+                'product_uom': line.product_uom,
+                'price_unit': 0.0, 
+                'order_id': self.id,
+                'purchase_line_id': line.id,
+                'date_planned': datetime.today().strftime(DEFAULT_SERVER_DATETIME_FORMAT),
+                }
+        return vals
+        
+    @api.onchange('parents_ids')
+    def onchange_parent_id(self):
+        if self.service_type != 'douane':
+            return {}
+        new_lines = self.env['purchase.order.line']
+        for line in self.parents_ids.order_line:
+            data = self._prepare_order_line_from_po_line(line)
+            new_line = new_lines.new(data)
+            new_lines += new_line
+
+        self.order_line = new_lines
+        return {}
     
     @api.model
     def create(self, values):
@@ -476,28 +505,64 @@ class PurchaseHeri(models.Model):
         self.write({'state': 'cancel', 'change_state_date': fields.Datetime.now()})
         
     def action_compute_prix_revient(self):
+#         if self.purchase_type == 'purchase_import':
+#             breq_transport = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
+#             breq_assurance = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
+#             breq_additionnel = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
+#             
+#             bex_transport = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
+#             bex_assurance = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
+#             bex_additionnel = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
+#             
+#             total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
+#             cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
+#             fob_total = self.amount_untaxed
+#             caf_total = (fob_total+total_assurance_fret)*(self.taux_change)
+#             if self.taux_change == 0.0:
+#                 raise UserError(u'Le taux de change doit être non nul')
+#             for line in self.order_line:
+#                 if fob_total == 0.0:
+#                     raise UserError(u'FOB total ne devrait pas être vide')
+#                 elif line.product_qty == 0.0:
+#                     raise UserError(u'La quantité l\'article ne devrait pas être vide')
+#                 else:
+#                     line.cout_revient = ((caf_total+cLocTotal)*((line.price_subtotal)/fob_total)+((line.product_id.taxe_douane)*(line.price_subtotal)))/(line.product_qty)
+        
+        
+        #New
+        if self.taux_change == 0.0:
+            raise UserError(u'Le taux de change doit être non nul')
+        purchase_obj = self.env['purchase.order']
+        purchase_line_obj = self.env['purchase.order.line']
+        bex_obj = self.env['budget.expense.report']
+        bex_line_obj = self.env['bex.line']
+        
         if self.purchase_type == 'purchase_import':
-            breq_transport = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
-            breq_assurance = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
-            breq_additionnel = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
             
-            bex_transport = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
-            bex_assurance = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
-            bex_additionnel = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
+            breq_transport = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
+            breq_assurance = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
+            breq_additionnel = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
+            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','douane')])[0]
             
+            bex_transport = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
+            bex_assurance = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
+            bex_additionnel = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
+            bex_droit_douane = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_droit_douane]))])
+
             total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
             cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
-            fob_total = self.amount_untaxed
-            caf_total = (fob_total+total_assurance_fret)*(self.taux_change)
-            if self.taux_change == 0.0:
-                raise UserError(u'Le taux de change doit être non nul')
+            fob_total = sum(line.product_qty*line.price_unit for line in self.order_line)
+            caf_total = (fob_total + total_assurance_fret) * self.taux_change
+            
             for line in self.order_line:
                 if fob_total == 0.0:
-                    raise UserError(u'FOB total ne devrait pas être vide')
-                elif line.product_qty == 0.0:
-                    raise UserError(u'La quantité l\'article ne devrait pas être vide')
+                    raise UserError(u'FOB total ne devrait pas être nulle')
+                elif line.product_qty <= 0.0:
+                    raise UserError(u'La quantité des articles devrait être un nombre positif non nulle')
                 else:
-                    line.cout_revient = ((caf_total+cLocTotal)*((line.price_subtotal)/fob_total)+((line.product_id.taxe_douane)*(line.price_subtotal)))/(line.product_qty)
+                    bex_line_id = bex_line_obj.search([('bex_id','=', bex_droit_douane.id),('purchase_line_id.purchase_line_id','=', line.id)], limit=1)
+                    droit_douane = bex_line_id.montant_realise
+                    line.cout_revient = (((caf_total + cLocTotal) * ((line.price_unit) / fob_total)) + droit_douane) / (line.product_qty)
                     
     def choisir_mode_paiement(self):
                 #Generation popup mode de paiement
@@ -586,7 +651,9 @@ class PurchaseOrderLine(models.Model):
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
     caf = fields.Float(string='CAF')
     cdtd = fields.Float(string='Cout avec droit et taxe de douane')
-    cout_revient = fields.Float(string='Cout de revient')
+    cout_revient = fields.Float(string='Prix de revient estimatif')
+    
+    purchase_line_id = fields.Many2one('purchase.order.line', 'Purchase Order Line', ondelete='set null', index=True, readonly=True)
 
     def _suggest_quantity(self):
         res = super(PurchaseOrderLine, self)._suggest_quantity()
@@ -681,7 +748,7 @@ class PurchaseOrderLine(models.Model):
                 'purchase_type': line.order_id.purchase_type,
             }
             if line.order_id.purchase_type == 'purchase_import':
-                vals['prix_unitaire'] = line.cout_revient
+                vals['prix_unitaire'] = 0.0
             
             bex_lines = bex_line.create(vals)
         return True

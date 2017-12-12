@@ -508,7 +508,7 @@ class StockPicking(models.Model):
     @api.onchange('location_dest_id')
     def onchange_location_dest_id(self):
         for pick in self:
-            if pick.mouvement_type == 'bs':
+            if pick.mouvement_type in ('bs','be','bci'):
                 after_vals = {}
                 if pick.location_dest_id:
                     after_vals['location_dest_id'] = pick.location_dest_id.id
