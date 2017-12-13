@@ -576,7 +576,7 @@ class PurchaseHeri(models.Model):
                 else:
                     bex_line_id = bex_line_obj.search([('bex_id','=', bex_droit_douane.id),('purchase_line_id.purchase_line_id','=', line.id)], limit=1)
                     droit_douane = bex_line_id.montant_realise
-                    line.cout_revient = (((caf_total + cLocTotal) * ((line.price_unit) / fob_total)) + droit_douane) / (line.product_qty)
+                    line.cout_revient = (((caf_total + cLocTotal) * ((line.product_qty*line.price_unit) / fob_total)) + droit_douane) / (line.product_qty)
                     
     def choisir_mode_paiement(self):
                 #Generation popup mode de paiement

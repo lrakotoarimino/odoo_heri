@@ -49,7 +49,7 @@ class Bex(models.Model):
                 else:
                     bex_line_id = bex_line_obj.search([('bex_id','=', bex_droit_douane.id),('purchase_line_id.purchase_line_id','=', line.purchase_line_id.id)], limit=1)
                     droit_douane = bex_line_id.montant_realise
-                    line.prix_unitaire = (((caf_total + cLocTotal) * ((line.price_unit) / fob_total)) + droit_douane) / (line.qty_done)
+                    line.prix_unitaire = (((caf_total + cLocTotal) * ((line.qty_done*line.price_unit) / fob_total)) + droit_douane) / (line.qty_done)
     
     @api.multi
     def _compute_be_lie(self):
