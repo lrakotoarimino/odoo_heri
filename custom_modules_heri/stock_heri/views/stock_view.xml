@@ -198,6 +198,12 @@
 				<xpath expr="//field[@name='min_date']" position="after">
 					<field name="date_arrivee_reelle" attrs="{'invisible': [('mouvement_type', '!=', 'bs')]}"/>
 				</xpath>
+				<field name="move_lines" position="attributes">
+					<attribute name="attrs">{'readonly': [('mouvement_type', '=', 'bs')]}</attribute>
+				</field>
+				<button name="show_details" position="attributes">
+					<attribute name="invisible">1</attribute>
+				</button>
 				<field name="location_dest_id" position="attributes">
 					<attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': [('state', '=', 'done')]}</attribute>
 				</field>
@@ -262,6 +268,7 @@
             <field name="arch" type="xml">
                 <xpath expr="//form" position="attributes">
                     <attribute name="create">0</attribute>
+                    <attribute name="edit">0</attribute>
                 </xpath>            
 				<field name="location_dest_id" position="replace">
 				    <field name="location_dest_id" string="Magasin de destination" attrs="{'readonly': [('mouvement_type','not in',('be'))]}"/>

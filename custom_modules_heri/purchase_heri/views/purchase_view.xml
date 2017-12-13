@@ -100,7 +100,7 @@
 				</xpath>       
 				             
 				<xpath expr="//field[@name='statut_bex']" position="after">
-                	<field name="payment_term_id" />
+                	<field name="payment_term_id" attrs="{'required': [('purchase_type','in',('purchase_stored','purchase_not_stored','purchase_import'))]}"/>
                 </xpath>
                 <xpath expr="//field[@name='payment_term_id']" position="after">
                 	<field name="fiscal_position_id" />
@@ -475,7 +475,11 @@
                             <field name="journal_id" widget="selection"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                            <field name="payment_term_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"/>
+                            <field 
+                                name="payment_term_id" 
+                                options="{'no_open': True, 'no_create': True}" 
+                                attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state','=', 'done')],'required': [('purchase_type','in', ('purchase_stored','purchase_not_stored','purchase_import'))]}"/>
+                            
                             <field name="fiscal_position_id" attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"/>
                         </group>
                     </group>

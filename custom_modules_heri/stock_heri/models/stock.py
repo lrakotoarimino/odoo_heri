@@ -559,7 +559,7 @@ class StockMove(models.Model):
                                                                    ])
                 #recuperer tous les articles reserves dans bci
                 bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
-                                                                       ('picking_id.state','not in', ('done','cancel')), \
+                                                                       ('picking_id.state','not in', ('draft','done','cancel')), \
                                                                        ('product_id','=', line.product_id.id)
                                                                        ])  
                 total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
