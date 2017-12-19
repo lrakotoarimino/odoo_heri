@@ -519,31 +519,6 @@ class PurchaseHeri(models.Model):
         self.write({'state': 'mode_de_paiment_valide', 'change_state_date': fields.Datetime.now()})
         
     def action_compute_prix_revient(self):
-#         if self.purchase_type == 'purchase_import':
-#             breq_transport = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
-#             breq_assurance = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
-#             breq_additionnel = self.env['purchase.order'].search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
-#             
-#             bex_transport = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
-#             bex_assurance = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
-#             bex_additionnel = self.env['budget.expense.report'].search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
-#             
-#             total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
-#             cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
-#             fob_total = self.amount_untaxed
-#             caf_total = (fob_total+total_assurance_fret)*(self.taux_change)
-#             if self.taux_change == 0.0:
-#                 raise UserError(u'Le taux de change doit être non nul')
-#             for line in self.order_line:
-#                 if fob_total == 0.0:
-#                     raise UserError(u'FOB total ne devrait pas être vide')
-#                 elif line.product_qty == 0.0:
-#                     raise UserError(u'La quantité l\'article ne devrait pas être vide')
-#                 else:
-#                     line.cout_revient = ((caf_total+cLocTotal)*((line.price_subtotal)/fob_total)+((line.product_id.taxe_douane)*(line.price_subtotal)))/(line.product_qty)
-        
-        
-        #New
         if self.taux_change == 0.0:
             raise UserError(u'Le taux de change doit être non nul')
         purchase_obj = self.env['purchase.order']
