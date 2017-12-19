@@ -507,6 +507,7 @@
                                     <field name="product_uom" groups="product.group_uom" attrs="{'readonly': [('state', 'in', ('purchase', 'done', 'cancel'))]}"/>
                                     <field name="currency_id" invisible="1"/>
                                     <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="discount"/>
                                     <field name="cout_revient" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                     <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase')]" context="{'default_type_tax_use': 'purchase'}"/>
                                     <field name="price_subtotal" widget="monetary"/>
@@ -524,6 +525,7 @@
                                                     <field name="product_uom" groups="product.group_uom" class="oe_inline"/>
                                                 </div>
                                                 <field name="price_unit"/>
+                                                <field name="discount"/>
                                             </group>
                                             <group>
                                                 <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use', '=', 'purchase')]"/>
