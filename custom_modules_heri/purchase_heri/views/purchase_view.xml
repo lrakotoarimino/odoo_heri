@@ -20,7 +20,6 @@
                 <button name="action_view_invoice" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </button>
-                
                 <xpath expr="//button[@name='button_done']" position="replace">
                     <button name="button_done" invisible="1"/>
                 </xpath>
@@ -40,13 +39,23 @@
                 <xpath expr="//field[@name='fiscal_position_id']" position="replace">
 
                 </xpath>
+                <xpath expr="//field[@name='currency_id']" position="replace">
+					<field name="currency_id" groups="base.group_multi_currency" attrs="{'invisible': [('service_type','=','douane')]}"/>
+                </xpath>
                 <xpath expr="//field[@name='currency_id']" position="after">
+                	<field name="currency_en_ar" invisible="1"/>
+   	            	<field 
+	                   name="taux_change" 
+	                   attrs="{'invisible': [('service_type','!=','transport')]}"
+	                   widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
                 	<field name="picking_type_id" />
+                </xpath>
+                <xpath expr="//field[@name='amount_untaxed']" position="after">
+                    <field name="amount_total_ariary" attrs="{'invisible': [('service_type','!=','transport')]}" widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
                 </xpath>
                 <xpath expr="//field[@name='picking_type_id']" position="after">
                 	<field name="incoterm_id" />
                 </xpath>
-               
 				<xpath expr="//field[@name='state']" position="replace">
 					<field 
 					    name="state" 
@@ -416,7 +425,7 @@
                             name="action_view_br_assurance"
                             class="oe_stat_button"
                             icon="fa-font"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            invisible="1">
                             <field name="br_assurance_lie_count" widget="statinfo" string="Assurance" help="Sous-Breq Assurance"/>
                             <field name='purchase_ids_assurance' invisible="1"/>
                     	</button>
@@ -547,11 +556,13 @@
                             </field>
                             <group class="oe_subtotal_footer oe_right">
                                 <field name="amount_untaxed" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                <field name="amount_total_ariary" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
                                 <field name="amount_tax" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                 <div class="oe_subtotal_footer_separator oe_inline">
                                     <label for="amount_total"/>
                                 </div>
                                 <field name="amount_total" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+             
                             </group>
                             <field name="notes" class="oe_inline" placeholder="An administrator can set up default Terms and conditions in your Company settings."/>
                             <div class="oe_clear"/>

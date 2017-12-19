@@ -20,6 +20,13 @@ class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
     _description = "Budget Request"
     
+    @api.depends('amount_total_ariary')
+    def amount_ht_ariary(self):
+        for order in self :
+            order.amount_total_ariary = order.amount_untaxed * order.taux_change
+            
+    amount_total_ariary = fields.Float(string='Montant HT en Ariary',compute='amount_ht_ariary')
+    
     def _prepare_order_line_from_po_line(self, line):
         vals = {
                 'product_id': line.product_id,
@@ -314,8 +321,8 @@ class PurchaseHeri(models.Model):
     @api.depends('statut_bex')
     def _compute_all_validated(self):
         for order in self:
-            current_brq_id = self.env['purchase.order'].search([('parents_ids','=',order.id)])
-            if current_brq_id and all([x.statut_bex == 'comptabilise' for x in current_brq_id]):
+            current_brq_id = self.env['purchase.order'].search([('parents_ids','=',order.id),('service_type','!=','transport')])
+            if current_brq_id and all([x.statut_bex == 'comptabilise' for x in current_brq_id]) :
                 order.all_bex_validated = True
             else :
                 order.all_bex_validated = False
@@ -671,7 +678,6 @@ class PurchaseOrderLine(models.Model):
                                                                    ('product_id','=', line.product_id.id)
                                                                    ])  
             total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
-#             total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id.state not in ('done','cancel'))
             total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel'))
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
