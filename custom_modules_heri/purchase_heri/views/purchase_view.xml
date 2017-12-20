@@ -1,6 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 	<data>
+	    <!-- Redefinition du domaine du bouton : Purchase dans product.template -->
+        <record model="ir.actions.act_window" id="purchase.action_purchase_line_product_tree">
+            <field name="context">{}</field>
+            <field name="domain">[('product_id.product_tmpl_id','in',active_ids), ('order_id.state', 'not in', ['nouveau', 'cancel']), ('order_id.is_breq_stock', '=', False)]</field>
+            <field name="name">Purchases</field>
+            <field name="res_model">purchase.order.line</field>
+            <field name="view_id" ref="purchase.purchase_order_line_tree"/>
+        </record>
+        <!-- Fin -->
+        
+	    <!-- Ajout du prix unitaire remisé dans les lignes de commandes pour les achats locaux -->
+	      <record model="ir.ui.view" id="purchase_order_add_pu_discount_form">
+		    <field name="name">purchase_heri.order.form2</field>
+		    <field name="model">purchase.order</field>
+		    <field name="inherit_id" ref="purchase_discount.purchase_order_form"/>
+		    <field name="arch" type="xml">
+		        <xpath expr="//field[@name='discount'][1]" position="after">
+					<field name="pu_discounted"/>
+				</xpath>
+				<xpath expr="//field[@name='discount'][2]" position="after">
+					<field name="pu_discounted"/>
+				</xpath>
+		    </field>
+		  </record>
+		<!-- Fin -->
+		
 		<!-- Budget request form achat locaux-->
 		<record model="ir.ui.view" id="budget_request_form_view">
 			<field name="name">Budget Request</field>
@@ -517,6 +543,7 @@
                                     <field name="currency_id" invisible="1"/>
                                     <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                     <field name="discount"/>
+                                    <field name="pu_discounted" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                     <field name="cout_revient" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                     <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase')]" context="{'default_type_tax_use': 'purchase'}"/>
                                     <field name="price_subtotal" widget="monetary"/>
@@ -535,6 +562,7 @@
                                                 </div>
                                                 <field name="price_unit"/>
                                                 <field name="discount"/>
+                                                <field name="pu_discounted"/>
                                             </group>
                                             <group>
                                                 <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use', '=', 'purchase')]"/>

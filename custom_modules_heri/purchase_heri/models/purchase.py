@@ -123,7 +123,6 @@ class PurchaseHeri(models.Model):
         picking_id = picking_obj.search([('breq_id','=',self.id)],limit=1)
         picking_id.mapped('move_lines').action_cancel()
     
-                
     #creation budget expense report (budget request achat)
     @api.multi
     def _create_bex(self):
@@ -558,7 +557,7 @@ class PurchaseHeri(models.Model):
                 else:
                     bex_line_id = bex_line_obj.search([('bex_id','=', bex_droit_douane.id),('purchase_line_id.purchase_line_id','=', line.id)], limit=1)
                     droit_douane = bex_line_id.montant_realise
-                    line.cout_revient = (((caf_total + cLocTotal) * ((line.product_qty*line.price_unit) / fob_total)) + droit_douane) / (line.product_qty)
+                    line.cout_revient = (((caf_total + cLocTotal) * ((line.price_subtotal) / fob_total)) + droit_douane) / (line.product_qty)
                     
     def choisir_mode_paiement(self):
                 #Generation popup mode de paiement
@@ -648,9 +647,14 @@ class PurchaseOrderLine(models.Model):
     caf = fields.Float(string='CAF')
     cdtd = fields.Float(string='Cout avec droit et taxe de douane')
     cout_revient = fields.Float(string='Prix de revient estimatif')
-    
     purchase_line_id = fields.Many2one('purchase.order.line', 'Purchase Order Line', ondelete='set null', index=True, readonly=True)
-
+    pu_discounted = fields.Float(compute="_compute_pu_discounted", string='Prix unitaire remisé', store=True)
+    
+    @api.depends('price_unit','discount')
+    def _compute_pu_discounted(self):
+        for line in self:
+            line.pu_discounted = line.price_unit * (1 - line.discount / 100)
+        
     def _suggest_quantity(self):
         res = super(PurchaseOrderLine, self)._suggest_quantity()
         self.product_qty = 0.0
@@ -736,7 +740,7 @@ class PurchaseOrderLine(models.Model):
                 'product_uom': line.product_uom.id,
                 'breq_id': line.order_id.id,
                 'purchase_line_id': line.id,
-                'price_unit': line.price_unit,
+                'price_unit': line.pu_discounted,
                 'bex_id' :  bex.id,
                 'product_qty' : line.product_qty,
                 'prix_unitaire' : line.price_unit,
