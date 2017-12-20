@@ -546,7 +546,7 @@ class PurchaseHeri(models.Model):
 
             total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
             cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
-            fob_total = sum(line.product_qty*line.price_unit for line in self.order_line)
+            fob_total = sum(line.product_qty*line.pu_discounted for line in self.order_line)
             caf_total = (fob_total + total_assurance_fret) * self.taux_change
             
             for line in self.order_line:

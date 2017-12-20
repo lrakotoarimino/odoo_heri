@@ -278,7 +278,7 @@ class BexLine(models.Model):
     product_id = fields.Many2one('product.product', 'Article')
     product_qty = fields.Float('Quantité BReq',readonly=True)
     qty_done = fields.Float('Quantité reçue')
-    prix_unitaire = fields.Float('PUMP', readonly=True)
+    prix_unitaire = fields.Float('PU', readonly=True)
     montant_br = fields.Float('Montant BReq HT',readonly=True)
     montant_realise = fields.Float(compute='_compute_amount', string='Montant Bex HT', readonly=True, store=True)
     montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant Bex TTC', readonly=True, store=True)

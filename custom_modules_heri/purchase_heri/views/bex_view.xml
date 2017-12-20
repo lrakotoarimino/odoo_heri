@@ -55,7 +55,7 @@
 							<field name="nature" />
 							<field name="manager_id" invisible="1"/>
 							<field name="is_manager" invisible="1"/>
-							<field name="currency_id" invisible="1"/>
+							<field name="currency_id" readonly="1"/>
 							<field name="taux_change" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
 							<field name="is_creator" invisible="1"/>
                         </group>
