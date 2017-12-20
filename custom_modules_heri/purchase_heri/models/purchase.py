@@ -20,12 +20,12 @@ class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
     _description = "Budget Request"
     
-    @api.depends('amount_total_ariary')
-    def amount_ht_ariary(self):
-        for order in self :
-            order.amount_total_ariary = order.amount_untaxed * order.taux_change
+    @api.depends('taux_change', 'amount_untaxed')
+    def _compute_amount_ht_ariary(self):
+        for order in self:
+            order.amount_total_ariary = order.taux_change * order.amount_untaxed
             
-    amount_total_ariary = fields.Float(string='Montant HT en Ariary',compute='amount_ht_ariary')
+    amount_total_ariary = fields.Float(string='Montant HT en Ariary', compute='_compute_amount_ht_ariary')
     
     def _prepare_order_line_from_po_line(self, line):
         vals = {
@@ -311,11 +311,11 @@ class PurchaseHeri(models.Model):
     all_bex_validated = fields.Boolean('Tout bex est Comptabilisé',compute='_compute_all_validated')   
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie lié", compute='_compute_bs_lie')
     
-    def _currency_en_ar(self):
-        for breq in self:
-            breq.currency_en_ar = breq.env.ref('base.MGA').id
+    @api.model
+    def _get_currency_en_ar(self):
+        return self.env.ref('base.MGA').id
           
-    currency_en_ar = fields.Many2one('res.currency',compute="_currency_en_ar", readonly=True)
+    currency_en_ar = fields.Many2one('res.currency', default=_get_currency_en_ar, readonly=True)
     
     @api.depends('statut_bex')
     def _compute_all_validated(self):
@@ -537,7 +537,7 @@ class PurchaseHeri(models.Model):
             breq_transport = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
             breq_assurance = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
             breq_additionnel = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
-            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','douane')])[0]
+            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','douane')], limit=0)
             
             bex_transport = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
             bex_assurance = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
@@ -649,6 +649,7 @@ class PurchaseOrderLine(models.Model):
     cout_revient = fields.Float(string='Prix de revient estimatif')
     purchase_line_id = fields.Many2one('purchase.order.line', 'Purchase Order Line', ondelete='set null', index=True, readonly=True)
     pu_discounted = fields.Float(compute="_compute_pu_discounted", string='Prix unitaire remisé', store=True)
+    currency_en_ar = fields.Many2one('res.currency', related='order_id.currency_en_ar', readonly=True)
     
     @api.depends('price_unit','discount')
     def _compute_pu_discounted(self):

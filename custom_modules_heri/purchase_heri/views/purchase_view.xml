@@ -73,11 +73,16 @@
    	            	<field 
 	                   name="taux_change" 
 	                   attrs="{'invisible': [('service_type','!=','transport')]}"
-	                   widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
+	                   widget="monetary" 
+	                   options="{'currency_field': 'currency_en_ar'}" />
                 	<field name="picking_type_id" />
                 </xpath>
                 <xpath expr="//field[@name='amount_untaxed']" position="after">
-                    <field name="amount_total_ariary" attrs="{'invisible': [('service_type','!=','transport')]}" widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
+                    <field 
+                        name="amount_total_ariary" 
+                        attrs="{'invisible': [('service_type','!=','transport')]}" 
+                        widget="monetary" 
+                        options="{'currency_field': 'currency_en_ar'}" />
                 </xpath>
                 <xpath expr="//field[@name='picking_type_id']" position="after">
                 	<field name="incoterm_id" />
@@ -544,7 +549,8 @@
                                     <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                     <field name="discount"/>
                                     <field name="pu_discounted" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                                    <field name="cout_revient" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_en_ar" invisible="1"/>
+                                    <field name="cout_revient" widget="monetary" options="{'currency_field': 'currency_en_ar'}" readonly="1"/>
                                     <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase')]" context="{'default_type_tax_use': 'purchase'}"/>
                                     <field name="price_subtotal" widget="monetary"/>
                                 </tree>
