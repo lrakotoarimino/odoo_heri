@@ -25,7 +25,7 @@ class PurchaseHeri(models.Model):
         for order in self:
             order.amount_total_ariary = order.taux_change * order.amount_untaxed
             
-    amount_total_ariary = fields.Float(string='Montant HT en Ariary', compute='_compute_amount_ht_ariary')
+    amount_total_ariary = fields.Float(string='Montant HT (Ar)', compute='_compute_amount_ht_ariary')
     
     def _prepare_order_line_from_po_line(self, line):
         vals = {
@@ -320,7 +320,7 @@ class PurchaseHeri(models.Model):
     @api.depends('statut_bex')
     def _compute_all_validated(self):
         for order in self:
-            current_brq_id = self.env['purchase.order'].search([('parents_ids','=',order.id),('service_type','!=','transport')])
+            current_brq_id = self.env['purchase.order'].search([('parents_ids','=',order.id),('service_type','=','transport')])
             if current_brq_id and all([x.statut_bex == 'comptabilise' for x in current_brq_id]) :
                 order.all_bex_validated = True
             else :
@@ -537,8 +537,8 @@ class PurchaseHeri(models.Model):
             breq_transport = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
             breq_assurance = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
             breq_additionnel = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
-            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','douane')], limit=0)
-            
+            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','douane')],limit=1)
+                  
             bex_transport = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
             bex_assurance = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
             bex_additionnel = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])

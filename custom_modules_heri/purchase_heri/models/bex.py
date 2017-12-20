@@ -13,6 +13,13 @@ class Bex(models.Model):
     _order = "date desc, id desc"
     _description = "Budget Expense Report"
     
+    @api.depends('taux_change', 'amount_untaxed_bex')
+    def _compute_amount_ht_ariary(self):
+        for order in self:
+            order.amount_total_ariary = order.taux_change * order.amount_untaxed_bex
+            
+    amount_total_ariary = fields.Float(string='Montant HT (Ar)', compute='_compute_amount_ht_ariary')
+    
     be_lie_count = fields.Integer(compute='_compute_be_lie')
     be_ids = fields.One2many('stock.picking', string="be_ids", compute='_compute_be_lie')
     
@@ -29,7 +36,7 @@ class Bex(models.Model):
             breq_transport = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','transport')])
             breq_assurance = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','assurance')])
             breq_additionnel = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','additionel')])
-            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','douane')])[0]
+            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','douane')], limit=1)
             
             bex_transport = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
             bex_assurance = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
