@@ -287,7 +287,7 @@
 			<field name="name">Budget Request</field>
 			<field name="model">purchase.order</field>
 			<field name="mode">primary</field>
-			<field name="inherit_id" ref="budget_request_form_view"/>
+			<field name="inherit_id" ref="purchase_heri.budget_request_form_view"/>
 			<field name="arch" type="xml">
 		    	<!-- <field name="product_id" positiion="replace">
 		    	    <field 
@@ -346,7 +346,7 @@
                         string="Envoyer à la direction générale" 
                         name="action_a_approuver2"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), '|',('purchase_type', 'not in', ('purchase_import')), '|', ('is_creator','=',False), ('purchase_fille_ids','!=',False)]}"
+                        attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), '|',('purchase_type', 'not in', ('purchase_import')), '|',('is_creator','=',False),('purchase_fille_ids','!=',False)]}"
                      />
                     <button 
                         string="Valider" 
@@ -428,23 +428,15 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
-                        <button type="object"
-                            name="action_view_br_lie"
-                            class="oe_stat_button"
-                            icon="fa-plus-square"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
-                            <field name="br_lie_count" widget="statinfo" string="Autres" help="Sous-Breq Additionnel"/>
-                            <field name='purchase_ids' invisible="1"/>
-                        </button>
-                        <button type="object"
+                    	<button type="object"
                             name="action_view_breq_fille"
                             class="oe_stat_button"
                             icon="fa-folder"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False), ('parent_id', '!=', False)]}">
+                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
                             <field name="breq_fille_count" widget="statinfo" string="BReq Fille" help="BReq import fille"/>
                             <field name='purchase_fille_ids' invisible="1"/>
                         </button>
-                        <button type="object"
+						<button type="object"
                             name="action_view_br_transport"
                             class="oe_stat_button"
                             icon="fa-truck"
@@ -469,6 +461,14 @@
                             <field name='purchase_ids_assurance' invisible="1"/>
                     	</button>
                         <button type="object"
+                            name="action_view_br_lie"
+                            class="oe_stat_button"
+                            icon="fa-plus-square"
+                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            <field name="br_lie_count" widget="statinfo" string="Autres" help="Sous-Breq Additionnel"/>
+                            <field name='purchase_ids' invisible="1"/>
+                        </button>
+                        <button type="object"
                             name="action_view_bex"
                             class="oe_stat_button"
                             icon="fa-folder"
@@ -486,7 +486,6 @@
                     </div>
                     <group>
                         <group>
-                        	<field name="parent_id" attrs="{'invisible': [('parent_id','=', False)]}" string="Budget Request Mère"/>
                             <field name="partner_id" context="{'search_default_supplier':1, 'default_supplier':1, 'default_customer':0}" domain="[('supplier','=',True)]"/>
                             <field name="purchase_type" invisible="1"/>
                             <field name="is_creator" invisible="1" />
@@ -652,15 +651,15 @@
         <record id="action_br_tree_transport" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_request_tree"/>
-            <field name="act_window_id" ref="action_br_achat_import_transport"/>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import_transport"/>
         </record>
 
         <record id="action_br_form_transport" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="budget_request_form_view_inherit1"/>
-            <field name="act_window_id" ref="action_br_achat_import_transport"/>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view_inherit1"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import_transport"/>
         </record>
          <!--End Budget request transport-->
 		<!-- Budget request tdouane-->		
@@ -674,15 +673,15 @@
         <record id="action_br_tree_douane" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_request_tree"/>
-            <field name="act_window_id" ref="action_br_achat_import_douane"/>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import_douane"/>
         </record>
 
         <record id="action_br_form_douane" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="budget_request_form_view_inherit1"/>
-            <field name="act_window_id" ref="action_br_achat_import_douane"/>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view_inherit1"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import_douane"/>
         </record>
          <!--End Budget request douane-->
          <!-- Budget request assurance-->		
@@ -696,15 +695,15 @@
         <record id="action_br_tree_assurance" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_request_tree"/>
-            <field name="act_window_id" ref="action_br_achat_import_assurance"/>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import_assurance"/>
         </record>
 
         <record id="action_br_form_assurance" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="budget_request_form_view_inherit1"/>
-            <field name="act_window_id" ref="action_br_achat_import_assurance"/>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view_inherit1"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import_assurance"/>
         </record>
          <!--End Budget request assurance-->
 
@@ -728,15 +727,15 @@
 	   	<record id="action_br_tree_locaux_stocke" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_request_tree"/>
-            <field name="act_window_id" ref="action_stoke"/>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_stoke"/>
         </record>
 
         <record id="action_br_form_locaux_stocke" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="budget_request_form_view"/>
-            <field name="act_window_id" ref="action_stoke"/>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view"/>
+            <field name="act_window_id" ref="purchase_heri.action_stoke"/>
         </record>
 	   	<!-- Fin Achats locaux stockés menu action -->
         
@@ -758,15 +757,15 @@
    	   	<record id="action_br_tree_locaux_non_stocke" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_request_tree"/>
-            <field name="act_window_id" ref="action_non_stoke"/>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_non_stoke"/>
         </record>
 
         <record id="action_br_form_locaux_non_stocke" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="budget_request_form_view_inherit1"/>
-            <field name="act_window_id" ref="action_non_stoke"/>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view_inherit1"/>
+            <field name="act_window_id" ref="purchase_heri.action_non_stoke"/>
         </record>
 	   	<!-- Fin Achats locaux non stockés menu action -->
         
@@ -784,15 +783,15 @@
         <record id="action_br_tree_import" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_request_tree"/>
-            <field name="act_window_id" ref="action_br_achat_import"/>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import"/>
         </record>
 
         <record id="action_br_form_import" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="purchase_order_form2"/>
-            <field name="act_window_id" ref="action_br_achat_import"/>
+            <field name="view_id" ref="purchase_heri.purchase_order_form2"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_achat_import"/>
         </record>
         <!-- Fin Achats imports menu action -->
    		
@@ -814,19 +813,19 @@
 		<record id="action_br_lie_tree_view" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_request_tree"/>
-            <field name="act_window_id" ref="action_br_lie_tree"/>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_lie_tree"/>
         </record>
 
         <record id="action_br_lie_form_view" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="budget_request_form_view"/>
-            <field name="act_window_id" ref="action_br_lie_tree"/>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view"/>
+            <field name="act_window_id" ref="purchase_heri.action_br_lie_tree"/>
         </record>
         <!-- Fin Budget request lié button box action -->
-        
-        <!-- Budget request lié button box action -->
+		
+		<!-- Budget request fille button box action -->
 		<record id="action_breq_fille" model="ir.actions.act_window">
             <field name="name">Budget Request Fille</field>
             <field name="res_model">purchase.order</field>
@@ -854,7 +853,7 @@
             <field name="view_id" ref="purchase_order_form2"/>
             <field name="act_window_id" ref="action_breq_fille"/>
         </record>
-        <!-- Fin Budget request lié button box action -->
+        <!-- Fin Budget request fille button box action -->
 		
 		<!-- Budget expenses report lié button box action -->
 		<record id="action_bex_lie_tree" model="ir.actions.act_window">
@@ -868,8 +867,8 @@
          <record id="action_bex_tree" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_expenses_tree"/>
-            <field name="act_window_id" ref="action_bex_lie_tree"/>
+            <field name="view_id" ref="purchase_heri.budget_expenses_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_bex_lie_tree"/>
         </record>
 
         <record id="action_bex_form" model="ir.actions.act_window.view">
@@ -925,15 +924,15 @@
 	   	<record id="action_res_region_tree" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="res_region_tree"/>
-            <field name="act_window_id" ref="action_res_region"/>
+            <field name="view_id" ref="purchase_heri.res_region_tree"/>
+            <field name="act_window_id" ref="purchase_heri.action_res_region"/>
         </record>
 
         <record id="action_res_region_form" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="res_region_form_view"/>
-            <field name="act_window_id" ref="action_res_region"/>
+            <field name="view_id" ref="purchase_heri.res_region_form_view"/>
+            <field name="act_window_id" ref="purchase_heri.action_res_region"/>
         </record>
    		<!-- Fin Resource region menu action -->
 
@@ -948,7 +947,7 @@
 		<menuitem id="menu_stoke" parent="purchase.menu_procurement_management" action="action_stoke" name="Achats locaux stockés" sequence="1"/>
 		<menuitem id="menu_non_stoke" parent="purchase.menu_procurement_management" action="action_non_stoke" name="Achats locaux non stockés" sequence="2"/>
 		<menuitem id="menu_import" parent="purchase.menu_procurement_management" action="action_br_achat_import" name="Achats imports" sequence="3"/>
-		<menuitem id="menu_purchase_res_region" parent="purchase.menu_purchase_config" action="action_res_region" name="Région" sequence="0"/>
+		<menuitem id="menu_purchase_res_region" parent="purchase.menu_purchase_config" action="purchase_heri.action_res_region" name="Région" sequence="0"/>
 		<!-- Fin Menus -->
 		
 	</data>

@@ -28,8 +28,5 @@
         <record id="group_technicien_heri" model="res.groups">
             <field name="name">Technicien HERi</field>
         </record>
-        <record id="group_directeur_heri" model="res.groups">
-            <field name="name">Directeur HERi</field>
-        </record>
     </data>
 </odoo>

@@ -92,10 +92,10 @@ class PurchaseHeri(models.Model):
         
         #Modifier type de preparation
         if self.is_breq_stock :
-            picking_type_id = self.env.ref('purchase_heri.type_preparation_heri')
-            picking_type_id.write({'default_location_src_id': self.location_id.id})
+            picking_type_id = self.picking_type_id.id
+#             picking_type_id.write({'default_location_src_id': self.location_id.id})
             
-            res['picking_type_id'] = picking_type_id.id
+            res['picking_type_id'] = picking_type_id
             res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
             res['location_id'] = self.location_id.id
             res['move_type'] = 'direct'
@@ -232,8 +232,7 @@ class PurchaseHeri(models.Model):
     is_breq_id_sale = fields.Boolean('Est un breq stock sale') 
     is_breq_stock = fields.Boolean('Est un budget request stock', default=False)
     statut_breq_bex = fields.Char(compute="_concate_state", string='Etat BReq/BEX')
-    is_from_bci = fields.Boolean(u'Est-il venu d\'un bci lors de la facturation de materiel en mauvais etat dans vente ?', default=False)
-    to_invoice = fields.Boolean(u'Le Budget Request Stock est-il à facturer lors de la facturation de materiel en mauvais etat dans vente ?', default=False)
+    is_from_bci = fields.Boolean('Est-il venu d\'un bci lors de la facturation de materiel en mauvais etat dans vente', default=False)
     
     justificatif = fields.Text("Justificatif Non prévu/Dépassement")
     state = fields.Selection([
@@ -450,7 +449,7 @@ class PurchaseHeri(models.Model):
             if purchase_child:
                 br.purchase_ids = purchase_child
                 br.br_lie_count = len(purchase_child)
-                
+             
     @api.multi
     def _compute_breq_fille(self):
         for breq in self:
@@ -458,7 +457,7 @@ class PurchaseHeri(models.Model):
             if purchase_child:
                 breq.purchase_fille_ids = purchase_child
                 breq.breq_fille_count = len(purchase_child)
-                
+       
     @api.multi
     def _compute_br_transport_lie(self):
         for br_transport in self:
@@ -482,16 +481,16 @@ class PurchaseHeri(models.Model):
             if purchase_child_assurance:
                 br_transport.purchase_ids_assurance = purchase_child_assurance
                 br_transport.br_assurance_lie_count = len(purchase_child_assurance)
+                
+    @api.multi
+    def action_view_br_lie(self):
+        action = self.env.ref('purchase_heri.action_br_lie_tree')
+        result = action.read()[0]
+        return result
     
     @api.multi
     def action_view_breq_fille(self):
         action = self.env.ref('purchase_heri.action_breq_fille')
-        result = action.read()[0]
-        return result
-              
-    @api.multi
-    def action_view_br_lie(self):
-        action = self.env.ref('purchase_heri.action_br_lie_tree')
         result = action.read()[0]
         return result
     
@@ -649,8 +648,6 @@ class PurchaseHeri(models.Model):
     def creer_bs(self):
         for order in self:
             order._create_picking()
-            if order.to_invoice:
-                order.action_invoice_create()
             order.write({'state':'bs', 'change_state_date': fields.Datetime.now()})
 
     def envoyer_a_approuver(self):
@@ -772,10 +769,10 @@ class PurchaseOrderLine(models.Model):
                                 'product_qty': self.product_qty,
                                 }
                         }
-        elif self.order_id.parent_id:
-            total_qty = 0.0
-            qty_breq_fille = 0.0
-            allowed_qty = 0.0
+            elif self.order_id.parent_id:
+                total_qty = 0.0
+                qty_breq_fille = 0.0
+                allowed_qty = 0.0
             #Quantité total de l'article en cours dans BREq Mère
             order_line = self.env['purchase.order.line'].search([('order_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
             if order_line:
