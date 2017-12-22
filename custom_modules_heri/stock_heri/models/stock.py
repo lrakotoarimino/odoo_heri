@@ -751,3 +751,33 @@ class ReturnPickingHeri(models.TransientModel):
             'context': ctx,
             'views' : [(res and res.id or False, 'form')]
         }
+        
+class StockPickingtypeHeri(models.Model):
+    _inherit = "stock.picking.type"
+    
+    def get_action_bon_de_cession_interne(self):
+        for kanban in self :
+            if kanban.code in ('incoming','outgoing'):
+                action = self.env.ref('stock_heri.action_picking_tree_late_heri')
+            elif kanban.code == 'internal' :
+                action = self.env.ref('stock_heri.action_picking_tree_late_heri_bs')
+        result = action.read()[0]
+        return result
+        
+    def get_stock_picking_action_picking_type_tous(self):
+        for kanban in self :
+            if kanban.code in ('incoming','outgoing'):
+                action = self.env.ref('stock_heri.stock_picking_action_picking_type_heri')
+            elif kanban.code == 'internal' :
+                action = self.env.ref('stock_heri.stock_picking_action_picking_type_heri_bci')
+        result = action.read()[0]
+        return result
+    
+    def get_action_picking_tree_ready_heri(self):
+        for kanban in self :
+            if kanban.code in ('incoming','outgoing'):
+                action = self.env.ref('stock_heri.action_picking_tree_ready_heri_bs_be')
+            elif kanban.code == 'internal' :
+                action = self.env.ref('stock_heri.action_picking_tree_ready_heri_bci')
+        result = action.read()[0]
+        return result
