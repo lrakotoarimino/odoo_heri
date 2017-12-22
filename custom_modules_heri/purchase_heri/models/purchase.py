@@ -42,12 +42,35 @@ class PurchaseHeri(models.Model):
         return vals
         
     @api.onchange('parents_ids')
-    def onchange_parent_id(self):
+    def onchange_parents_ids(self):
         if self.service_type != 'douane':
             return {}
         new_lines = self.env['purchase.order.line']
         for line in self.parents_ids.order_line:
             data = self._prepare_order_line_from_po_line(line)
+            new_line = new_lines.new(data)
+            new_lines += new_line
+
+        self.order_line = new_lines
+        return {}
+    
+    @api.onchange('parent_id')
+    def onchange_parent_id(self):
+        new_lines = self.env['purchase.order.line']
+        self.partner_id = self.parent_id.partner_id
+        self.partner_ref = self.parent_id.partner_ref
+        self.nature = self.parent_id.nature
+        self.currency_id = self.parent_id.currency_id
+        self.taux_change = self.parent_id.taux_change
+        self.objet = self.parent_id.objet
+        self.section = self.parent_id.section
+        for line in self.parent_id.order_line:
+            data = self._prepare_order_line_from_po_line(line)
+            data['price_unit'] = line.price_unit
+            data['product_qty'] = line.product_qty
+            data['designation_frns'] = line.product_id.name
+            data['taxes_id'] = line.taxes_id
+            data['discount'] = line.discount
             new_line = new_lines.new(data)
             new_lines += new_line
 
@@ -69,10 +92,10 @@ class PurchaseHeri(models.Model):
         
         #Modifier type de preparation
         if self.is_breq_stock :
-            picking_type_id = self.picking_type_id.id
-#             picking_type_id.write({'default_location_src_id': self.location_id.id})
+            picking_type_id = self.env.ref('purchase_heri.type_preparation_heri')
+            picking_type_id.write({'default_location_src_id': self.location_id.id})
             
-            res['picking_type_id'] = picking_type_id
+            res['picking_type_id'] = picking_type_id.id
             res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
             res['location_id'] = self.location_id.id
             res['move_type'] = 'direct'
@@ -209,7 +232,8 @@ class PurchaseHeri(models.Model):
     is_breq_id_sale = fields.Boolean('Est un breq stock sale') 
     is_breq_stock = fields.Boolean('Est un budget request stock', default=False)
     statut_breq_bex = fields.Char(compute="_concate_state", string='Etat BReq/BEX')
-    is_from_bci = fields.Boolean('Est-il venu d\'un bci lors de la facturation de materiel en mauvais etat dans vente', default=False)
+    is_from_bci = fields.Boolean(u'Est-il venu d\'un bci lors de la facturation de materiel en mauvais etat dans vente ?', default=False)
+    to_invoice = fields.Boolean(u'Le Budget Request Stock est-il à facturer lors de la facturation de materiel en mauvais etat dans vente ?', default=False)
     
     justificatif = fields.Text("Justificatif Non prévu/Dépassement")
     state = fields.Selection([
@@ -242,6 +266,7 @@ class PurchaseHeri(models.Model):
         ('assurance', 'Assurance'),
         ('douane', 'Droit de douane'),
         ('additionel','Additionel'),
+        ('fille','Fille'),
     ], string='Type de service')
     
     purchase_import_type = fields.Selection([
@@ -261,6 +286,8 @@ class PurchaseHeri(models.Model):
     change_state_date = fields.Datetime(string="Date changement d\'état", readonly=True, help="Date du dernier changement d\'état.") 
     purchase_ids = fields.One2many('purchase.order', string="purchase_ids", compute='_compute_br_lie')
     br_lie_count = fields.Integer(compute='_compute_br_lie')
+    purchase_fille_ids = fields.One2many('purchase.order', string="purchase_fille_ids", compute='_compute_breq_fille')
+    breq_fille_count = fields.Integer(compute='_compute_breq_fille')
     purchase_ids_transport = fields.One2many('purchase.order', string="purchase_ids_transport", compute='_compute_br_transport_lie')
     br_transport_lie_count = fields.Integer(compute='_compute_br_transport_lie')
     taux_change = fields.Float(string='Taux de change')
@@ -271,6 +298,7 @@ class PurchaseHeri(models.Model):
     purchase_ids_assurance = fields.One2many('purchase.order', string="purchase_ids_assurance", compute='_compute_br_assurance_lie')
     br_assurance_lie_count = fields.Integer(compute='_compute_br_assurance_lie')
     
+    parent_id = fields.Many2one('purchase.order',readonly=True, string='BReq mère')
     parents_ids = fields.Many2one('purchase.order',readonly=True, string='BReq d\'origine')
     date_prevu = fields.Datetime(string="Date prévue livraison", default=fields.Datetime.now())
     modalite_paiement = fields.Float(string='Modalité de paiement')
@@ -424,6 +452,14 @@ class PurchaseHeri(models.Model):
                 br.br_lie_count = len(purchase_child)
                 
     @api.multi
+    def _compute_breq_fille(self):
+        for breq in self:
+            purchase_child = self.env['purchase.order'].search([('parent_id','=',breq.id),('service_type','=','fille')])
+            if purchase_child:
+                breq.purchase_fille_ids = purchase_child
+                breq.breq_fille_count = len(purchase_child)
+                
+    @api.multi
     def _compute_br_transport_lie(self):
         for br_transport in self:
             purchase_child_transport = self.env['purchase.order'].search([('parents_ids','=',br_transport.id),('service_type','=','transport')])
@@ -446,7 +482,13 @@ class PurchaseHeri(models.Model):
             if purchase_child_assurance:
                 br_transport.purchase_ids_assurance = purchase_child_assurance
                 br_transport.br_assurance_lie_count = len(purchase_child_assurance)
-                
+    
+    @api.multi
+    def action_view_breq_fille(self):
+        action = self.env.ref('purchase_heri.action_breq_fille')
+        result = action.read()[0]
+        return result
+              
     @api.multi
     def action_view_br_lie(self):
         action = self.env.ref('purchase_heri.action_br_lie_tree')
@@ -493,7 +535,7 @@ class PurchaseHeri(models.Model):
     def _get_is_manager(self):
         self.is_manager = False
         current_employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)]).id
-        manager_id = self.employee_id.coach_id.id
+        manager_id = self.employee_id.parent_id.id
         if current_employee_id == manager_id:
             self.is_manager = True
             
@@ -607,6 +649,8 @@ class PurchaseHeri(models.Model):
     def creer_bs(self):
         for order in self:
             order._create_picking()
+            if order.to_invoice:
+                order.action_invoice_create()
             order.write({'state':'bs', 'change_state_date': fields.Datetime.now()})
 
     def envoyer_a_approuver(self):
@@ -728,6 +772,23 @@ class PurchaseOrderLine(models.Model):
                                 'product_qty': self.product_qty,
                                 }
                         }
+        elif self.order_id.parent_id:
+            total_qty = 0.0
+            qty_breq_fille = 0.0
+            allowed_qty = 0.0
+            #Quantité total de l'article en cours dans BREq Mère
+            order_line = self.env['purchase.order.line'].search([('order_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
+            if order_line:
+                total_qty = sum(x.product_qty for x in order_line)
+                breq_fille_line = self.env['purchase.order.line'].search([('order_id.parent_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
+                if breq_fille_line:
+                    qty_breq_fille = sum(x.product_qty for x in breq_fille_line)
+                allowed_qty = total_qty - qty_breq_fille
+                if self.product_qty > allowed_qty:
+                    raise UserError(u'La quantité de l\'article dépasse la quantité du Budget Request Mère ! ')
+            else:
+                raise UserError('Article introuvable! ')
+            
         return
 
     @api.multi
