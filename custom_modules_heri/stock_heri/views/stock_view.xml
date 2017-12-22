@@ -195,9 +195,6 @@
                 <xpath expr="//form" position="attributes">
                     <attribute name="create">0</attribute>
                 </xpath>
-				<xpath expr="//field[@name='min_date']" position="after">
-					<field name="date_arrivee_reelle" attrs="{'invisible': [('mouvement_type', '!=', 'bs')]}"/>
-				</xpath>
 				<field name="move_lines" position="attributes">
 					<attribute name="attrs">{'readonly': [('mouvement_type', '=', 'bs')]}</attribute>
 				</field>
@@ -321,8 +318,18 @@
                     <field name="section"/>
                     <field name="is_bs" invisible="1"/>
                     <field name="is_returned" invisible="1"/>
-                    
                 </xpath>
+                <xpath expr="//field[@name='min_date']" position="after">
+					<field name="date_arrivee_reelle" attrs="{'invisible': [('mouvement_type', '!=', 'bs')]}"/>
+				</xpath>
+                <xpath expr="//field[@name='min_date']" position="after">
+					 <field name="is_received" invisible="1"/>
+					 <field name="product_received" attrs="{'invisible': [('state', 'not in',('done'))]}"/>
+				</xpath>
+				<xpath expr="//button[@name='do_new_transfer']" position="after">
+				    <button name="action_received_call" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',False),('state', 'not in',('done'))]}" groups="purchase_heri.group_call_center_heri"/>
+				    <button name="action_received_log" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',True),('state', 'not in',('done'))]}" groups="purchase_heri.group_logistique_heri"/>
+				</xpath>
                 <xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">
 		    		<attribute name="string">Retourner</attribute>
 		    		<attribute name="states"></attribute>

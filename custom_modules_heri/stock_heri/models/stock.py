@@ -15,6 +15,24 @@ class StockPicking(models.Model):
     _inherit = 'stock.picking' 
     _order = 'create_date desc'
     
+    is_received = fields.Boolean('Est reçu',compute="onchange_location_dest_id")
+    product_received = fields.Many2one('hr.employee',string="Article reçu par :",readonly=1)
+    
+    
+    def action_received_call(self):
+        for order in self :
+            employee_obj = self.env['hr.employee']
+            #on cherche l'id de l'employe en cours dans la base hr_employee
+            employee_id = employee_obj.search([('user_id','=',self.env.uid)])
+            order.update({'product_received': employee_id.id})
+        
+    def action_received_log(self):
+        for order in self :
+            employee_obj = self.env['hr.employee']
+            #on cherche l'id de l'employe en cours dans la base hr_employee
+            employee_id = employee_obj.search([('user_id','=',self.env.uid)])
+            order.update({'product_received': employee_id.id})
+    
     @api.model
     def create(self, vals):
         context = (self._context or {})
@@ -260,7 +278,7 @@ class StockPicking(models.Model):
         for move in self.move_lines.filtered(lambda move: move.state not in ('done', 'cancel')):
             values = product_id_to_vals.pop(move.product_id.id, [])
             #insertion de prix unitaire et prix subtotal
-            if self.mouvement_type == 'bs':
+            if self.mouvement_type in ('bs','bci'):
                 for val in values:
                     val.update({
                                 'price_unit': move.purchase_line_id.price_unit,
@@ -510,6 +528,9 @@ class StockPicking(models.Model):
         for pick in self:
             if pick.mouvement_type in ('bs','be','bci'):
                 after_vals = {}
+                if pick.location_dest_id.is_kiosque :
+                    pick.is_received = True
+#                     pick.picking_type_id = self.env.ref('purchase_heri.type_preparation_heri_kiosque')
                 if pick.location_dest_id:
                     after_vals['location_dest_id'] = pick.location_dest_id.id
                 if after_vals:

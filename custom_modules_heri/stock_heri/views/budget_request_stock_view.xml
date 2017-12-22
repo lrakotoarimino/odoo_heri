@@ -76,8 +76,9 @@
                             <field name="is_manager" invisible="1"/>
                             <field name="partner_ref"/>
                             <field name="location_id" attrs="{'invisible': [('is_breq_stock', '=', False)], 'required': [('is_breq_stock', '=', True)]}"/>
-                            <field name="currency_id" groups="base.group_multi_currency"/>
+                            <field name="currency_id" groups="base.group_multi_currency" readonly="1"/>
                             <field name="is_shipped" invisible="1"/>
+                            <field name="picking_type_id" domain="[('code','=','outgoing')]" options="{'no_create': True}"/>
                         </group>
                         <group>
                             <field name="date_order" readonly="1"/>
@@ -193,7 +194,6 @@
                                             help="This changes the scheduled date of all order lines to the given date"
                                             class="fa fa-calendar o_icon_button oe_edit_only"/>
                                     </div>
-                                    <field name="picking_type_id" domain="[('code','=','outgoing')]" options="{'no_create': True}"/>
                                     <field name="dest_address_id" groups="stock.group_stock_multi_locations" attrs="{'invisible': [('default_location_dest_id_usage', '!=', 'customer')], 'required': [('default_location_dest_id_usage', '=', 'customer')]}"/>
                                     <field name="default_location_dest_id_usage" invisible="1"/>
                                     <field name="incoterm_id"/>
