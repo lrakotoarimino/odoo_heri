@@ -428,15 +428,7 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
-                        <button type="object"
-                            name="action_view_br_lie"
-                            class="oe_stat_button"
-                            icon="fa-plus-square"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
-                            <field name="br_lie_count" widget="statinfo" string="Autres" help="Sous-Breq Additionnel"/>
-                            <field name='purchase_ids' invisible="1"/>
-                        </button>
-                        <button type="object"
+						<button type="object"
                             name="action_view_br_transport"
                             class="oe_stat_button"
                             icon="fa-truck"
@@ -460,6 +452,14 @@
                             <field name="br_assurance_lie_count" widget="statinfo" string="Assurance" help="Sous-Breq Assurance"/>
                             <field name='purchase_ids_assurance' invisible="1"/>
                     	</button>
+                        <button type="object"
+                            name="action_view_br_lie"
+                            class="oe_stat_button"
+                            icon="fa-plus-square"
+                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            <field name="br_lie_count" widget="statinfo" string="Autres" help="Sous-Breq Additionnel"/>
+                            <field name='purchase_ids' invisible="1"/>
+                        </button>
                         <button type="object"
                             name="action_view_bex"
                             class="oe_stat_button"

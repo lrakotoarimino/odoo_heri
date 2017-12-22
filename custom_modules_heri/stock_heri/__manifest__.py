@@ -8,8 +8,8 @@
     'website': 'https://www.ingenosya.mg',
     'depends': ['purchase_heri'],
     'data': [
-            'views/budget_request_stock_view.xml',
             'views/stock_view.xml',
+            'views/budget_request_stock_view.xml',
             'report/report_bon_de_sortie_template.xml',
             'report/report_bon_de_sortie.xml',
               ],
