@@ -69,10 +69,10 @@ class PurchaseHeri(models.Model):
         
         #Modifier type de preparation
         if self.is_breq_stock :
-            picking_type_id = self.env.ref('purchase_heri.type_preparation_heri')
-            picking_type_id.write({'default_location_src_id': self.location_id.id})
+            picking_type_id = self.picking_type_id.id
+#             picking_type_id.write({'default_location_src_id': self.location_id.id})
             
-            res['picking_type_id'] = picking_type_id.id
+            res['picking_type_id'] = picking_type_id
             res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
             res['location_id'] = self.location_id.id
             res['move_type'] = 'direct'
