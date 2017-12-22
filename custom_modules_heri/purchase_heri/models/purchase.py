@@ -769,22 +769,29 @@ class PurchaseOrderLine(models.Model):
                                 'product_qty': self.product_qty,
                                 }
                         }
-            elif self.order_id.parent_id:
-                total_qty = 0.0
-                qty_breq_fille = 0.0
-                allowed_qty = 0.0
-            #Quantité total de l'article en cours dans BREq Mère
-            order_line = self.env['purchase.order.line'].search([('order_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
-            if order_line:
-                total_qty = sum(x.product_qty for x in order_line)
-                breq_fille_line = self.env['purchase.order.line'].search([('order_id.parent_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
-                if breq_fille_line:
-                    qty_breq_fille = sum(x.product_qty for x in breq_fille_line)
-                allowed_qty = total_qty - qty_breq_fille
-                if self.product_qty > allowed_qty:
-                    raise UserError(u'La quantité de l\'article dépasse la quantité du Budget Request Mère ! ')
-            else:
-                raise UserError('Article introuvable! ')
+        elif self.order_id.parent_id:
+            total_qty = 0.0
+            qty_breq_fille = 0.0
+            allowed_qty = 0.0
+        #Quantité total de l'article en cours dans BREq Mère
+        order_line = self.env['purchase.order.line'].search([('order_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
+        if order_line:
+            total_qty = sum(x.product_qty for x in order_line)
+            breq_fille_line = self.env['purchase.order.line'].search([('order_id.parent_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
+            if breq_fille_line:
+                qty_breq_fille = sum(x.product_qty for x in breq_fille_line)
+            allowed_qty = total_qty - qty_breq_fille
+            if self.product_qty > allowed_qty:
+                return {
+                        'warning': {
+                                    'title': 'Avertissement - Quantité commandée!', 'message': 'La quantité de l\'article dépasse la quantité du Budget Request Mère !'
+                                },
+                        'value': {
+                                'product_qty': total_qty,
+                                }
+                        }
+        else:
+            raise UserError('Article introuvable! ')
             
         return
 
