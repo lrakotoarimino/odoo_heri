@@ -202,10 +202,11 @@
 					<attribute name="invisible">1</attribute>
 				</button>
 				<field name="location_dest_id" position="attributes">
-					<attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': [('state', '=', 'done')]}</attribute>
+					<!-- <attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': [('state', '=', 'done')]}</attribute> -->
+					<attribute name="attrs">{'readonly': [('state', '=', 'done')]}</attribute>
 				</field>
 				<field name="location_id" position="replace">
-				    <field name="location_id" readonly="1"/>
+				    <field name="location_id" readonly="1" string="Magasin d'origine"/>
 				</field>
 				<button name="do_new_transfer" position="attributes">
 				    <attribute name="invisible">1</attribute>

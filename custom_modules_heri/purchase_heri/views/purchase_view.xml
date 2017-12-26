@@ -346,7 +346,7 @@
                         string="Envoyer à la direction générale" 
                         name="action_a_approuver2"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), '|',('purchase_type', 'not in', ('purchase_import')), '|',('is_creator','=',False),('purchase_fille_ids','!=',False)]}"
+                        attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), '|',('purchase_type', 'not in', ('purchase_import')), '|',('is_creator','=',False), ('breq_fille_count','>',0)]}"
                      />
                     <button 
                         string="Valider" 
@@ -432,7 +432,7 @@
                             name="action_view_breq_fille"
                             class="oe_stat_button"
                             icon="fa-folder"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            attrs="{'invisible': ['|', ('purchase_type', 'not in', ('purchase_import')), ('state', 'not in', ('nouveau'))]}">
                             <field name="breq_fille_count" widget="statinfo" string="BReq Fille" help="BReq import fille"/>
                             <field name='purchase_fille_ids' invisible="1"/>
                         </button>
@@ -440,7 +440,7 @@
                             name="action_view_br_transport"
                             class="oe_stat_button"
                             icon="fa-truck"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            attrs="{'invisible': [('purchase_type', 'not in', ('purchase_import'))]}">
                             <field name="br_transport_lie_count" widget="statinfo" string="Transport" help="Sous-Breq Transport"/>
                             <field name='purchase_ids_transport' invisible="1"/>
                     	</button>
@@ -448,7 +448,7 @@
                             name="action_view_br_douane"
                             class="oe_stat_button"
                             icon="fa-anchor"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            attrs="{'invisible': [('purchase_type', 'not in', ('purchase_import'))]}">
                             <field name="br_douane_lie_count" widget="statinfo" string="Douane" help="Sous-Breq Douane"/>
                             <field name='purchase_ids_douane' invisible="1"/>
                     	</button>
@@ -464,7 +464,7 @@
                             name="action_view_br_lie"
                             class="oe_stat_button"
                             icon="fa-plus-square"
-                            attrs="{'invisible': ['|',('purchase_type', 'not in', ('purchase_import')), ('is_creator', '=',False)]}">
+                            attrs="{'invisible': [('purchase_type', 'not in', ('purchase_import'))]}">
                             <field name="br_lie_count" widget="statinfo" string="Autres" help="Sous-Breq Additionnel"/>
                             <field name='purchase_ids' invisible="1"/>
                         </button>

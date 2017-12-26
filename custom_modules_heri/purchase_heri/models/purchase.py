@@ -92,11 +92,12 @@ class PurchaseHeri(models.Model):
         
         #Modifier type de preparation
         if self.is_breq_stock :
-            picking_type_id = self.picking_type_id.id
-#             picking_type_id.write({'default_location_src_id': self.location_id.id})
-            
-            res['picking_type_id'] = picking_type_id
-            res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
+            if not picking_type_id.default_location_dest_id:
+                raise UserError("Le type de préparation du champ 'Livré à' %s n'a pas d'Emplacement de destination par défaut. Merci de configurer" % (self.picking_type_id.name))
+
+            res['picking_type_id'] = self.picking_type_id.id
+            #res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
+            res['location_dest_id'] = self.picking_type_id.default_location_dest_id.id
             res['location_id'] = self.location_id.id
             res['move_type'] = 'direct'
             res['employee_id'] = self.employee_id.id
@@ -683,7 +684,7 @@ class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
 
     qte_prevu = fields.Float(compute="onchange_prod_id", string='Quantité disponible')
-    designation_frns = fields.Text(string='Description Fournisseur', readonly=True)
+    designation_frns = fields.Text(string='Description Fournisseur')
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
     caf = fields.Float(string='CAF')
     cdtd = fields.Float(string='Cout avec droit et taxe de douane')
