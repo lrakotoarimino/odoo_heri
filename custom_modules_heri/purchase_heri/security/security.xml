@@ -31,5 +31,11 @@
 		<record id="group_directeur_heri" model="res.groups">
             <field name="name">Directeur HERi</field>
         </record>
+        <record id="group_daf_heri" model="res.groups">
+            <field name="name">Directeur des Opérations HERi</field>
+        </record>
+        <record id="group_dop_heri" model="res.groups">
+            <field name="name">Directeur Adminisratif et Financier HERi</field>
+        </record>
     </data>
 </odoo>

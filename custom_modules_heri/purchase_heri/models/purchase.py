@@ -100,6 +100,11 @@ class PurchaseHeri(models.Model):
                 raise UserError('Veuillez renseigner les lignes de la commande.')
         return order 
     
+    #Redefinir pour ne pas initialiser le champ livré à
+    @api.model
+    def _default_picking_type(self):
+        return False
+    
     @api.model
     def _prepare_picking(self):
         res = super(PurchaseHeri,self)._prepare_picking()
