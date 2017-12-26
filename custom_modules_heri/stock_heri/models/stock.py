@@ -36,14 +36,19 @@ class StockPicking(models.Model):
     @api.model
     def create(self, vals):
         context = (self._context or {})
+        
         mouvement_type = context.get('default_mouvement_type', False)
         if mouvement_type and mouvement_type == 'bci':
             vals['name'] = self.env['ir.sequence'].next_by_code('bon.cession.interne')
             if not vals['move_lines']:
                 raise UserError('Veuillez insérer les articles à transférer.')
+        elif mouvement_type and mouvement_type == 'bs':
+            vals['name'] = self.env['ir.sequence'].next_by_code('bon.sortie')
+        elif mouvement_type and mouvement_type == 'be':
+            vals['name'] = self.env['ir.sequence'].next_by_code('bon.entree')
+        
         return super(StockPicking, self).create(vals)
         
-            
     breq_id = fields.Many2one('purchase.order')
     section = fields.Char("Section analytique d’imputation")
     amount_untaxed = fields.Float("Total")

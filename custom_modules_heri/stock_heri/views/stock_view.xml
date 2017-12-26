@@ -533,7 +533,7 @@
 	    <!-- Ajout du champ qte_prevu dans move_lines -->
 		
 		
-		<!-- Sequences for bon de cessio interne --> 
+		<!-- Sequence bon de cession interne --> 
         <record id="seq_bon_cession_interne" model="ir.sequence">
             <field name="name">Bon cession interne</field>
             <field name="code">bon.cession.interne</field>
@@ -542,6 +542,29 @@
             <field name="padding">6</field>
             <field name="company_id" eval="False"/>
         </record>
+       	<!-- Fin Sequence bon de cession interne -->
+       	
+       	<!-- Sequence bon de sortie --> 
+        <record id="seq_bon_sortie" model="ir.sequence">
+            <field name="name">Séquence des bons de sortie</field>
+            <field name="code">bon.sortie</field>
+            <field name="domain">[('mouvement_type','=','bs')]</field>  
+            <field name="prefix">BS</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Fin Sequence bon de sortie -->
+        
+        <!-- Sequence bon d'entrée --> 
+        <record id="seq_bon_entree" model="ir.sequence">
+            <field name="name">Séquence des bons d'entrée</field>
+            <field name="code">bon.entree</field>
+            <field name="domain">[('mouvement_type','=','be')]</field>  
+            <field name="prefix">BE</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Fin Sequence bon d'entrée -->
         
         <!-- Menus -->
 		<menuitem id="menu_stock_picking_heri" parent="stock.menu_stock_root" sequence="-100" name="Stock"/>
