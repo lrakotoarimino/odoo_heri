@@ -28,7 +28,7 @@
 			<field name="inherit_id" ref="stock.product_template_form_view_procurement_button"/>
 			<field name="arch" type="xml">
 				<xpath expr="//button[@name='%(stock.action_view_change_product_quantity)d']" position="attributes">
-					<attribute name="groups">purchase_heri.group_directeur_heri,purchase_heri.group_dg_heri</attribute>
+					<attribute name="groups">purchase_heri.group_dg_heri,purchase_heri.group_daf_heri,purchase_heri.group_dop_heri</attribute>
 				</xpath>
 			</field>
 		</record>	
@@ -39,7 +39,7 @@
 			<field name="inherit_id" ref="stock.product_form_view_procurement_button"/>
 			<field name="arch" type="xml">
 				<xpath expr="//button[@name='%(stock.action_view_change_product_quantity)d']" position="attributes">
-					<attribute name="groups">purchase_heri.group_directeur_heri,purchase_heri.group_dg_heri</attribute>
+					<attribute name="groups">purchase_heri.group_dg_heri,purchase_heri.group_daf_heri,purchase_heri.group_dop_heri</attribute>
 				</xpath>
 			</field>
 		</record>	

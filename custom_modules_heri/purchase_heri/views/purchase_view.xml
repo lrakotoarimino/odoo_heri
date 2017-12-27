@@ -75,7 +75,7 @@
 	                   attrs="{'invisible': [('service_type','!=','transport')]}"
 	                   widget="monetary" 
 	                   options="{'currency_field': 'currency_en_ar'}" />
-                	<field name="picking_type_id" />
+                	<field name="picking_type_id" domain="[('code','=','incoming')]" options="{'no_create': True}"/>
                 </xpath>
                 <xpath expr="//field[@name='amount_untaxed']" position="after">
                     <field 
@@ -510,7 +510,7 @@
                                 attrs="{'required': [('purchase_type','=','purchase_import')]}"
                                 widget="monetary" options="{'currency_field': 'currency_en_ar'}" />
                             <field name="is_shipped" invisible="1"/>
-                            <field name="picking_type_id" domain="[('code','=','incoming')]" options="{'no_create': True}" groups="stock.group_stock_multi_locations"/>
+                            <field name="picking_type_id" domain="[('code','=','incoming')]" options="{'no_create': True}"/>
                             <field name="incoterm_id"/>                       
                         </group>
                         <group>
