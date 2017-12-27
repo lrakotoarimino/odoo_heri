@@ -8,6 +8,11 @@ from odoo.api import onchange
 from datetime import datetime
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
+READONLY_STATES = {
+        'purchase': [('readonly', True)],
+        'done': [('readonly', True)],
+        'cancel': [('readonly', True)],
+    }
 #Region
 class ResRegion(models.Model):
     _name = "res.region"
@@ -19,6 +24,15 @@ class ResRegion(models.Model):
 class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
     _description = "Budget Request"
+    
+    @api.model
+    def _default_picking_type2(self):
+        if self.env.context.get('default_is_breq_stock'):
+            return False
+        return super(PurchaseHeri,self)._default_picking_type()
+    
+    picking_type_id = fields.Many2one('stock.picking.type', 'Deliver To', states=READONLY_STATES, required=True, default=_default_picking_type2,\
+        help="This will determine picking type of incoming shipment")
     
     @api.depends('taux_change', 'amount_untaxed')
     def _compute_amount_ht_ariary(self):
