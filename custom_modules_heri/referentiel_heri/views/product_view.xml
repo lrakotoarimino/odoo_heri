@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 	<data>
-	
 		<!-- Customer form -->
 		<record model="ir.ui.view" id="product_heri_form_view">
 			<field name="name">product.product.form</field>
