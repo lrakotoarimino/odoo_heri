@@ -111,7 +111,7 @@ class PurchaseHeri(models.Model):
         
         #Modifier type de preparation
         if self.is_breq_stock :
-            if not picking_type_id.default_location_dest_id:
+            if not self.picking_type_id.default_location_dest_id:
                 raise UserError("Le type de préparation du champ 'Livré à' %s n'a pas d'Emplacement de destination par défaut. Merci de configurer" % (self.picking_type_id.name))
 
             res['picking_type_id'] = self.picking_type_id.id
