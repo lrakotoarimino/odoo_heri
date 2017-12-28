@@ -8,7 +8,6 @@
 			<field name="inherit_id" ref="stock.view_location_form"/>
 			<field name="arch" type="xml">
 			    <xpath expr="//field[@name='usage']" position="before">
-					<field name="is_kiosque"/>
 					<field name="date_contrat" attrs="{'required': [('is_kiosque', '=', True)], 'invisible':[('is_kiosque', '=', False)]}"/>
 					<field name="region_id" attrs="{'required': [('is_kiosque', '=', True)], 'invisible':[('is_kiosque', '=', False)]}"/>
 					<field name="premiere_redevance"/>

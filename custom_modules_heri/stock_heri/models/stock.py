@@ -15,8 +15,15 @@ class StockPicking(models.Model):
     _inherit = 'stock.picking' 
     _order = 'create_date desc'
     
-    is_received = fields.Boolean('Est reçu',compute="onchange_location_dest_id")
-    product_received = fields.Many2one('hr.employee',string="Article reçu par :",readonly=1)
+    @api.depends('location_dest_id')
+    def _compute_is_received(self):
+        for pick in self:
+            if pick.mouvement_type in ('bs','be','bci'):
+                if pick.location_dest_id.is_kiosque :
+                    pick.is_received = True
+    
+    is_received = fields.Boolean('Est reçu', compute="_compute_is_received")
+    product_received = fields.Many2one('hr.employee', string="Article reçu par :", readonly=1)
     
     
     def action_received_call(self):
@@ -533,8 +540,8 @@ class StockPicking(models.Model):
         for pick in self:
             if pick.mouvement_type in ('bs','be','bci'):
                 after_vals = {}
-                if pick.location_dest_id.is_kiosque :
-                    pick.is_received = True
+#                 if pick.location_dest_id.is_kiosque :
+#                     pick.is_received = True
 #                     pick.picking_type_id = self.env.ref('purchase_heri.type_preparation_heri_kiosque')
                 if pick.location_dest_id:
                     after_vals['location_dest_id'] = pick.location_dest_id.id

@@ -11,6 +11,7 @@
             'views/stock_view.xml',
             'views/budget_request_stock_view.xml',
             'views/stock_kanban_view.xml',
+            'views/stock_location_view.xml',
             'report/report_bon_de_sortie_template.xml',
             'report/report_bon_de_sortie.xml',
               ],

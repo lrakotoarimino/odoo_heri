@@ -328,8 +328,8 @@
 					 <field name="product_received" attrs="{'invisible': [('state', 'not in',('done'))]}"/>
 				</xpath>
 				<xpath expr="//button[@name='do_new_transfer']" position="after">
-				    <button name="action_received_call" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',False),('state', 'not in',('done'))]}" groups="purchase_heri.group_call_center_heri"/>
-				    <button name="action_received_log" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',True),('state', 'not in',('done'))]}" groups="purchase_heri.group_logistique_heri"/>
+				    <button name="action_received_call" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',False), '|',('product_received', '!=',False), ('state', 'not in',('done'))]}" groups="purchase_heri.group_call_center_heri"/>
+				    <button name="action_received_log" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',True), '|',('product_received', '!=',False), ('state', 'not in',('done'))]}" groups="purchase_heri.group_logistique_heri"/>
 				</xpath>
                 <xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">
 		    		<attribute name="string">Retourner</attribute>
