@@ -683,7 +683,7 @@ class ReturnPickingHeri(models.TransientModel):
 
         # create new picking for returned products
         
-        picking_type_id = picking.picking_type_id.return_picking_type_id.id or picking.picking_type_id.id
+        picking_type_id = picking.picking_type_id.id
         res = re.findall("\d+", picking.name)
         longeur_res = len(res)
         res_final = res[longeur_res-1]
@@ -721,8 +721,8 @@ class ReturnPickingHeri(models.TransientModel):
                     'qty_done': new_qty,
                     'picking_id': new_picking.id,
                     'state': 'draft',
-                    'location_id': return_line.move_id.location_dest_id.id,
-                    'location_dest_id': self.location_id.id or return_line.move_id.location_id.id,
+                    'location_id': picking.location_dest_id.id,
+                    'location_dest_id': self.location_id.id,
                     'picking_type_id': picking_type_id,
                     'warehouse_id': picking.picking_type_id.warehouse_id.id,
                     'origin_returned_move_id': return_line.move_id.id,

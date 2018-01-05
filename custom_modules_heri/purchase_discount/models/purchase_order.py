@@ -74,15 +74,16 @@ class PurchaseOrderLine(models.Model):
         maximum inheritability. We have to also switch temporarily the order
         state for avoiding an infinite recursion.
         """
-        price_unit = False
-        price = self._get_discounted_price_unit()
-        if price != self.price_unit:
-            # Only change value if it's different
-            self.order_id.state = 'draft'
-            price_unit = self.price_unit
-            self.price_unit = price
+        if self.order_id.purchase_type not in ('purchase_import','purchase_stored','purchase_not_stored') :
+            price_unit = False
+            price = self._get_discounted_price_unit()
+            if price != self.price_unit:
+                # Only change value if it's different
+                self.order_id.state = 'draft'
+                price_unit = self.price_unit
+                self.price_unit = price
+            if price_unit:
+                self.price_unit = price_unit
+                self.order_id.state = 'purchase'
         price = super(PurchaseOrderLine, self)._get_stock_move_price_unit()
-        if price_unit:
-            self.price_unit = price_unit
-            self.order_id.state = 'purchase'
         return price
