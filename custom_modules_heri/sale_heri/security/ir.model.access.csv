@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_a_facturer_dg,a.facturer.dg,sale_heri.model_a_facturer,purchase_heri.group_dg_heri,1,1,1,0

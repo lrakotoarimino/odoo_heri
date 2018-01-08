@@ -23,6 +23,9 @@ class BreqStockHeri(models.Model):
             ('facturation_tiers', 'Tiers'),
             ('facturation_entrepreneurs', 'Entrepreneurs'),
             ('facturation_heri_entrepreneurs', 'Entrepreneurs Heri'),
+            ('facturation_mat_mauvais_etat', 'Matériels mauvais état'),
+            ('facturation_perte_materiel', 'Perte Matériels'),
+            ('regularisation_facture', 'Regularisation Facture')
         ], string='Type de Facturation')
     #creation bon de sortie (budget request stock) loué
     @api.multi
@@ -32,7 +35,7 @@ class BreqStockHeri(models.Model):
             if order.facturation_type == 'materiel_loue' :
                 vals = {
     
-                        'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                        'picking_type_id': order.picking_type_id.id,
                         'partner_id': order.partner_id.id,
                         'date': order.date_order,
                         'origin': order.breq_id_sale.name,
@@ -50,7 +53,7 @@ class BreqStockHeri(models.Model):
                         }
             if order.facturation_type == 'facturation_tiers' :
                 vals = {
-                        'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                        'picking_type_id': order.picking_type_id.id,
                         'partner_id': order.partner_id.id,
                         'date': order.date_order,
                         'origin': order.breq_id_sale.name,
@@ -68,7 +71,7 @@ class BreqStockHeri(models.Model):
                         }
             if order.facturation_type == 'facturation_heri_entrepreneurs':
                 vals = {
-                        'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                        'picking_type_id': order.picking_type_id.id,
                         'partner_id': order.partner_id.id,
                         'date': order.date_order,
                         'origin': order.breq_id_sale.name,
@@ -82,7 +85,7 @@ class BreqStockHeri(models.Model):
                         'amount_untaxed' : order.amount_untaxed,
                         'mouvement_type' :'bci',
                         }
-            picking_type_id = order.env.ref('purchase_heri.type_preparation_heri').id
+            picking_type_id = order.picking_type_id.id,
             move = StockPickingHeri.create(vals)
             move_lines = order.order_line._create_stock_moves(move)
             if order.facturation_type == 'facturation_heri_entrepreneurs':
@@ -102,31 +105,12 @@ class BreqStockHeri(models.Model):
     
     def create_picking_bs_et_bci(self):
         StockPickingHeri = self.env['stock.picking']
-        move_lines = self.env['stock.move']
         for order in self:
-                vals_bs = {
-    
-                        'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
-                        'partner_id': order.partner_id.id,
-                        'date': order.date_order,
-                        'origin': order.breq_id_sale.name,
-                        'location_dest_id': order.env.ref('purchase_heri.stock_location_virtual_heri').id,
-                        'location_id': order.location_id.id,
-                        'company_id': order.company_id.id,
-                        'move_type': 'direct',
-                        'state':'attente_magasinier',
-                        'employee_id': order.employee_id.id,
-                        'breq_id' : order.id,
-                        'section' : order.section,
-                        'amount_untaxed' : order.amount_untaxed,
-                        'is_bs': True,
-                        'mouvement_type' : order.mouvement_type,
-                        }
                 vals_bci = {
-                        'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
+                        'picking_type_id': order.picking_type_id.id,
                         'partner_id': order.partner_id.id,
                         'date': order.date_order,
-                        'origin': order.breq_id_sale.name,
+                        'origin': order.name,
                         'location_dest_id':  order.env.ref('purchase_heri.stock_location_virtual_heri').id,
                         'location_id': order.location_id.id,
                         'company_id': order.company_id.id,
@@ -144,30 +128,14 @@ class BreqStockHeri(models.Model):
                 res_final = res[longeur_res-1]
                 bci_name = "BCI" + "".join(res_final)
                 bci.update({'name': bci_name})
-                for line in order.order_line:
-                    template = {
-                                'name': line.name or '',
-                                'product_id': line.product_id.id,
-                                'product_uom': line.product_uom.id,
-                                'product_uom_qty': line.product_qty,
-                                'price_unit': line.price_unit,
-                                'location_dest_id': order.kiosque_id.id,
-                                'location_id': order.location_id.id,
-                                'picking_id': bci.id,
-                                'company_id': order.company_id.id,
-                                'procurement_id': False,
-                                'origin': order.name,
-                                }
-                    move_lines.create(template)
-                    move_lines.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
-                    move_lines.action_assign()
-                bci.aviser_magasinier_tiers()
                 #création bs
-                bs = StockPickingHeri.create(vals_bs)
-                move_test = order.order_line._create_stock_moves(bs)
+                move_test = order.order_line._create_stock_moves(bci)
                 move_test = move_test.filtered(lambda x: x.state not in ('done', 'cancel')).action_confirm()
                 move_test.action_assign()
-                bs.aviser_magasinier_tiers()
+                if order.facturation_type == 'facturation_perte_materiel' :
+                    bci.aviser_logistique_perte()
+                else :
+                    bci.aviser_magasinier_tiers()
         return True       
         
     #test
@@ -176,15 +144,18 @@ class BreqStockHeri(models.Model):
         ('confirmation_dg', 'En attente validation DG'),
         ('a_approuver', 'Avis supérieur hiérarchique'),
         ('preparation_materiel', 'préparation des matériels'),
+        ('avis_logistique','Avis Logistique'),
+        ('avis_finance','Avis Finance'),
         ('test', 'Test des matériels'),
-        ('etab_facture', 'Etablissement Facture'),
         ('comptabilise', 'Comptabilise'),
         ('aviser_finance', 'Etablissement OV'),
         ('ov_to_bank', 'OV envoyé à la banque'),
-        ('br_lie', 'Prix de revient'),
+        ('br_lie', 'Attente pièce jointe'),
         ('calcul_pr', 'Prix de revient calculé'),
         ('non_prevue', 'En vérification compta'),
         ('attente_validation', 'En attente validation DG'),
+        ('etab_facture', 'Etablissement Facture'),
+        ('ne_pas_payer', 'Ne pas payer'),
         ('wait_mode', 'En attente paiement finance'),
         ('mode_de_paiment_valide', 'Mode de paiement Validé'),
         ('purchase', 'BEX'),
@@ -242,7 +213,72 @@ class BreqStockHeri(models.Model):
     def create_bs(self):
         self._create_picking_sale()
         self.write({'state':'bs'})
+    
+    def envoyer_logistique(self):
+        attachment_obj = self.env['ir.attachment']
+        for order in self:
+            attachment_ids = attachment_obj.search([('res_model','=','purchase.order'),('res_id','=',order.id)])
+            if attachment_ids : 
+                self.write({'state':'avis_logistique'})
+            else:
+                raise UserError("Veuillez d'abord insérer une pièce jointe dans le document pour justificatif.")
         
+    def envoyer_au_finance(self):
+        self.write({'state':'avis_finance'})
+    def envoyer_au_DG(self):
+        self.write({'state':'attente_validation'})
+    def ne_pas_facturer(self):
+        self.write({'state':'ne_pas_payer'})
+    def facturer_entrepreneur(self):
+        self.write({'state':'etab_facture'})
+    
+    def a_facturer(self):
+                #Generation popup mode de paiement
+        ir_model_data = self.env['ir.model.data']        
+        try:            
+            template_id = ir_model_data.get_object_reference('sale_heri', 'action_a_facturer')[1]        
+        except ValueError:            
+            template_id = False
+        
+        try:            
+            compose_form_id = ir_model_data.get_object_reference('sale_heri', 'view_a_facturer_form')[1]        
+        except ValueError:            
+            compose_form_id = False        
+            
+        ctx = dict()        
+        ctx.update({          
+            'default_model': 'a.facturer',
+            'default_use_template': bool(template_id),            
+            'default_template_id': template_id,      
+            'default_breq_id': self.id,
+        })
+        
+        return {
+            'name': 'Pourcentage à facturer',
+            'domain': [],
+            'res_model': 'a.facturer',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'views': [(compose_form_id, 'form')],
+            'view_id': compose_form_id,
+            'context': ctx,
+            'target': 'new',
+        }
+    impayee_count = fields.Float(compute="_compute_facture_impayee")
+    
+    @api.multi
+    def _compute_facture_impayee(self):
+        for order in self:
+            facture_impayee = order.env['account.invoice'].search([('partner_id','=',order.partner_id.id),('state','not in',('paid','cancel'))])
+            if facture_impayee:
+                order.impayee_count = len(facture_impayee)
+    @api.multi
+    def action_impayee_facture(self):
+        action = self.env.ref('sale_heri.action_sale_heri_lie_facture').read()[0]
+        action['domain'] = [('partner_id', '=', self.partner_id.id),('state','not in',('paid','cancel'))]
+        return action
+             
     breq_facture_stock_ids = fields.One2many('account.invoice', string="Breq facture ids", compute='_compute_breq_stock_facture_lie')
     breq_facture_stock_count = fields.Integer(compute='_compute_breq_stock_facture_lie') 
     
@@ -250,7 +286,7 @@ class BreqStockHeri(models.Model):
     @api.multi
     def _compute_breq_stock_facture_lie(self):
         for order in self:
-            breq_stock_facture_child= order.env['account.invoice'].search([('breq_stock_id','=',order.id)],limit=1)
+            breq_stock_facture_child= order.env['account.invoice'].search([('breq_stock_id','=',order.id)])
             if breq_stock_facture_child:
                 order.breq_facture_stock_ids = breq_stock_facture_child
                 order.breq_facture_stock_count = len(breq_stock_facture_child)
@@ -324,9 +360,13 @@ class BreqStockHeri(models.Model):
                         vals['name'] = invoices[group_key].name + ', ' + order.breq_id_sale.client_order_ref
                     invoices[group_key].write(vals)
                 if line.qty_to_invoice > 0:
-                    line.invoice_line_create(invoices[group_key].id, line.qty_to_invoice)
+                    for qty in order.order_line :
+                        qty_id = qty.product_qty
+                    line.invoice_line_create(invoices[group_key].id, qty_id)
                 elif line.qty_to_invoice < 0 and final:
-                    line.invoice_line_create(invoices[group_key].id, line.qty_to_invoice)
+                    for qty in order.order_line :
+                        qty_id = qty.product_qty
+                    line.invoice_line_create(invoices[group_key].id, qty_id)
 
             if references.get(invoices.get(group_key)):
                 if order not in references[invoices[group_key]]:
@@ -395,3 +435,53 @@ class BreqStockHeri(models.Model):
         action = self.env.ref('sale_heri.action_bon_de_cession_lie_facture_entrepreneurs_1')
         result = action.read()[0]
         return result  
+    
+    #action form bon de cession interne facturation perte
+    @api.multi
+    def action_bci_et_bs_lie_facturation_perte(self):
+        action = self.env.ref('sale_heri.action_bon_de_cession_lie_facture_perte')
+        result = action.read()[0]
+        return result  
+    
+    sale_order_count = fields.Integer(compute='_compute_sale_order_count', string='# of Sales Order')
+    
+    def _compute_sale_order_count(self):
+        for order in self:
+            sale_order_count = order.env['sale.order'].search([('partner_id','=',order.partner_id.id),('facturation_type','=','facturation_tiers')])
+            if sale_order_count:
+                order.sale_order_count = len(sale_order_count)
+    @api.multi
+    def action_sale_order(self):
+        action = self.env.ref('sale_heri.action_facturation_tiers').read()[0]
+        action['domain'] = [('partner_id', '=', self.partner_id.id),('facturation_type','=','facturation_tiers')]
+        return action
+    
+class PurchaseOrderLineHeri(models.Model):
+    _inherit="purchase.order.line"
+    
+    @api.onchange('product_id')
+    def onchange_prod_id(self):
+        for line in self:
+            if line.order_id.is_breq_stock and not line.location_id:
+                raise UserError("La zone d'emplacement source ne doit pas être vide dans un Budget Request Stock")
+            #line.qte_prevu = line.product_id.virtual_available
+            
+            location_src_id = line.location_id
+            total_qty_available = 0.0
+            total_reserved = 0.0
+            liste_picking_ids = []
+            
+            stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+            line_ids = line.search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
+                                                               ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
+                                                               ])
+            #recuperer tous les articles reserves dans bci
+            bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+                                                                   ('picking_id.state','not in', ('done','cancel')), \
+                                                                   ('product_id','=', line.product_id.id),\
+                                                                   ])  
+            total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
+            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel') and x.order_id.bci_id.state not in ('done','cancel'))
+            for quant in stock_quant_ids:
+                total_qty_available += quant.qty
+            line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved

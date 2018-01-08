@@ -4,7 +4,7 @@
 	<data>
 		<!-- workflow -->
 		<record id="sale_facturation_wkf" model="workflow">
-			<field name="name">workflow.sale.facturation.redevance.heri</field>
+			<field name="name">Facturation redevance mensuelle</field>
 			<field name="osv">sale.order</field>
 			<field name="on_create">True</field>
 		</record>

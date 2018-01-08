@@ -10,9 +10,9 @@
     'data': [
                 #views
                 'views/sale_view.xml',
+                'views/sale_fact_materiel_mauvais_etat_view.xml',
                 'views/sale_ajout_materiel_entrepreneur_view.xml',
                 'views/sale_fact_materiel_tiers_view.xml',
-                'views/sale_fact_materiel_mauvais_etat_view.xml',
                 'views/budget_request_stock_view.xml',
                 'views/stock_location_view.xml',
                 'views/res_calendar_view.xml',
@@ -21,6 +21,7 @@
                 'views/sale_fact_heri_materiel_entrepreneur_view.xml',
                 'views/account_invoice_view.xml',
                 'views/sale_fact_materiel_entrepreneurs_view.xml',
+                'views/sale_reechelonnement_impayes_view.xml',
                 'views/stock_view.xml',
                 #workflow
                 'views/sale_wkf.xml',
@@ -29,6 +30,14 @@
                 'views/sale_fact_materiel_mauvais_etat_wkf.xml',
                 'views/cron_calendar.xml',
                 'views/sale_fact_heri_materiel_entrepreneur_wkf.xml',
+                'views/sale_reechelonnement_impayes_wkf.xml',
+                'views/sale_fact_perte_materiel_view.xml',
+                'views/sale_fact_regularisation_des_erreurs_view.xml',
+                #report
+                'report/report_bon_de_cession_interne_template.xml',
+                'report/report_bon_de_cession_interne.xml',
+                #serurity
+                'security/ir.model.access.csv'
             ],
     'demo': [],
     'test': [],

@@ -6,4 +6,6 @@ import res_config
 import stock
 import account_invoice
 import sale_fact_materiel_mauvais_etat
-
+import sale_reechelonnement_impayes
+import sale_facturation_perte_materiel
+import regularisation_des_erreurs

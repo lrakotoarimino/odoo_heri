@@ -113,6 +113,7 @@
                             type="object"
                             class="oe_stat_button"
                             icon="fa-pencil-square-o"
+                            attrs="{'invisible': [('impayee_count','=',0)]}"
                             >
                             <field name="impayee_count" widget="statinfo" string="Impayées"/>
                   </button>

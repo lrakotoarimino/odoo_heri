@@ -20,7 +20,7 @@
 				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
 					<field 	name="facturation_type" invisible="1"/>
-					<field 	name="location_id" string="Magasin du Client" attrs="{'required': [('facturation_type', '=', 'facturation_entrepreneurs')]}"/>
+					<field 	name="location_id" string="Magasin d'Origine" attrs="{'required': [('facturation_type', '=', 'facturation_entrepreneurs')]}"/>
 				</xpath>
 				<xpath expr="//field[@name='location_id']" position="after">
 					<field 
@@ -43,6 +43,16 @@
 		    	<xpath expr="//field[@name='order_line']" position="attributes">
 					<attribute name="attrs">{'readonly': [('state', 'in', ('breq_stock'))]}</attribute>
 				</xpath>
+				<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="before">
+			      <button name="action_impayee_facture_client"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            attrs="{'invisible': [('impayee_client_count','=',0)]}"
+                            >
+                            <field name="impayee_client_count" widget="statinfo" string="Impayées client"/>
+                  </button>
+                </xpath>
 				
 				<!--bouton pour le workflow facturation tiers -->
 				<xpath expr="//field[@name='state']" position="before">

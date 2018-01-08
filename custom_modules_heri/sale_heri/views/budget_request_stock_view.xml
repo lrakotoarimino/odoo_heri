@@ -33,7 +33,7 @@
 				</xpath>
 				<field name="state" position="before">	
 					<button name="generer_bci_et_bs" 
-							string="Generer le BS et BCI" 
+							string="Generer le Bon de cession interne" 
 							type="object"
 							class="oe_highlight" 
 							groups="purchase_heri.group_magasinier_heri"
@@ -143,7 +143,7 @@
             <field name="arch" type="xml">
                 
                	<field name="state" position="replace">
-				    <field name="state" widget="statusbar" statusbar_visible="nouveau,test,bs" />
+				    <field name="state" widget="statusbar" statusbar_visible="nouveau,preparation_materiel,test,bs" />
 				</field>
 				<field name="partner_id" position="after">
 				    <field name="breq_id_sale" invisible="1" />
@@ -156,13 +156,19 @@
 				<field name="location_id" position="after">
 				    <field name="kiosque_id"  readonly="1" />  
 				</field>
-				<field name="state" position="before">					
+				<field name="state" position="before">	
+					<button name="envoyer_pour_la_preparation" 
+							string="Préparation Materiel" 
+							type="object"
+							class="oe_highlight" 
+							groups="purchase_heri.group_call_center_heri"
+                       		attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False),('is_breq_id_sale', '=', False)]}"/>					
 					<button name="envoyer_pour_tester" 
 							string="A tester" 
 							type="object"
 							class="oe_highlight" 
 							groups="purchase_heri.group_magasinier_heri"
-                       		attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False),('is_breq_id_sale', '=', False)]}"/>
+                       		attrs="{'invisible': ['|',('state', 'not in', ('preparation_materiel')),('is_breq_stock', '=', False)]}"/>
 					<button name="create_bs" 
 							string="Générer le bon de sortie" 
 							type="object"
@@ -253,7 +259,7 @@
                     		string="Générer le bon de sortie" 
                     		type="object"
 							class="oe_highlight" 
-							groups="purchase_heri.group_finance_heri"
+							groups="purchase_heri.group_magasinier_heri"
                        		attrs="{'invisible': ['|',('state', 'not in', ('etab_facture')),'|',('is_breq_stock', '=', False),('is_facture_comptabilise', '=', False)]}"/>
 				</field>
 				<xpath expr="//div[@name='button_box']//button[@name='action_bs_lie']" position="before">

@@ -32,8 +32,8 @@ class SaleHeri(models.Model):
         is_bon_etat = True
         for order in self:
             for line in order.order_line :
-                if line.qte_prevu < line.product_uom_qty :
-                    raise UserError("Verifiez la quantité demandée par rapport à  la quantité disponible.")
+                if line.qte_detenu_par_kiosque < line.product_uom_qty :
+                    raise UserError("Verifiez la quantité demandée par rapport à la quantité detenue par le kiosque.")
                 if line.product_uom_qty <= 0.0:
                     raise UserError("la quantité demandée doit être une valeur positive.")
 
@@ -44,7 +44,7 @@ class SaleHeri(models.Model):
         is_bon_etat = False
         for order in self:
             for line in order.order_line :
-                if line.qte_prevu < line.product_uom_qty :
+                if line.qte_detenu_par_kiosque < line.product_uom_qty :
                     raise UserError("Verifiez la quantité demandée par rapport à  la quantité disponible.")
                 if line.product_uom_qty <= 0.0:
                     raise UserError("la quantité demandée doit être une valeur positive.")

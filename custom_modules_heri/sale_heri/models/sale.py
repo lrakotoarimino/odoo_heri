@@ -34,12 +34,14 @@ class SaleHeri(models.Model):
             ('facturation_tiers', 'Tiers'),
             ('facturation_entrepreneurs', 'Entrepreneurs'),
             ('facturation_heri_entrepreneurs', 'Entrepreneurs Heri'),
-            ('facturation_mat_mauvais_etat', 'Matériels mauvais état')
+            ('facturation_mat_mauvais_etat', 'Matériels mauvais état'),
+            ('reechelonnement_impayes', 'Reéchelonnement des impayés'),
+            ('regularisation_facture', 'Regularisation Facture')
         ], string='Type de Facturation')
     correction_et_motif = fields.Text(string="Correction et Motif")
     purchase_id= fields.Many2one('purchase.order')
     calendar_id = fields.Many2one('res.calendar', string='Calendrier de facturation')
-    partner_client_id = fields.Many2one('res.partner', string='Client', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, required=True, change_default=True, index=True, track_visibility='always')
+    partner_client_id = fields.Many2one('res.partner', string='Client', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, change_default=True, index=True, track_visibility='always')
     sent_finance = fields.Boolean('Est envoyé au finance')
     
     @api.depends('state', 'order_line.invoice_status')
@@ -71,7 +73,7 @@ class SaleHeri(models.Model):
 
             line_invoice_status = [line.invoice_status for line in order.order_line]
 
-            if order.state not in ('draft','sale', 'done','breq_stock','capacite_ok','verif_pec'):
+            if order.state not in ('draft','sale', 'done','breq_stock','capacite_ok','verif_pec','materiel_mauvais_etat'):
                 invoice_status = 'no'
             elif any(invoice_status == 'to invoice' for invoice_status in line_invoice_status):
                 invoice_status = 'to invoice'
@@ -109,15 +111,18 @@ class SaleHeri(models.Model):
     
     state = fields.Selection([
         ('draft', 'Nouveau'),
+        ('a_la_finance', 'Avis Finance'),
         ('controle_technicien', 'Contrôle du technicien'),
-        ('materiel_bon_etat', 'Matérel en bon état'),
-        ('materiel_mauvais_etat', 'Matériel en mauvais état'),
+        ('materiel_bon_etat', 'Matérels en bon état'),
+        ('materiel_mauvais_etat', 'Matériels en mauvais état'),
         ('correction_et_motif', 'Correction et Motif Call Center'),
         ('correction_et_motif_finance', 'Correction et Motif Finance'),
+        ('attente_finance','Avis Finance'),
         ('observation_dg', 'Observation du DG'),
         ('verif_pec', 'Verification des PEC'),
         ('facture_generer', 'Facture Generée'),
-        ('facture_au_finance', 'Facture Envoyé'),
+        ('facture_au_finance', 'Facture Envoyé au finance'),
+        ('valider_par_finance', 'Facture validé par finance'),
         ('breq_stock','Budget request stock'),
         ('solvabilite_ok','Contrôle de solvabilité'),
         ('capacite_ok','Contrôle capacité kiosque'),
@@ -370,9 +375,15 @@ class SaleHeri(models.Model):
     def action_annuler(self):
         self.write({'state':'cancel'})
     def action_au_finance(self):
-        self.sent_finance = True
-        self.action_invoice_create()
-        self.write({'state':'facture_au_finance'})
+        attachment_obj = self.env['ir.attachment']
+        for order in self:
+            attachment_ids = attachment_obj.search([('res_model','=','sale.order'),('res_id','=',order.id)])
+            if attachment_ids : 
+                self.sent_finance = True
+                self.action_invoice_create()
+                self.write({'state':'facture_au_finance'})
+            else:
+                raise UserError("Veuillez d'abord insérer une pièce jointe dans le document pour justificatif.")
         
     
     breq_stock_ids = fields.One2many('purchase.order', string="Breq stock ids", compute='_compute_breq_stock_lie')
@@ -440,6 +451,7 @@ class SaleHeri(models.Model):
                     'is_breq_id_sale' :True,
                     'move_type': 'direct',
                     'location_id': order.location_id.id,
+                    'dest_address_id': order.partner_id.id,
                     'kiosque_id': order.partner_id.kiosque_id.id,
                     'company_id': order.company_id.id,
                     'amount_tax': order.amount_tax,
@@ -460,13 +472,31 @@ class SaleHeri(models.Model):
     @api.multi
     def _compute_facture_impayee(self):
         for order in self:
-            facture_impayee = order.env['account.invoice'].search([('partner_id','=',order.partner_id.id),('state','not in',('paid','cancel'))])
+            if order.facturation_type != 'reechelonnement_impayes':
+                facture_impayee = order.env['account.invoice'].search([('partner_id','=',order.partner_id.id),('state','not in',('paid','cancel'))])
+            else:
+                facture_impayee = order.env['account.invoice'].search([('partner_id','=',order.partner_id.id), ('state','not in',('paid','cancel')), ('is_reechelonnement', '=', False)])
             if facture_impayee:
                 order.impayee_count = len(facture_impayee)
+                
+    impayee_client_count = fields.Float(compute="_compute_facture_impayee_client")
+    
+    @api.multi
+    def _compute_facture_impayee_client(self):
+        for order in self:
+            facture_impayee_client = order.env['account.invoice'].search([('partner_id','=',order.partner_client_id.id),('state','not in',('paid','cancel'))])
+            if facture_impayee_client:
+                order.impayee_client_count = len(facture_impayee_client)
     @api.multi
     def action_impayee_facture(self):
         action = self.env.ref('sale_heri.action_sale_heri_lie_facture').read()[0]
         action['domain'] = [('partner_id', '=', self.partner_id.id),('state','not in',('paid','cancel'))]
+        return action
+    
+    @api.multi
+    def action_impayee_facture_client(self):
+        action = self.env.ref('sale_heri.action_sale_heri_lie_facture').read()[0]
+        action['domain'] = [('partner_id', '=', self.partner_client_id.id),('state','not in',('paid','cancel'))]
         return action
                 
     @api.multi
@@ -500,7 +530,7 @@ class SaleHeri(models.Model):
 
             order._create_breq_stock()
             order.write({'state':'breq_stock'}) 
-     
+        
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
      
@@ -512,7 +542,7 @@ class SaleOrderLineHeri(models.Model):
     qte_article = fields.Float(string='Quantité de l\'article')
     location_id = fields.Many2one('stock.location', related='order_id.location_id', readonly=True)
     location_kiosque_id = fields.Many2one('stock.location', related='order_id.kiosque_id', readonly=True)
-    product_uom_qty = fields.Float(string='Quantity', required=True, default=0.0)
+    product_uom_qty = fields.Float(string='Quantity', default=0.0)
     
     state = fields.Selection([
         ('draft', 'Nouveau'),
@@ -549,11 +579,11 @@ class SaleOrderLineHeri(models.Model):
         """
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for line in self:
-            if line.state not in ('sale','draft', 'done','breq_stock','capacite_ok','verif_pec'):
+            if line.state not in ('sale','draft', 'done','breq_stock','capacite_ok','verif_pec','materiel_mauvais_etat'):
                 line.invoice_status = 'no'
             elif not float_is_zero(line.qty_to_invoice, precision_digits=precision):
                 line.invoice_status = 'to invoice'
-            elif line.state in ('sale','draft','breq_stock','capacite_ok','verif_pec') and line.product_id.invoice_policy == 'order' and\
+            elif line.state in ('sale','draft','breq_stock','capacite_ok','verif_pec','materiel_mauvais_etat') and line.product_id.invoice_policy == 'order' and\
                     float_compare(line.qty_delivered, line.product_uom_qty, precision_digits=precision) == 1:
                 line.invoice_status = 'upselling'
             elif float_compare(line.qty_invoiced, line.product_uom_qty, precision_digits=precision) >= 0:
@@ -568,7 +598,7 @@ class SaleOrderLineHeri(models.Model):
         calculated from the ordered quantity. Otherwise, the quantity delivered is used.
         """
         for line in self:
-            if line.order_id.state in ['draft','sale', 'done','breq_stock','capacite_ok','verif_pec']:
+            if line.order_id.state in ['draft','sale', 'done','breq_stock','capacite_ok','verif_pec','materiel_mauvais_etat']:
                 if line.product_id.invoice_policy == 'order':
                     line.qty_to_invoice = line.product_uom_qty - line.qty_invoiced
                 else:
@@ -587,9 +617,10 @@ class SaleOrderLineHeri(models.Model):
             location_kiosque_id = line.location_kiosque_id
             total_qty_available = 0.0
             total_qty_available_kiosque = 0.0
+            total_qty_available_kiosque_ancien = 0.0
             total_reserved = 0.0
             liste_picking_ids = []
-            
+                
             stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
             stock_quant_kiosque_ids = self.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_kiosque_id.id)])
             line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
@@ -606,6 +637,10 @@ class SaleOrderLineHeri(models.Model):
                 total_qty_available += quant.qty
             for quant_kiosque in stock_quant_kiosque_ids:
                 total_qty_available_kiosque +=quant_kiosque.qty
+                calendar = self.env.ref('sale_heri.calendrier_facturation_redevance') 
+                if calendar.last_month > quant_kiosque.in_date and quant_kiosque.in_date < calendar.current_month:
+                    total_qty_available_kiosque_ancien += quant_kiosque.qty  
+
             line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
             line.qte_detenu_par_kiosque = total_qty_available_kiosque
     
@@ -737,5 +772,8 @@ class SaleAdvancePaymentInvHeri(models.TransientModel):
                 })
                 self._create_invoice(order, so_line, amount)
         if self._context.get('open_invoices', False):
-            return sale_orders.action_view_facture_sms()
+            if sale_orders.facturation_type != 'reechelonnement_impayes':
+                return sale_orders.action_view_facture_sms()
+            else:
+                return sale_orders.action_view_invoice()
         return {'type': 'ir.actions.act_window_close'}

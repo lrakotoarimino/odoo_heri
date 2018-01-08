@@ -6,6 +6,7 @@ class AccountInvoiceHeri(models.Model):
      
     breq_stock_id = fields.Many2one('purchase.order')
     breq_id_sale = fields.Many2one('sale.order')
+    is_reechelonnement = fields.Boolean('Est un facture rééchelonnement ?')
     state = fields.Selection([
             ('draft','Draft'),
             ('proforma', 'Pro-forma'),
