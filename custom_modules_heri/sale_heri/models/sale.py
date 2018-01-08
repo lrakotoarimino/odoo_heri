@@ -533,6 +533,15 @@ class SaleHeri(models.Model):
         
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
+    
+    qty_delivered = fields.Float(string='Delivered', copy=False, compute="_compute_qte_delivred")
+   
+    @api.multi
+    def _compute_qte_delivred(self):
+        for order in self:
+            stock_child= order.env['stock.picking'].search([('origin','=',order.order_id.name),('state','=','done')])
+            if stock_child:
+                order.qty_delivered = stock_child.pack_operation_product_ids.qty_done   
      
     date_arrivee = fields.Datetime(string='Date d\'arrivée')
     nbre_jour_detention = fields.Float(string='Durée', default=0.0)
