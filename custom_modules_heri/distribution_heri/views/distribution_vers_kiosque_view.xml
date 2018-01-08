@@ -1,0 +1,202 @@
+<odoo>
+	<data>
+			<record id="view_distribution_vers_kiosque" model="ir.ui.view">
+            <field name="name">Distribution vers kiosque</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="arch" type="xml">
+                <field name="partner_id" position="replace">
+				    <field name="partner_id" />
+				</field>
+                <field name="state" position="replace">
+				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,visa_logiste,attente_call_center,bci_visa_logistique,done" />
+				</field>
+				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
+					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
+					<attribute name="invisible">1</attribute>
+				</xpath>
+				<xpath expr="//field[@name='min_date']" position="after">
+					<field name="mouvement_type" invisible="1"/>
+					<field name="purchase_terminated" invisible="1" />
+				</xpath>
+				<xpath expr="//field[@name='location_id']" position="replace">
+					<field name="location_id" attrs="{'readonly': [('mouvement_type','in',('bs'))]}" string="Magasin d'Origine"/>
+				</xpath>
+				<xpath expr="//button[@name='action_cancel']" position="attributes">
+					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
+					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>
+				</xpath>
+ 				<xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+	    		</xpath>
+	    		<xpath expr="//field[@name='state']" position="before">
+					<button 
+				      	    string="Envoyer au logistique" 
+				      	    name="aviser_logistique_perte"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('draft')), ('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	 />
+				    <button 
+				      	    string="Achat prestataire" 
+				      	    name="achat_prestataire"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_logistique')),'|',('purchase_terminated','=',True), ('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_logistique_heri"
+				      	 />
+				     <button 
+				      	    string="Envoyer par missionnaire" 
+				      	    name="envoye_missionnaire"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_logistique')),'|',('purchase_terminated','=',False),('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_logistique_heri"
+				      	 />
+				     <button 
+				      	    string="Envoyer par Taxi-brousse ou par 1/3" 
+				      	    name="achat_prestataire"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_logistique')),'|',('purchase_terminated','=',False),('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_logistique_heri"
+				      	 />
+				      <button 
+				      	    string="Etablir BCI" 
+				      	    name="etab_bci"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_magasinier')),('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_magasinier_heri"
+				      	 />
+				      <button 
+				      	    string="Envoyer au call center" 
+				      	    name="action_aviser_call_center_bs"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('visa_logiste')),('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_logistique_heri"
+				      	 />
+				      <button 
+				      	    string="Etablir BCI" 
+				      	    name="etab_bci_call"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_call_center')),('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_call_center_heri"
+				      	 />
+				      <button 
+				      	    string="Non Facturé" 
+				      	    name="create_bs_distribution"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('bci_visa_logistique')),'|',('mouvement_type','!=','distribution_vers_kiosque'),('bs_count','!=',0)]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_logistique_heri"
+				      	 />
+				      <button 
+				      	    string="Deja Facturé" 
+				      	    name="do_new_transfer"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('bci_visa_logistique')),'|',('mouvement_type','!=','distribution_vers_kiosque'),('bs_count','!=',0)]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_logistique_heri"
+				      	 />
+			     </xpath>
+			     <xpath expr="//div[@name='button_box']/button[@name='action_see_move_scrap']" position="after">
+                        <button 
+                        	name="achat_prestataire"
+                        	type="object"
+                            class="oe_stat_button"
+                            icon="fa-truck"
+                            attrs="{'invisible': ['|',('state','not in',('attente_logistique')),'|',('mouvement_type','!=','distribution_vers_kiosque'),('prestataire_count','=',0)]}"
+                            >
+                            <field name="prestataire_count"  widget="statinfo" string="Prestataire" help="Prestataire de service"/>
+  
+                      	</button>
+ 				</xpath>
+ 				<xpath expr="//div[@name='button_box']/button[@name='action_see_move_scrap']" position="after">
+                        <button 
+                        	name="action_bon_de_sortie_bci"
+                        	type="object"
+                            class="oe_stat_button"
+                            icon="fa-truck"
+                            attrs="{'invisible': ['|',('state','not in','bci_visa_logistique'),'|',('mouvement_type','not in','distribution_vers_kiosque'),('bs_count','=',0)]}"
+                            >
+                            <field name="bs_count"  widget="statinfo" string="Bon de sortie" help="Bon de sortie lie"/>
+  
+                      	</button>
+ 				</xpath>
+            </field>
+        </record>
+        <!-- action bci et bs lie budget request stock facturation pertes -->
+		<record model="ir.actions.act_window" id="action_distribution_vers_kiosque">
+	       	<field name="name">Distribution d'article vers kiosque</field>
+	       	<field name="res_model">stock.picking</field>
+	       	<field name="domain">[('mouvement_type','=','distribution_vers_kiosque')]</field> 
+	       	<field name="context">{'default_mouvement_type': 'distribution_vers_kiosque'}</field>
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	   	</record> 
+	   	
+	   	<record id="action_distribution_vers_kiosque_tree" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="stock.vpicktree"/>
+            <field name="act_window_id" ref="action_distribution_vers_kiosque"/>
+        </record>
+        <record id="action_distribution_vers_kiosque_form" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_distribution_vers_kiosque"/>
+            <field name="act_window_id" ref="action_distribution_vers_kiosque"/>
+		</record>
+		<menuitem id="menu_distribution_vers_kiosque" name="Distribution d'article vers le kiosque" parent="stock_heri.menu_stock_picking_heri" action="action_distribution_vers_kiosque" sequence="2"/>
+		
+		<!-- Achats locaux non stockés menu action -->
+	    <record model="ir.actions.act_window" id="action_non_stoke_distribution">
+	       <field name="name">Achats de prestataire de service</field>
+	       <field name="res_model">purchase.order</field>
+		   <field name="domain">[('picking_bci_id','=',active_id),('purchase_type','=','purchase_not_stored')]</field>
+			<field name="context">{'default_picking_bci_id': active_id,'default_purchase_type': 'purchase_not_stored'}</field>
+	       <field name="view_type">form</field>
+	       <field name="view_mode">tree,form</field>
+	       <field name="help" type="html">
+	         <p class="oe_view_nocontent_create">
+	             Click here to create a new prestataire de service.
+	         </p>
+	       </field>
+	   	</record>
+	   	
+	   	
+	   	
+   	   	<record id="prestataire_tree_distribution" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="purchase_heri.budget_request_tree"/>
+            <field name="act_window_id" ref="action_non_stoke_distribution"/>
+        </record>
+
+
+
+        <record id="prestataire_form_distribution" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="purchase_heri.budget_request_form_view_inherit1"/>
+            <field name="act_window_id" ref="action_non_stoke_distribution"/>
+        </record>
+        
+        <record id="stock_location_virtual_taxi_brousse" model="stock.location">
+            <field name="name">Emplacement virtuel Taxi-brousse</field>
+            <field name="location_id" ref="stock.stock_location_locations_virtual"/>
+            <field name="usage">internal</field>
+            <field name="company_id"></field>
+    	</record>
+    	<record id="stock_location_virtual_kiosque" model="stock.location">
+            <field name="name">Emplacement virtuel kiosque</field>
+            <field name="location_id" ref="stock.stock_location_locations_virtual"/>
+            <field name="usage">internal</field>
+            <field name="company_id"></field>
+    	</record>
+	</data>
+</odoo>
