@@ -513,7 +513,7 @@ class SaleHeri(models.Model):
         return action
     
     @api.multi
-    def action_sale_heri_lie_facture(self):
+    def action_sale_heri_lie_facture_entrepreneurs(self):
         action = self.env.ref('sale_heri.action_sale_heri_lie_facture')
         result = action.read()[0]
         return result

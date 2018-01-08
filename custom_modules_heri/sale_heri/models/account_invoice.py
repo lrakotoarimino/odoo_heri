@@ -27,8 +27,8 @@ class AccountInvoiceHeri(models.Model):
     def action_aviser_callcenter(self):
         self.write({'state':'attente_envoi_sms'})
     
-    def action_envoi_sms(self):
-        self.write({'state':'open'})
+#     def action_envoi_sms(self):
+#         self.write({'state':'open'})
     
     def action_pour_visa(self):
         self.action_invoice_open()
