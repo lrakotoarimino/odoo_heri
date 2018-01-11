@@ -56,7 +56,7 @@
 					    />
 				</xpath>
 				<xpath expr="//field[@name='partner_id']" position="after">
-					<field name="correction_et_motif" attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif'))]}"/>
+					<field name="correction_et_motif" attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif','correction_et_motif_finance'))]}"/>
 				</xpath>
 				<xpath expr="//field[@name='date_order']" position="after">
 					<field name="date_debut_facturation" attrs="{'required': [('facturation_type', '=', 'facturation_redevance')]}"/>
