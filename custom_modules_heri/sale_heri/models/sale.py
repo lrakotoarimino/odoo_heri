@@ -452,6 +452,7 @@ class SaleHeri(models.Model):
                     'move_type': 'direct',
                     'location_id': order.location_id.id,
                     'dest_address_id': order.partner_id.id,
+                    'picking_type_id': order.env.ref('purchase_heri.type_preparation_heri').id,
                     'kiosque_id': order.partner_id.kiosque_id.id,
                     'company_id': order.company_id.id,
                     'amount_tax': order.amount_tax,
@@ -534,14 +535,14 @@ class SaleHeri(models.Model):
 class SaleOrderLineHeri(models.Model):
     _inherit = 'sale.order.line'
     
-    qty_delivered = fields.Float(string='Delivered', copy=False, compute="_compute_qte_delivred")
+    qty_delivered = fields.Float(compute='_compute_qte_delivred',string='Delivered', copy=False)
    
     @api.multi
     def _compute_qte_delivred(self):
         for order in self:
-            stock_child= order.env['stock.picking'].search([('origin','=',order.order_id.name),('state','=','done')])
-            if stock_child:
-                order.qty_delivered = stock_child.pack_operation_product_ids.qty_done   
+            stock_child = order.env['stock.pack.operation'].search([('product_id','=',order.product_id.id),('picking_id.origin','=',order.order_id.name),('picking_id.state','=','done')])
+            for qty in stock_child:
+                order.qty_delivered = qty.qty_done   
      
     date_arrivee = fields.Datetime(string='Date d\'arrivée')
     nbre_jour_detention = fields.Float(string='Durée', default=0.0)
