@@ -110,7 +110,7 @@ class BreqStockHeri(models.Model):
                         'picking_type_id': order.picking_type_id.id,
                         'partner_id': order.partner_id.id,
                         'date': order.date_order,
-                        'origin': order.name,
+                        'origin': order.breq_id_sale.name,
                         'location_dest_id':  order.env.ref('purchase_heri.stock_location_virtual_heri').id,
                         'location_id': order.location_id.id,
                         'company_id': order.company_id.id,
