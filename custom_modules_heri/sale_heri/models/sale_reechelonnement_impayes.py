@@ -25,7 +25,7 @@ class SaleHeri(models.Model):
 
     @api.multi
     def _prepare_invoice(self):
-        invoice_vals = super(SaleOrder, self)._prepare_invoice()
+        invoice_vals = super(SaleHeri, self)._prepare_invoice()
         invoice_vals['is_reechelonnement'] = True
         return invoice_vals
         
