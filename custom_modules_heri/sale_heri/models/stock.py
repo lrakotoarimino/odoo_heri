@@ -21,11 +21,12 @@ class StockPickingHeri(models.Model):
     state = fields.Selection([
         ('draft', 'Draft'), ('cancel', 'Cancelled'),
         ('attente_hierarchie','Avis supérieur hierarchique'),
+        ('attente_call_center','Avis call center'),
         ('attente_finance','Avis Finance'),
         ('attente_logistique','Avis logistique'),
         ('attente_magasinier','Avis Magasinier'),
         ('visa_logiste','visa logistique'),
-        ('attente_call_center','Avis call center'),
+        ('visa_call_center','Avis call center'),
         ('bci_visa_logistique','Visa Logistique'),
         ('waiting', 'Waiting Another Operation'),
         ('confirmed', 'Waiting Availability'),

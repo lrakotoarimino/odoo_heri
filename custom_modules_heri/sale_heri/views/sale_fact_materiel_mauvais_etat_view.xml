@@ -22,6 +22,9 @@
 							widget="statusbar" 
 					    	statusbar_visible="draft,controle_technicien"/>
 				</xpath>
+				<xpath expr="//field[@name='payment_term_id']" position="after">
+					<field name="etat_materiel" attrs="{'invisible': [('state', 'in', ('draft', 'controle_technicien'))]}"/>
+				</xpath>
 				<xpath expr="//field[@name='order_line']/tree//field[@name='product_uom_qty']" position="after">
 					<field name="qte_detenu_par_kiosque"/>
 				</xpath>
