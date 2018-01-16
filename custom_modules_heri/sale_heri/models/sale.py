@@ -731,7 +731,7 @@ class SaleOrderLineHeri(models.Model):
                 'price_unit': line.price_unit,
                 'price_subtotal' : line.price_subtotal,
                 'date_planned':fields.Datetime.now(),
-                'purchase_line_id':line.order_id.id,
+#                 'purchase_line_id':line.order_id.id,
                 'taxes_id': [(6, 0, line.tax_id.ids)],
                 'order_id': breq_id.id,
                 

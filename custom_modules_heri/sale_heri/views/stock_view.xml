@@ -164,7 +164,7 @@
 				    <button name="aviser_logistique" string="Pour visa" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_magasinier')),('mouvement_type','not in',('bci','bs'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
 				    <button name="action_aviser_magasinier_bs" string="Vu" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('visa_logiste')), ('mouvement_type','not in',('bci'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 					<button name="action_aviser_call_center_bs" string="Vu" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('visa_logiste')), ('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
-					<button name="action_validation_call_center_bs" string="Valider" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_call_center')), ('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_call_center_heri" type="object"/>		
+					<button name="action_validation_call_center_bs" string="Valider" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('visa_call_center')), ('mouvement_type','not in',('bs'))]}" groups="purchase_heri.group_call_center_heri" type="object"/>		
 					<button name="create_bs_bci" string="Créer Bon de sortie" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('done')),'|',('mouvement_type','not in','bci'),('is_bs_create','=',True)]}" groups="purchase_heri.group_magasinier_heri" type="object"/>					
 				</xpath>
             </field>
@@ -234,7 +234,7 @@
 				    <field name="partner_id" readonly="1"/>
 				</field>
                 <field name="state" position="replace">
-				    <field name="state" widget="statusbar" statusbar_visible="attente_logistique,attente_call_center,done" />
+				    <field name="state" widget="statusbar" statusbar_visible="attente_logistique,visa_call_center,done" />
 				</field>
 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
@@ -266,13 +266,13 @@
 		    		<attribute name="invisible">1</attribute>
 	    		</xpath>
 				<xpath expr="//header" position="inside">	
-					<button name="do_stock_transfer" string="Valider" class="oe_highlight" attrs="{'invisible': ['|',('state','not in','attente_call_center'),('mouvement_type','not in','bci')]}" groups="purchase_heri.group_call_center_heri" type="object"/>	
+					<button name="do_stock_transfer" string="Valider" class="oe_highlight" attrs="{'invisible': ['|',('state','not in','visa_call_center'),('mouvement_type','not in','bci')]}" groups="purchase_heri.group_call_center_heri" type="object"/>	
 				    <button name="action_aviser_call_center_bs" string="Pour visa" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_logistique')),('mouvement_type','not in',('bci','bs'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 				    <button 
 			    	    type="object"  
 			    	    name="do_print_BS" 
 			    	    string="Valider et imprimer" 
-			    	    attrs="{'invisible': ['|',('state','not in',('attente_call_center')),('mouvement_type','!=','bs')]}"
+			    	    attrs="{'invisible': ['|',('state','not in',('visa_call_center')),('mouvement_type','!=','bs')]}"
 			    	    groups="purchase_heri.group_call_center_heri"/>	
 			    	<button name="create_bs_bci_perte" string="Créer Bon de sortie" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('done')),'|',('mouvement_type','not in','bci'),('is_bs_create','=',True)]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 				</xpath>

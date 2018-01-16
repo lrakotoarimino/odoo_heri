@@ -74,8 +74,7 @@ class StockPickingHeri(models.Model):
       
     def aviser_call_center(self):
         self.write({'state':'attente_call_center'})  
-
-        self.write({'state':'attente_magasinier'})    
+           
     def aviser_logistique(self):
         self.write({'state':'visa_logiste'})  
     def aviser_logistique_perte(self):
@@ -85,7 +84,7 @@ class StockPickingHeri(models.Model):
         self.write({'state':'assigned'})
 
     def action_aviser_call_center_bs(self):
-        self.write({'state':'attente_call_center'})
+        self.write({'state':'visa_call_center'})
         
     def action_validation_call_center_bs(self):
         self.write({'state':'assigned'})
@@ -130,7 +129,7 @@ class StockPickingHeri(models.Model):
                             'qty_done': line.qty_done,
                             'product_uom_id': line.product_uom_id.id,
                             'location_dest_id': order.env.ref('sale_heri.stock_location_virtual_client').id,
-                            'location_id': move.location_dest_id.id,
+                            'location_id': order.location_dest_id.id,
                             'picking_id': move.id,
                             'company_id': move.company_id.id,
                             'procurement_id': False,
@@ -146,7 +145,7 @@ class StockPickingHeri(models.Model):
                             'product_uom_qty': line.product_uom_qty,
                             'product_uom': line.product_uom.id,
                             'location_dest_id': order.env.ref('sale_heri.stock_location_virtual_client').id,
-                            'location_id': move.location_dest_id.id,
+                            'location_id': order.location_dest_id.id,
                             'picking_id': move.id,
                             'company_id': move.company_id.id,
                             'procurement_id': False,
@@ -193,7 +192,7 @@ class StockPickingHeri(models.Model):
                             'qty_done': line.qty_done,
                             'product_uom_id': line.product_uom_id.id,
                             'location_dest_id': order.env.ref('sale_heri.stock_location_virtual_client').id,
-                            'location_id': move.location_dest_id.id,
+                            'location_id': order.location_dest_id.id,
                             'picking_id': move.id,
                             'company_id': move.company_id.id,
                             'procurement_id': False,
@@ -209,7 +208,7 @@ class StockPickingHeri(models.Model):
                             'product_uom_qty': line.product_uom_qty,
                             'product_uom': line.product_uom.id,
                             'location_dest_id': order.env.ref('sale_heri.stock_location_virtual_client').id,
-                            'location_id': move.location_dest_id.id,
+                            'location_id': order.location_dest_id.id,
                             'picking_id': move.id,
                             'company_id': move.company_id.id,
                             'procurement_id': False,
