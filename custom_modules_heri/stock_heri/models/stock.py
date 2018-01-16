@@ -43,7 +43,6 @@ class StockPicking(models.Model):
     @api.model
     def create(self, vals):
         context = (self._context or {})
-        
         mouvement_type = context.get('default_mouvement_type', False)
         if mouvement_type and mouvement_type == 'bci':
             vals['name'] = self.env['ir.sequence'].next_by_code('bon.cession.interne')
@@ -56,6 +55,7 @@ class StockPicking(models.Model):
         
         return super(StockPicking, self).create(vals)
         
+    is_bon_etat = fields.Boolean('Le materiel est-il en bon etat ?')       
     breq_id = fields.Many2one('purchase.order')
     section = fields.Char("Section analytique d’imputation")
     amount_untaxed = fields.Float("Total")
@@ -99,6 +99,8 @@ class StockPicking(models.Model):
     state = fields.Selection([
         ('draft', 'Draft'), ('cancel', 'Cancelled'),
         ('attente_hierarchie','Avis supérieur hierarchique'),
+        ('attente_call_center','Avis Call Center'),
+        ('attente_finance','Avis Finance'),
         ('attente_logistique','Avis logistique'),
         ('attente_magasinier','Avis Magasinier'),
         ('waiting', 'Waiting Another Operation'),
@@ -398,18 +400,23 @@ class StockPicking(models.Model):
                     'employee_id': pick.employee_id.id,         
                     'company_id': pick.company_id.id,
                     'picking_bci_id': pick.id,
+                    #Le Budget Request Stock génère une facture pour les matériels retournés en mauvais état
+                    'to_invoice': True,
+                    #Pour dire que le Budget Request Stock est généré par un BCI lors de la facturation des matériels retournés en mauvais état
                     'is_from_bci' : True,
                     'is_breq_stock' : True,
-                    'is_breq_id_sale' :False,
+                    'is_breq_id_sale' : True,
+                    'breq_id_sale': pick.sale_order_id.id,
                     'move_type': 'direct',
                     'location_id': pick.location_dest_id.id,
                     'company_id': pick.company_id.id,
                     'amount_untaxed': pick.amount_untaxed,
                     'date_planned':fields.Datetime.now(),
-                    'mouvement_type':'bci',
+                    'mouvement_type':'bs',
                     'justificatif': "C'/est un justificatif",
                     'department_id': pick.employee_id.department_id.id,
                     }
+            var = vals
             budget_request_stock = breq_stock_obj.create(vals)    
             #Creer order_line dans le breq_stock 
             for line in pick.move_lines:
@@ -429,7 +436,8 @@ class StockPicking(models.Model):
     @api.multi
     def do_stock_transfer(self):
         for pick in self:
-            if pick.is_bci_sale_id:
+            #S'il s'agit d'un BCI lors des matériels retournés en mauvais état et le matériel est bien en mauvais état
+            if pick.is_bci_sale_id and not pick.is_bon_etat:
                 pick._create_breq_stock()
             dict = {}
             product_list = []

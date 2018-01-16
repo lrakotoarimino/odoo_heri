@@ -545,7 +545,7 @@
 			</field>
 		</record>
 		
-		<!-- Sequence bon de cession interne --> 
+		<!-- Sequences for bon de cessio interne --> 
         <record id="seq_bon_cession_interne" model="ir.sequence">
             <field name="name">Bon cession interne</field>
             <field name="code">bon.cession.interne</field>
