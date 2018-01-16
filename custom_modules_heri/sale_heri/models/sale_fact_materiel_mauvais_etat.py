@@ -17,7 +17,11 @@ class SaleHeri(models.Model):
     _description = "Facturation des materiels retournes en mauvais etat"
     
     bci_count = fields.Integer(compute='_compute_bci_lie', string="Nombre de bci lié") 
-    
+    etat_materiel = fields.Selection([
+        ('bon', 'BON'),
+        ('mauvais', 'MAUVAIS'),
+        ], string='Etat de(s) matériel(s)', readonly=True, track_visibility='onchange')
+
     @api.multi
     def _compute_bci_lie(self):
         for order in self:
@@ -38,7 +42,7 @@ class SaleHeri(models.Model):
                     raise UserError("la quantité demandée doit être une valeur positive.")
 
             order._create_bci(is_bon_etat)
-            order.write({'state':'materiel_bon_etat'})
+            order.write({'state':'materiel_bon_etat', 'etat_materiel':'bon'})
             
     def action_materiel_mauvais_etat(self):
         is_bon_etat = False
@@ -49,7 +53,7 @@ class SaleHeri(models.Model):
                 if line.product_uom_qty <= 0.0:
                     raise UserError("la quantité demandée doit être une valeur positive.")
             order._create_bci(is_bon_etat)
-            order.write({'state':'materiel_mauvais_etat'})
+            order.write({'state':'materiel_mauvais_etat', 'etat_materiel':'mauvais'})
         
     @api.multi
     def _create_bci(self, is_bon_etat):
