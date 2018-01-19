@@ -681,6 +681,8 @@ class SaleOrderLineHeri(models.Model):
                                 'product_uom_qty': self.product_uom_qty,
                                 }
                         }
+        elif self.order_id.facturation_type in ('facturation_redevance'):
+            self.send_to_dg = True
         return
     
     #Redefinition pour supprimer la modification du prix unitaire à 1.0

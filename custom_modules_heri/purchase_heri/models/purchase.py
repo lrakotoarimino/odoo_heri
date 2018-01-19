@@ -668,6 +668,8 @@ class PurchaseHeri(models.Model):
     def creer_bs(self):
         for order in self:
             order._create_picking()
+            if order.to_invoice:
+                order.action_invoice_create()
             order.write({'state':'bs', 'change_state_date': fields.Datetime.now()})
 
     def envoyer_a_approuver(self):

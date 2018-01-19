@@ -26,7 +26,8 @@ class SaleHeri(models.Model):
     @api.multi
     def _prepare_invoice(self):
         invoice_vals = super(SaleHeri, self)._prepare_invoice()
-        invoice_vals['is_reechelonnement'] = True
+        if self.facturation_type == 'reechelonnement_impayes':
+            invoice_vals['is_reechelonnement'] = True
         return invoice_vals
         
     def _prepare_invoice_line_from_invoice_line(self, line):

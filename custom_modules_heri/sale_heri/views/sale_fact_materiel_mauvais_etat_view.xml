@@ -228,7 +228,7 @@
             <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
             <field name="arch" type="xml">
             	<field name="state" position="replace">
-				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_call_center,attente_finance,attente_magasinier,done" />
+				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_call_center,attente_magasinier,done" />
 				</field>
 				<xpath expr="//field[@name='picking_type_id']" position="attributes">
 				    <attribute name="domain">[('code','=','internal')]</attribute>
@@ -244,8 +244,7 @@
 				</xpath>
 				<xpath expr="//header" position="inside">
 					<button name="aviser_call_center" string="Validation Call Center" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('draft')),('mouvement_type','not in',('bci'))]}" type="object" groups="purchase_heri.group_logistique_heri"/>
-				    <button name="action_aviser_finance" string="Validation Finance" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_call_center')),('mouvement_type','not in',('bci'))]}" type="object" groups="purchase_heri.group_call_center_heri"/>
-				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_finance')), ('mouvement_type','not in',('bci'))]}" type="object" groups="purchase_heri.group_finance_heri"/>
+				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_call_center')), ('mouvement_type','not in',('bci'))]}" type="object" groups="purchase_heri.group_finance_heri"/>
 				 </xpath>
 				
 				<field name="location_dest_id" position="attributes">
