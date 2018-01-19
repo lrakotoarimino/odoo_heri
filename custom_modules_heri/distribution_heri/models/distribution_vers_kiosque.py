@@ -2,6 +2,7 @@
 
 from odoo import fields, models, api
 import re
+from odoo.exceptions import UserError
 
 class StockPickingDistribution(models.Model):
     _inherit = 'stock.picking'   
@@ -131,4 +132,35 @@ class StockPickingDistribution(models.Model):
                 move_lines.create(template)
             move.aviser_magasinier_tiers()
                 
+        return True
+class StockMove(models.Model):
+    _inherit = 'stock.move'
+     
+    @api.depends('product_id')
+    def _compute_qte_prevu(self):
+        for line in self:
+            if line.picking_id.mouvement_type in ('bci','distribution_vers_kiosque','prise_en_charge'):
+                if not line.location_id:
+                    raise UserError("La zone d'emplacement source ne doit pas être vide")
+                
+                location_src_id = line.location_id
+                total_qty_available = 0.0
+                total_reserved = 0.0
+                liste_picking_ids = []
+                
+                stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
+                line_ids = line.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
+                                                                   ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
+                                                                   ])
+                #recuperer tous les articles reserves dans bci
+                bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
+                                                                       ('picking_id.state','not in', ('draft','done','cancel')), \
+                                                                       ('product_id','=', line.product_id.id)
+                                                                       ])  
+                total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
+                total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel'))
+                for quant in stock_quant_ids:
+                    total_qty_available += quant.qty
+                line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
+        
         return True
