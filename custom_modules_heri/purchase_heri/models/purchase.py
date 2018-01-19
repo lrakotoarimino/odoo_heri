@@ -253,6 +253,7 @@ class PurchaseHeri(models.Model):
     is_breq_stock = fields.Boolean('Est un budget request stock', default=False)
     statut_breq_bex = fields.Char(compute="_concate_state", string='Etat BReq/BEX')
     is_from_bci = fields.Boolean('Est-il venu d\'un bci lors de la facturation de materiel en mauvais etat dans vente', default=False)
+    to_invoice = fields.Boolean(u'Le Budget Request Stock est-il à facturer lors de la facturation de materiel en mauvais etat dans vente ?', default=False)
     
     justificatif = fields.Text("Justificatif Non prévu/Dépassement")
     state = fields.Selection([
