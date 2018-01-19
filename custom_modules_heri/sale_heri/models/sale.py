@@ -28,6 +28,7 @@ class SaleHeri(models.Model):
     #champ pour recupérer le kiosque
     kiosque_id = fields.Many2one('stock.location', string='Kiosque *') 
     location_id = fields.Many2one('stock.location', string='Magasin d\'origine *') 
+    send_to_dg = fields.Boolean(string='A envoyer au DG')
     facturation_type = fields.Selection([
             ('facturation_redevance','Redevance mensuelle'),
             ('materiel_loue', 'Materiel Loué'),
@@ -707,6 +708,7 @@ class SaleOrderLineHeri(models.Model):
     @api.onchange('qte_article','nbre_jour_detention')
     def onchange_correction_qte_article(self):
         self.product_uom_qty = self.qte_article*self.nbre_jour_detention
+        self.send_to_dg = True
     
     @api.onchange('date_arrivee')
     def onchange_correction_date_arrivee(self):

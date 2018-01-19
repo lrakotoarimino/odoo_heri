@@ -111,6 +111,7 @@
 				 <!--bouton pour le workflow facturation redevance -->
 				<xpath expr="//field[@name='state']" position="before">
 				<field name="is_creator" invisible="1"/>
+				<field name="send_to_dg" invisible="1"/>
 				<button 
 			      	    string="Générer les articles à facturer" 
 			      	    name="action_generer_redevance"
@@ -141,14 +142,14 @@
 			      	    string="Valider" 
 			      	    name="action_validation_finance"
 			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance')), ('send_to_dg', '=', False)]}"
 			      	    groups="purchase_heri.group_finance_heri"
 			      	 />
 			      	 <button 
 			      	    string="Envoyer au DG pour vérification" 
 			      	    name="action_verification_dg"
 			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance'))]}"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('correction_et_motif_finance')), ('send_to_dg', '=', True)]}"
 			      	    groups="purchase_heri.group_finance_heri"
 			      	 />
 			      	 <button 
