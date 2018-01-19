@@ -6,12 +6,20 @@ import re
 class StockPickingDistribution(models.Model):
     _inherit = 'stock.picking'   
     
+    @api.depends('location_dest_id')
+    def _compute_is_received(self):
+        for pick in self:
+            if pick.mouvement_type in ('bs','be','bci','prise_en_charge'):
+                if pick.location_dest_id.is_kiosque :
+                    pick.is_received = True
+    
     mouvement_type = fields.Selection([
         ('bs', 'bon de sortie'),
         ('be', 'bon d entree'),
         ('bci', 'Bon de cession Interne'),
         ('br', 'Bon de Retour'),
         ('distribution_vers_kiosque', 'Distribution vers le kiosque'),
+        ('prise_en_charge', 'Pris en charge article envoyé par les entrepreneurs'),
         ], string='Type de Mouvement', readonly=True, track_visibility='onchange')
     
     purchase_terminated = fields.Boolean(compute="_compute_purchase_terminated")
@@ -20,7 +28,11 @@ class StockPickingDistribution(models.Model):
     def achat_prestataire(self):
         action = self.env.ref('distribution_heri.action_non_stoke_distribution').read()[0]
         return action
-     
+    
+    def action_bon_de_sortie_distribution_fonction(self):
+        action = self.env.ref('distribution_heri.action_bon_de_sortie_distribution').read()[0]
+        return action
+    
     def _compute_purchase_terminated(self):
         for order in self:
             current_brq_id = self.env['purchase.order'].search([('picking_bci_id','=',order.id)])
@@ -43,14 +55,11 @@ class StockPickingDistribution(models.Model):
         self.write({'state':'attente_magasinier'})
         
     def etab_bci(self):
-        self.update({'location_dest_id': self.env.ref('distribution_heri.stock_location_virtual_taxi_brousse').id})
         self.action_confirm()
         self.action_assign()
         self.write({'state':'visa_logiste'})
         
     def etab_bci_call(self):
-        self.update({'location_id': self.location_dest_id})
-        self.update({'location_dest_id': self.env.ref('distribution_heri.stock_location_virtual_kiosque').id})
         self.write({'state':'bci_visa_logistique'})
         
     bs_count = fields.Integer(compute='_compute_bs')
@@ -88,15 +97,15 @@ class StockPickingDistribution(models.Model):
             picking_type = self.env['stock.picking.type'].search([('id','=',picking_type_id)])
             picking_type.code = 'internal'
             picking_type.default_location_src_id = order.location_id.id
-            picking_type.default_location_dest_id = order.location_dest_id.id
+            picking_type.default_location_dest_id = move.location_dest_id.id
             for line in order.pack_operation_ids:
                 template = {
                             'product_id': line.product_id.id,
                             'product_qty': line.product_qty,
                             'qty_done': line.product_qty,
                             'product_uom_id': line.product_uom_id.id,
-                            'location_dest_id': move.location_dest_id.id,
-                            'location_id': move.location_id.id,
+                            'location_dest_id': order.location_dest_id.id,
+                            'location_id': order.location_id.id,
                             'picking_id': move.id,
                             'company_id': move.company_id.id,
                             'procurement_id': False,
@@ -111,8 +120,8 @@ class StockPickingDistribution(models.Model):
                             'product_id': line.product_id.id,
                             'product_uom_qty': line.product_uom_qty,
                             'product_uom': line.product_uom.id,
-                            'location_dest_id': move.location_dest_id.id,
-                            'location_id': move.location_id.id,
+                            'location_dest_id': order.location_dest_id.id,
+                            'location_id': order.location_id.id,
                             'picking_id': move.id,
                             'company_id': move.company_id.id,
                             'procurement_id': False,

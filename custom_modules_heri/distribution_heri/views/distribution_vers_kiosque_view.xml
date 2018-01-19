@@ -9,8 +9,12 @@
                 <field name="partner_id" position="replace">
 				    <field name="partner_id" />
 				</field>
+				<xpath expr="//button[@name='do_print_picking']" position="attributes">
+		    		<attribute name="states"></attribute>
+		    		<attribute name="attrs">{'invisible': [('mouvement_type','in',('bs','be','bci','br','distribution_vers_kiosque','prise_en_charge'))]}</attribute>
+	    		</xpath>
                 <field name="state" position="replace">
-				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,visa_logiste,attente_call_center,bci_visa_logistique,done" />
+				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,visa_logiste,visa_call_center,bci_visa_logistique,done" />
 				</field>
 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
@@ -82,7 +86,7 @@
 				      	    string="Etablir BCI" 
 				      	    name="etab_bci_call"
 				      	    class="oe_highlight" 
-				      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_call_center')),('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('visa_call_center')),('mouvement_type','!=','distribution_vers_kiosque')]}"
 				      	    type="object"
 				      	    groups="purchase_heri.group_call_center_heri"
 				      	 />
@@ -109,7 +113,7 @@
                         	type="object"
                             class="oe_stat_button"
                             icon="fa-truck"
-                            attrs="{'invisible': ['|',('state','not in',('attente_logistique')),'|',('mouvement_type','!=','distribution_vers_kiosque'),('prestataire_count','=',0)]}"
+                            attrs="{'invisible': ['|',('mouvement_type','!=','distribution_vers_kiosque'),('prestataire_count','=',0)]}"
                             >
                             <field name="prestataire_count"  widget="statinfo" string="Prestataire" help="Prestataire de service"/>
   
@@ -117,7 +121,7 @@
  				</xpath>
  				<xpath expr="//div[@name='button_box']/button[@name='action_see_move_scrap']" position="after">
                         <button 
-                        	name="action_bon_de_sortie_bci"
+                        	name="action_bon_de_sortie_distribution_fonction"
                         	type="object"
                             class="oe_stat_button"
                             icon="fa-truck"
@@ -186,6 +190,71 @@
             <field name="act_window_id" ref="action_non_stoke_distribution"/>
         </record>
         
+       	<!-- action bs distribution de materiels-->
+		<record id="view_bs_distribution_inherit" model="ir.ui.view">
+            <field name="name">bon.de.sortie.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="arch" type="xml">
+            	<xpath expr="//form" position="attributes">
+                    <attribute name="create">0</attribute>
+                </xpath> 
+                <field name="partner_id" position="replace">
+				    <field name="partner_id" readonly="1"/>
+				</field>
+                <field name="state" position="replace">
+				    <field name="state" widget="statusbar" statusbar_visible="attente_magasinier,visa_logiste,done" />
+				</field>
+				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
+					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
+					<attribute name="invisible">1</attribute>
+				</xpath>
+				
+				<xpath expr="//field[@name='location_id']" position="replace">
+					<field name="location_id" attrs="{'readonly': [('mouvement_type','in',('bs'))]}" string="Magasin d'Origine"/>
+				</xpath>
+				<xpath expr="//button[@name='action_cancel']" position="attributes">
+					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
+					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>
+				</xpath>
+ 				<xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+	    		</xpath>
+				<xpath expr="//header" position="inside">	
+				    <button name="etab_bci" string="Pour visa" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_magasinier')),('mouvement_type','not in',('bci','bs'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
+				    <button 
+			    	    type="object"  
+			    	    name="do_print_BS" 
+			    	    string="Valider et imprimer" 
+			    	    attrs="{'invisible': ['|',('state','not in',('visa_logiste')),('mouvement_type','!=','bs')]}"
+			    	    groups="purchase_heri.group_logistique_heri"/>	
+				</xpath>
+            </field>
+        </record>
+         <!-- action bs  stock distribution -->
+		<record model="ir.actions.act_window" id="action_bon_de_sortie_distribution">
+	       	<field name="name"> bon de sortie lié</field>
+	       	<field name="res_model">stock.picking</field>
+	       	<field name="domain">[('picking_bs_id','=',active_id)]</field>  	
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	   	</record> 
+        
+        <record id="action_bon_sortie_tree_distribution" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="stock_heri.view_bon_sortie_sans_creer_tree"/>
+            <field name="act_window_id" ref="action_bon_de_sortie_distribution"/>
+        </record>
+        
+        <record id="action_bon_sortie_form_distribution" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_bs_distribution_inherit"/>
+            <field name="act_window_id" ref="action_bon_de_sortie_distribution"/>
+		</record>  
+    	
         <record id="stock_location_virtual_taxi_brousse" model="stock.location">
             <field name="name">Emplacement virtuel Taxi-brousse</field>
             <field name="location_id" ref="stock.stock_location_locations_virtual"/>

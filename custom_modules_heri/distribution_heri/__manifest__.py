@@ -9,7 +9,8 @@
     'depends': ['base','purchase_heri','stock_heri','sale'],
     'data': [
                 #views
-                'views/distribution_view.xml',
+                'views/distribution_vers_kiosque_view.xml',
+                'views/distribution_view.xml'
              ],
     'demo': [],
     'test': [],
