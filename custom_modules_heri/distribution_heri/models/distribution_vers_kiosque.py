@@ -10,7 +10,7 @@ class StockPickingDistribution(models.Model):
     @api.depends('location_dest_id')
     def _compute_is_received(self):
         for pick in self:
-            if pick.mouvement_type in ('bs','be','bci','prise_en_charge'):
+            if pick.mouvement_type in ('bs','be','bci','prise_en_charge','distribution_vers_kiosque'):
                 if pick.location_dest_id.is_kiosque :
                     pick.is_received = True
     
@@ -50,7 +50,7 @@ class StockPickingDistribution(models.Model):
             purchase_child = self.env['purchase.order'].search([('picking_bci_id','=',br.id)])
             if purchase_child:
                 br.prestataire_count = len(purchase_child)
-    
+  
     def envoye_missionnaire(self):
         self.action_confirm()
         self.write({'state':'attente_magasinier'})
