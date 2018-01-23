@@ -27,6 +27,7 @@ class StockPickingHeri(models.Model):
         ('attente_magasinier','Avis Magasinier'),
         ('visa_logiste','visa logistique'),
         ('visa_call_center','Avis call center'),
+        ('dist_visa_magasinier','Visa Magasinier'),
         ('bci_visa_logistique','Visa Logistique'),
         ('waiting', 'Waiting Another Operation'),
         ('confirmed', 'Waiting Availability'),
