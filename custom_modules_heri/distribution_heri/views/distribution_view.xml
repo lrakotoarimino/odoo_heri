@@ -25,8 +25,15 @@
 					<field name="purchase_terminated" invisible="1" />
 				</xpath>
 				<xpath expr="//field[@name='location_id']" position="replace">
-					<field name="location_id" attrs="{'readonly': [('mouvement_type','in',('bs'))]}" string="Magasin d'Origine"/>
+					<field name="location_id"  string="Magasin d'Origine"/>
 				</xpath>
+				<xpath expr="//field[@name='location_dest_id']" position="replace">
+					<field name="location_dest_id" domain="[('is_kiosque', '=', True)]" string="Magasin d'Origine"/>
+				</xpath>
+				<xpath expr="//field[@name='location_dest_id']" position="after">
+					<field name="observation_colis" attrs="{'invisible': ['|',('state', 'in', ('draft')),('mouvement_type','!=','prise_en_charge')],'required':[('state', 'in', ('attente_logistique'))]}" string="Observations"/>
+				</xpath>
+
 				<xpath expr="//button[@name='action_cancel']" position="attributes">
 					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
 					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>

@@ -13,6 +13,7 @@ class StockPickingDistribution(models.Model):
             if pick.mouvement_type in ('bs','be','bci','prise_en_charge','distribution_vers_kiosque'):
                 if pick.location_dest_id.is_kiosque :
                     pick.is_received = True
+    observation_colis = fields.Text(string="Observations ")
     
     mouvement_type = fields.Selection([
         ('bs', 'bon de sortie'),
@@ -54,7 +55,11 @@ class StockPickingDistribution(models.Model):
     def envoye_missionnaire(self):
         self.action_confirm()
         self.write({'state':'attente_magasinier'})
-        
+    
+    def envoyer_magasinier_distribution(self):
+        self.action_assign()
+        self.write({'state':'dist_visa_magasinier'})
+
     def etab_bci(self):
         self.action_confirm()
         self.action_assign()

@@ -14,7 +14,7 @@
 		    		<attribute name="attrs">{'invisible': [('mouvement_type','in',('bs','be','bci','br','distribution_vers_kiosque','prise_en_charge'))]}</attribute>
 	    		</xpath>
                 <field name="state" position="replace">
-				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,visa_logiste,visa_call_center,bci_visa_logistique,done" />
+				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,visa_logiste,visa_call_center,dist_visa_magasinier,bci_visa_logistique,done" />
 				</field>
 				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
@@ -25,8 +25,15 @@
 					<field name="purchase_terminated" invisible="1" />
 				</xpath>
 				<xpath expr="//field[@name='location_id']" position="replace">
-					<field name="location_id" attrs="{'readonly': [('mouvement_type','in',('bs'))]}" string="Magasin d'Origine"/>
+					<field name="location_id" string="Magasin d'Origine"/>
 				</xpath>
+				<xpath expr="//field[@name='location_dest_id']" position="replace">
+					<field name="location_dest_id" domain="[('is_kiosque', '=', True)]" string="Magasin d'Origine"/>
+				</xpath>
+				<xpath expr="//field[@name='location_dest_id']" position="after">
+					<field name="observation_colis" string="Informations sur Bon de Retour" attrs="{'invisible': ['|',('state', 'not in', ('visa_call_center')),('mouvement_type','!=','distribution_vers_kiosque')],'required':[('state', 'in', ('visa_call_center'))]}"/>
+				</xpath>
+				
 				<xpath expr="//button[@name='action_cancel']" position="attributes">
 					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
 					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>
@@ -83,12 +90,20 @@
 				      	    groups="purchase_heri.group_logistique_heri"
 				      	 />
 				      <button 
-				      	    string="Etablir BCI" 
-				      	    name="etab_bci_call"
+				      	    string="Information Enregistrer" 
+				      	    name="envoyer_magasinier_distribution"
 				      	    class="oe_highlight" 
 				      	    attrs="{'invisible': ['|',('state', 'not in', ('visa_call_center')),('mouvement_type','!=','distribution_vers_kiosque')]}"
 				      	    type="object"
 				      	    groups="purchase_heri.group_call_center_heri"
+				      	 />
+				      <button 
+				      	    string="Etablir BCI" 
+				      	    name="etab_bci_call"
+				      	    class="oe_highlight" 
+				      	    attrs="{'invisible': ['|',('state', 'not in', ('dist_visa_magasinier')),('mouvement_type','!=','distribution_vers_kiosque')]}"
+				      	    type="object"
+				      	    groups="purchase_heri.group_magasinier_heri"
 				      	 />
 				      <button 
 				      	    string="Non Facturé" 
