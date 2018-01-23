@@ -244,7 +244,7 @@
 				</xpath>
 				<xpath expr="//header" position="inside">
 					<button name="aviser_call_center" string="Validation Call Center" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('draft')),('mouvement_type','not in',('bci'))]}" type="object" groups="purchase_heri.group_logistique_heri"/>
-				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_call_center')), ('mouvement_type','not in',('bci'))]}" type="object" groups="purchase_heri.group_finance_heri"/>
+				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_call_center')), ('mouvement_type','not in',('bci'))]}" type="object" groups="purchase_heri.group_call_center_heri"/>
 				 </xpath>
 				
 				<field name="location_dest_id" position="attributes">
