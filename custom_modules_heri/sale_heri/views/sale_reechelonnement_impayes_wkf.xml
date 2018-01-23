@@ -37,6 +37,13 @@
 			<field name="kind">function</field>
 			<field name="action">generation_facture_reechelonnement()</field>
 		</record>
+		
+		<record id="activity_refus_dg" model="workflow.activity">
+			<field name="wkf_id" ref="sale_reechelonnement_wkf"/>
+			<field name="name">Refus DG</field>
+			<field name="kind">function</field>
+			<field name="action">action_refus_dg()</field>
+		</record>
 		<!--End workflow activity-->
 		
 		<!-- workflow transition-->
@@ -74,6 +81,12 @@
             <field name="act_from" ref="activity_validation_dg"/>
             <field name="act_to" ref="activity_observation_finance"/>
             <field name="signal">action_annulation_dg</field>
+        </record>    
+        
+        <record id="activity_validation_dg_to_activity_refus_dg" model="workflow.transition">
+            <field name="act_from" ref="activity_validation_dg"/>
+            <field name="act_to" ref="activity_refus_dg"/>
+            <field name="signal">action_refuser_dg</field>
         </record>      
 		<!--End workflow transition-->
 		<!--End workflow -->

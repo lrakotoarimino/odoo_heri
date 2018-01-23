@@ -73,6 +73,13 @@
 			      	    groups="purchase_heri.group_dg_heri"
 			      	 />
 			      	 <button 
+			      	    string="Refuser" 
+			      	    name="action_refuser_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
+			      	    groups="purchase_heri.group_dg_heri"
+			      	 />
+			      	 <button 
 			      	    string="A revoir" 
 			      	    name="action_annulation_dg"
 			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"

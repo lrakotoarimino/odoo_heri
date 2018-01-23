@@ -73,6 +73,9 @@ class SaleHeri(models.Model):
     def generation_facture_reechelonnement(self):
         self.action_confirm()
         
+    def action_refus_dg(self):
+        self.write({'state':'refus_dg'})
+        
     @api.multi
     def action_impayes(self):
         action = self.env.ref('sale_heri.action_impayes').read()[0]

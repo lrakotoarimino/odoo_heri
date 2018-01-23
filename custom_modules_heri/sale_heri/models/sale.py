@@ -133,6 +133,7 @@ class SaleHeri(models.Model):
         ('sale', 'Génération facture SMS'),
         ('done', 'Locked'),
         ('cancel', 'Cancelled'),
+        ('refus_dg', 'Refusé par DG'),
         ], string='Status', readonly=True, copy=False, index=True, track_visibility='onchange',default='draft')
     
     def get_employee_id(self):
