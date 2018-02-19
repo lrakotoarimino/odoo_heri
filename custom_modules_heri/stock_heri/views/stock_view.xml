@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 	<data>
-				
 		<!-- Debut form de base stock.picking-->
 		<record id="view_picking_form_base" model="ir.ui.view">
             <field name="name">stock.picking.form.base</field>
@@ -50,10 +49,13 @@
 				<button name="button_scrap" position="attributes">
 				    <attribute name="invisible">1</attribute>
 				</button>
-				
 				<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,partially_available,assigned,done" />
 				</field>
+				
+                <field name="move_lines" position="attributes">
+                	<attribute name="attrs">{'readonly': [('state', 'in', ('cancel', 'partially_available', 'done'))]}</attribute>
+                </field>  
             </field>
    		</record>
 		<!-- Fin form de base stock.picking-->
@@ -62,7 +64,7 @@
             <field name="name">stock.picking.advanced.form</field>
             <field name="model">stock.picking</field>
             <field name="mode">primary</field>
-            <field name="inherit_id" ref="stock_heri.view_picking_form_base"/>
+            <field name="inherit_id" ref="view_picking_form_base"/>
             <field name="arch" type="xml">
                 <field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,done" />
@@ -71,7 +73,7 @@
 				    <button name="do_stock_transfer" string="Valider" class="oe_highlight" attrs="{'invisible': [('state','not in',('assigned'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
                     <button name="action_cancel" string="Annuler" attrs="{'invisible': [('state','not in',('assigned'))]}" groups="purchase_heri.group_magasinier_heri" type="object"/>
 				</xpath>
-            </field>
+			</field>
         </record>
 		
 		<!-- Debut bon de cession interne form view -->
@@ -79,23 +81,15 @@
             <field name="name">stock.cession.interne.form</field>
             <field name="model">stock.picking</field>
             <field name="mode">primary</field>
-            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
+            <field name="inherit_id" ref="view_picking_form_advanced"/>
             <field name="arch" type="xml">
             	<field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,done" />
 				</field>
 				<xpath expr="//field[@name='picking_type_id']" position="attributes">
 				    <attribute name="domain">[('code','=','internal')]</attribute>
-				</xpath>
-<!-- 
-				<xpath expr="//field[@name='move_lines']//field[@name='product_uom_qty']" position="after">
-				    <field name="qte_prevu" readonly="1"/>
-
-				<xpath expr="//field[@name='move_lines']" position="inside">
-				    <field name="location_id" readonly="1"/> 
-
-				</xpath> -->
-				<xpath expr="//button[@name='do_stock_transfer']" position="attributes">
+				</xpath> 
+			    <xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
 					<attribute name="attrs">{'invisible': [('state','not in',('attente_magasinier'))]}</attribute>
 				</xpath>
@@ -107,6 +101,13 @@
 				    <button name="action_aviser_logistique" string="Envoyer au logistique" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('draft')),('mouvement_type','not in',('bci'))]}" type="object"/>
 				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_logistique')), ('mouvement_type','not in',('bci'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 				</xpath>
+				
+				<field name="location_dest_id" position="attributes">
+                    <attribute name="domain">[('is_kiosque','=',False)]</attribute>
+				</field>
+				<field name="location_id" position="attributes">
+				    <attribute name="domain">[('is_kiosque','=',False)]</attribute>
+				</field>
             </field>
         </record>
 		<!-- Fin bon de cession interne form view -->
@@ -147,19 +148,18 @@
 	   	<record id="action_bon_cession_interne_tree" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="stock_heri.view_bon_cession_interne_tree"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_cession_interne"/>
+            <field name="view_id" ref="view_bon_cession_interne_tree"/>
+            <field name="act_window_id" ref="action_bon_de_cession_interne"/>
         </record>
 
         <record id="action_bon_cession_interne_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock_heri.view_bci_form_advanced_inherit"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_cession_interne"/>
+            <field name="view_id" ref="view_bci_form_advanced_inherit"/>
+            <field name="act_window_id" ref="action_bon_de_cession_interne"/>
         </record>
 		<!-- Fin action bon de cession interne -->
-		
-		<!-- Debut action bon de sortie -->
+
         <record model="ir.actions.act_window" id="action_bon_de_sortie">
 	       	<field name="name">Bon de sortie en stock</field>
 	       	<field name="res_model">stock.picking</field>
@@ -168,21 +168,72 @@
 	       	<field name="view_type">form</field>
 	       	<field name="view_mode">tree,form</field>
 	   	</record>
+
 	   	
-	   	<record id="action_bon_sortie_tree" model="ir.actions.act_window.view">
+	   	<!-- Debut bon de sortie tree view sans create -->
+	   	<record id="view_bon_sortie_sans_creer_tree" model="ir.ui.view">
+            <field name="name">stock.picking.sans.creer.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock.vpicktree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//tree" position="attributes">
+                    <attribute name="create">0</attribute>
+                    <attribute name="edit">0</attribute>
+                </xpath> 
+			</field>
+        </record>
+        <!-- Fin bon de sortie tree view sans create -->
+	   	
+	   	<!-- Debut bon de sortie form view -->
+	   	<record id="view_picking_bs_lie_form_advanced_inherit" model="ir.ui.view">
+            <field name="name">stok.bon.sortie.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="view_picking_form_advanced"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="attributes">
+                    <attribute name="create">0</attribute>
+                </xpath>
+				<field name="move_lines" position="attributes">
+					<attribute name="attrs">{'readonly': [('mouvement_type', '=', 'bs')]}</attribute>
+				</field>
+				<button name="show_details" position="attributes">
+					<attribute name="invisible">1</attribute>
+				</button>
+				<field name="location_dest_id" position="attributes">
+					<!-- <attribute name="attrs">{'invisible': [('picking_type_code', '=', 'incoming')], 'readonly': [('state', '=', 'done')]}</attribute> -->
+					<attribute name="attrs">{'readonly': [('state', '=', 'done')]}</attribute>
+				</field>
+				<field name="location_id" position="replace">
+				    <field name="location_id" readonly="1" string="Magasin d'origine"/>
+				</field>
+				<button name="do_new_transfer" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				<button name="do_stock_transfer" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				<field name="qty_done" position="replace">
+				    <field name="qty_done" readonly="1"/>
+				</field>
+			</field>
+		</record>
+        <!-- Fin bon de sortie form view -->
+        
+        <record id="action_bon_sortie_tree" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="stock.vpicktree"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_sortie"/>
+            <field name="view_id" ref="view_bon_sortie_sans_creer_tree"/>
+            <field name="act_window_id" ref="action_bon_de_sortie"/>
         </record>
-
         <record id="action_bon_sortie_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock.view_picking_form"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_sortie"/>
+            <field name="view_id" ref="view_picking_bs_lie_form_advanced_inherit"/>
+            <field name="act_window_id" ref="action_bon_de_sortie"/>
 		</record>
-				
+
 	   	<record model="ir.actions.act_window" id="action_bon_de_sortie_lie">
 	       	<field name="name">Bon de sortie en stock lié</field>
 	       	<field name="res_model">stock.picking</field>
@@ -195,14 +246,14 @@
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="stock.vpicktree"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_sortie_lie"/>
+            <field name="act_window_id" ref="action_bon_de_sortie_lie"/>
         </record>
 
         <record id="action_bon_sortie_form_lie" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock.view_picking_form"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_sortie_lie"/>
+            <field name="view_id" ref="view_picking_bs_lie_form_advanced_inherit"/>
+            <field name="act_window_id" ref="action_bon_de_sortie_lie"/>
 		</record>
 	  	<!-- Fin bon de sortie -->
 	  	
@@ -211,14 +262,24 @@
             <field name="name">stock.be.picking.advanced.form</field>
             <field name="model">stock.picking</field>
             <field name="mode">primary</field>
-            <field name="inherit_id" ref="stock_heri.view_picking_form_advanced"/>
-            <field name="arch" type="xml">            
+            <field name="inherit_id" ref="view_picking_form_advanced"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="attributes">
+                    <attribute name="create">0</attribute>
+                    <attribute name="edit">0</attribute>
+                </xpath>            
 				<field name="location_dest_id" position="replace">
 				    <field name="location_dest_id" string="Magasin de destination" attrs="{'readonly': [('mouvement_type','not in',('be'))]}"/>
 				</field>
 				<field name="location_id" position="replace">
 				    <field name="location_id" invisible="1"/>
 				</field>
+				<field name="move_lines" position="attributes">
+					<attribute name="readonly">1</attribute>
+				</field>
+				<button name="show_details" position="attributes">
+					<attribute name="invisible">1</attribute>
+				</button>
 			</field>
 		</record>
 		
@@ -233,15 +294,15 @@
 	   	<record id="action_bon_d_entree_tree_view" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="stock.vpicktree"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_d_entree"/>
+            <field name="view_id" ref="view_bon_sortie_sans_creer_tree"/>
+            <field name="act_window_id" ref="action_bon_d_entree"/>
         </record>
 
         <record id="action_bon_d_entree_form_view" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock_heri.view_be_picking_form_advanced"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_d_entree"/>
+            <field name="view_id" ref="view_be_picking_form_advanced"/>
+            <field name="act_window_id" ref="action_bon_d_entree"/>
 		</record>
 	   	<!-- Fin bon d'entree -->
 	   	
@@ -258,8 +319,18 @@
                     <field name="section"/>
                     <field name="is_bs" invisible="1"/>
                     <field name="is_returned" invisible="1"/>
-                    
                 </xpath>
+                <xpath expr="//field[@name='min_date']" position="after">
+					<field name="date_arrivee_reelle" attrs="{'invisible': [('mouvement_type', '!=', 'bs')]}"/>
+				</xpath>
+                <xpath expr="//field[@name='min_date']" position="after">
+					 <field name="is_received" invisible="1"/>
+					 <field name="product_received" attrs="{'invisible': [('state', 'not in',('done'))]}"/>
+				</xpath>
+				<xpath expr="//button[@name='do_new_transfer']" position="after">
+				    <button name="action_received_call" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',False), '|',('product_received', '!=',False), ('state', 'not in',('done'))]}" groups="purchase_heri.group_call_center_heri"/>
+				    <button name="action_received_log" type="object" class="oe_highlight"  string="Reception d'article" attrs="{'invisible': ['|',('is_received', '=',True), '|',('product_received', '!=',False), ('state', 'not in',('done'))]}" groups="purchase_heri.group_logistique_heri"/>
+				</xpath>
                 <xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">
 		    		<attribute name="string">Retourner</attribute>
 		    		<attribute name="states"></attribute>
@@ -359,13 +430,15 @@
             <field name="name">stock.picking.advanced.form</field>
             <field name="model">stock.picking</field>
             <field name="mode">primary</field>
-            <field name="inherit_id" ref="stock_heri.stock_heri_form_view"/>
+            <field name="inherit_id" ref="stock_heri_form_view"/>
             <field name="arch" type="xml">
+                <xpath expr="//form" position="attributes">
+                    <attribute name="create">0</attribute>
+                </xpath>
                 <field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_hierarchie,attente_magasinier,done" />
 				</field>
-
-            	</field>
+			</field>
         </record> 
         
 	   	<record model="ir.actions.act_window" id="action_bon_de_retour">
@@ -380,15 +453,15 @@
 	   	<record id="action_bon_retour_tree" model="ir.actions.act_window.view">
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
-            <field name="view_id" ref="stock.vpicktree"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_retour"/>
+            <field name="view_id" ref="view_bon_sortie_sans_creer_tree"/>
+            <field name="act_window_id" ref="action_bon_de_retour"/>
         </record>
 
         <record id="action_bon_retour_form" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock_heri.view_picking_form_advanced2"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_retour"/>
+            <field name="view_id" ref="view_picking_form_advanced2"/>
+            <field name="act_window_id" ref="action_bon_de_retour"/>
 		</record>
 	   	
 	   	<record model="ir.actions.act_window" id="action_bon_de_retour_lie">
@@ -403,14 +476,14 @@
             <field eval="1" name="sequence"/>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="stock.vpicktree"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_retour_lie"/>
+            <field name="act_window_id" ref="action_bon_de_retour_lie"/>
         </record>
 
         <record id="action_bon_retour_form_lie" model="ir.actions.act_window.view">
             <field eval="2" name="sequence"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref="stock_heri.view_picking_form_advanced2"/>
-            <field name="act_window_id" ref="stock_heri.action_bon_de_retour_lie"/>
+            <field name="view_id" ref="view_picking_form_advanced2"/>
+            <field name="act_window_id" ref="action_bon_de_retour_lie"/>
 		</record>
 	   	<!-- Fin action bon de retour -->
 	   	
@@ -445,6 +518,32 @@
 				</field>
 			</field>
 		</record>
+		<!--  -->
+		
+		<!-- Début ajout du champ qte_prevu dans move_lines-->
+		<record model="ir.ui.view" id="view_move_picking_advanced_tree">
+			<field name="name">stock.move.advanced.tree</field>
+			<field name="model">stock.move</field>
+			<field name="inherit_id" ref="stock.view_move_picking_tree"/>
+			<field name="arch" type="xml"> 
+		        <xpath expr="//field[@name='product_uom_qty']" position="after">
+			    	<field name="qte_prevu" readonly="1"/>
+			    </xpath>
+	    	</field>
+    	</record>
+	    <!-- Ajout du champ qte_prevu dans move_lines -->
+		
+		<!-- Debut stock quant form view -->
+	   	<record id="view_stock_quant_inherit_form" model="ir.ui.view">
+            <field name="name">stock.quant.inherit.form</field>
+            <field name="model">stock.quant</field>
+            <field name="inherit_id" ref="stock.view_stock_quant_form"/>
+            <field name="arch" type="xml">          
+				<field name="inventory_value" position="after">
+				    <field name="date_arrivee_reelle"/>
+				</field>
+			</field>
+		</record>
 		
 		<!-- Sequences for bon de cessio interne --> 
         <record id="seq_bon_cession_interne" model="ir.sequence">
@@ -455,14 +554,36 @@
             <field name="padding">6</field>
             <field name="company_id" eval="False"/>
         </record>
-		
+       	<!-- Fin Sequence bon de cession interne -->
+       	
+       	<!-- Sequence bon de sortie --> 
+        <record id="seq_bon_sortie" model="ir.sequence">
+            <field name="name">Séquence des bons de sortie</field>
+            <field name="code">bon.sortie</field>
+            <field name="domain">[('mouvement_type','=','bs')]</field>  
+            <field name="prefix">BS</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Fin Sequence bon de sortie -->
+        
+        <!-- Sequence bon d'entrée --> 
+        <record id="seq_bon_entree" model="ir.sequence">
+            <field name="name">Séquence des bons d'entrée</field>
+            <field name="code">bon.entree</field>
+            <field name="domain">[('mouvement_type','=','be')]</field>  
+            <field name="prefix">BE</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Fin Sequence bon d'entrée -->
+        
         <!-- Menus -->
 		<menuitem id="menu_stock_picking_heri" parent="stock.menu_stock_root" sequence="-100" name="Stock"/>
-		<menuitem  action="action_budget_request_stock" id="menu_budget_request_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="1" name="Budget Request Stock"/>
-		<menuitem  action="action_bon_de_sortie" id="menu_bon_sortie_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="2" name="Bon de Sortie"/>
-		<menuitem  action="action_bon_d_entree" id="menu_bon_entree_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="3" name="Bon d'Entrée"/>
-		<menuitem  action="action_bon_de_cession_interne" id="menu_bon_cession_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="4" name="Bon de Cession Interne"/>
-		<menuitem  action="action_bon_de_retour" id="menu_bon_retour_stock_heri" parent="stock_heri.menu_stock_picking_heri" sequence="5" name="Bon de Retour"/>
+		<menuitem action="action_bon_de_sortie" id="menu_bon_sortie_stock_heri" parent="menu_stock_picking_heri" sequence="2" name="Bon de Sortie"/>
+		<menuitem action="action_bon_d_entree" id="menu_bon_entree_stock_heri" parent="menu_stock_picking_heri" sequence="3" name="Bon d'Entrée"/>
+		<menuitem action="action_bon_de_cession_interne" id="menu_bon_cession_stock_heri" parent="menu_stock_picking_heri" sequence="4" name="Bon de Cession Interne"/>
+		<menuitem action="action_bon_de_retour" id="menu_bon_retour_stock_heri" parent="menu_stock_picking_heri" sequence="5" name="Bon de Retour"/>
 		<!-- Fin Menus -->
 	</data>
 </odoo>

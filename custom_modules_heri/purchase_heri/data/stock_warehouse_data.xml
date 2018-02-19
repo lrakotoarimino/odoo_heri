@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <odoo>
   <data>
-    <!-- etape candidature -->  
+    <!-- Entrepot -->  
+	<!--  
 	<record model="stock.warehouse" id="entrepot_tsiadana1">
         <field name="name">Tsiadana1</field>
         <field name="code">TSDN1</field>
@@ -34,6 +35,8 @@
         <field name="name">Kiosque 1</field>
         <field name="code">KSQ1</field>
     </record>
+    -->
+    
     <record model="ir.sequence" id="sequence_breq_stock">
         <field name="name">BReq stock out</field>
         <field name="implementation">standard</field>

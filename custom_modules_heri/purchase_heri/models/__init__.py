@@ -3,3 +3,4 @@ import bex
 import paiement
 import stock
 import res_config
+import product

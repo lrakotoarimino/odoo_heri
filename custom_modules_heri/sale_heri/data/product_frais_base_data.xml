@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<data> 
+		<record model="product.product" id="product_frais_base">
+	        <field name="name">Frais de base</field>
+	        <field name="type">service</field>
+			<field name="sale_ok">True</field>
+			<field name="purchase_ok">True</field>
+	    </record>  
+	</data>
+</odoo>

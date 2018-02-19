@@ -94,6 +94,13 @@
 			<field name="action">action_refus_dg()</field>
 		</record>
 		
+		<record id="act_paiement_valide" model="workflow.activity">
+			<field name="wkf_id" ref="purchase_heri_wkf"/>
+			<field name="name">Mode de paiement valide</field>
+			<field name="kind">function</field>
+			<field name="action">action_paiement_valider()</field>
+		</record>
+		
 		<record id="act_confirmed" model="workflow.activity">
 			<field name="wkf_id" ref="purchase_heri_wkf"/>
 			<field name="name">Confirmé</field>
@@ -239,8 +246,14 @@
             <field name="condition">amount_untaxed &lt;= 2000000</field>
         </record>
         
-        <record id="act_wait_mode_to_act_confirmed" model="workflow.transition">
+        <record id="act_wait_mode_to_act_paiement_valide" model="workflow.transition">
             <field name="act_from" ref="act_wait_mode"/>
+            <field name="act_to" ref="act_paiement_valide"/>
+            <field name="signal">action_paiement</field>
+        </record>
+        
+        <record id="act_paiement_valide_to_act_confirmed" model="workflow.transition">
+            <field name="act_from" ref="act_paiement_valide"/>
             <field name="act_to" ref="act_confirmed"/>
             <field name="signal">valider_mode</field>
         </record>

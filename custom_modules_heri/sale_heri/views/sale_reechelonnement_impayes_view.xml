@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+		<!-- Debut reechelonnement des empayes form -->
+		<record model="ir.ui.view" id="reechelonnement_impayes_form_view">
+			<field name="name">Rééchelonnement des impayés</field>
+			<field name="model">sale.order</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="sale_order_form_view_advanced"/>
+			<field name="arch" type="xml">
+			    <xpath expr="//field[@name='partner_id']" position="before">
+			        <field name="facturation_type" invisible="1"/>
+					<field 
+					    name="kiosque_id" 
+					    domain="[('is_kiosque', '=', True)]"
+					    />
+				</xpath>
+				<xpath expr="//field[@name='partner_id']" position="after">
+					<field name="invoices_id" domain="[('state', 'not in', ('paid','cancel')), ('partner_id', '=', partner_id)]"/>
+				</xpath>
+				<xpath expr="//field[@name='state']" position="replace">
+					<field 	name="state"
+							widget="statusbar" 
+					    	statusbar_visible="draft,attente_finance,observation_dg,sale"/>
+				</xpath>
+				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d']" position="attributes">
+		    		<attribute name="groups">purchase_heri.group_finance_heri</attribute>
+		    		<attribute name="attrs">{'invisible': [('state', '!=', 'sale')]}</attribute>
+		    	</xpath>
+		    	<xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="before">
+			      <button name="action_impayes"
+                          type="object"
+                          class="oe_stat_button"
+                          icon="fa-pencil-square-o">
+                          <field name="impayee_count" widget="statinfo" string="Impayés"/>
+	              </button>
+                </xpath>
+				 <!--bouton pour le workflow reéchelonnemnt des impayés -->
+				<xpath expr="//field[@name='state']" position="before">
+					<field name="is_creator" invisible="1"/>
+					<button 
+			      	    string="Validation Finance" 
+			      	    name="action_validation_call"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft'))]}"
+			      	    groups="purchase_heri.group_call_center_heri"
+			      	 />
+			      	<button 
+			      	    string="Valider" 
+			      	    name="action_finance_ok"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_finance'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+			      	 <button 
+			      	    string="Envoyer au DG pour vérification" 
+			      	    name="action_verif_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_finance'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+			      	 <button 
+			      	    string="A revoir par le Call Center" 
+			      	    name="action_refus_finance"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_finance'))]}"
+			      	    groups="purchase_heri.group_finance_heri"
+			      	 />
+					<button 
+			      	    string="Accorder" 
+			      	    name="action_validation_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
+			      	    groups="purchase_heri.group_dg_heri"
+			      	 />
+			      	 <button 
+			      	    string="Refuser" 
+			      	    name="action_refuser_dg"
+			      	    class="oe_highlight" 
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
+			      	    groups="purchase_heri.group_dg_heri"
+			      	 />
+			      	 <button 
+			      	    string="A revoir" 
+			      	    name="action_annulation_dg"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg'))]}"
+			      	    groups="purchase_heri.group_dg_heri"
+			      	 />
+			      	 <!--End bouton pour le workflow reéchelonnemnt des impayés -->
+				</xpath>
+			</field>
+		</record>	
+		
+		<record model="ir.ui.view" id="reechelonnement_impayes_tree_view">
+	        <field name="name">Rééchelonnement des impayés</field>
+	        <field name="model">sale.order</field>
+	        <field name="arch" type="xml">
+	            <tree string="Reéchelonnement des impayés">
+	                   <field name="message_needaction" invisible="1"/>
+	                   <field name="name" string="Order Number"/>
+	                   <field name="date_order"/>
+	                   <field name="partner_id"/>
+	                   <field name="user_id"/>
+	                   <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
+	                   <field name="currency_id" invisible="1"/>
+	                   <field name="invoice_status"/>
+	                   <field name="state"/>
+	               </tree>
+	        </field>
+     	</record>
+		
+		<record model="ir.actions.act_window" id="action_reechelonnement_impayes">
+	       	<field name="name">Rééchelonnement des impayés</field>
+	       	<field name="res_model">sale.order</field>
+			<field name="domain">[('facturation_type','=','reechelonnement_impayes')]</field>  	
+			<field name="context">{'default_facturation_type': 'reechelonnement_impayes'}</field> 
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	       	<field name="help" type="html">
+	          	<p class="oe_view_nocontent_create">
+	              Cliquer ici pour créer une demande de retour de matériels par l'entrepreneur.
+	          	</p>
+        	</field>
+	   	</record>
+	   	
+	   	<record id="action_reechelonnementr_tree_view" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="reechelonnement_impayes_tree_view"/>
+            <field name="act_window_id" ref="action_reechelonnement_impayes"/>
+        </record>
+
+        <record id="action_reechelonnement_form_view" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="reechelonnement_impayes_form_view"/>
+            <field name="act_window_id" ref="action_reechelonnement_impayes"/>
+		</record>
+		<!-- Fin Reéchelonnement des impayés form -->
+	
+		<!-- Action Facture Reéchelonnement -->
+		<record model="ir.actions.act_window" id="action_impayes">
+	       	<field name="name">Facture impayés</field>
+	       	<field name="res_model">account.invoice</field>
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	       	<field name="help" type="html">
+         	<p class="oe_view_nocontent_create">
+	             Click here to create a new Facture.
+         	</p>
+	       </field>
+	   	</record>
+	   	
+		<record id="action_facture_reechelonnement_tree" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="account.invoice_tree"/>
+            <field name="act_window_id" ref="action_impayes"/>
+		</record>
+        <record id="action_facture_reechelonnement_form" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="account.invoice_form"/>
+            <field name="act_window_id" ref="action_impayes"/>
+		</record>
+		<!-- Fin Action Facture Reéchelonnement -->
+	
+		<menuitem 
+		    id="menu_reechelonnement_impayes" 
+		    name="Rééchelonnement des impayés" 
+		    parent="sales_team.menu_sales" 
+		    action="action_reechelonnement_impayes" 
+		    sequence="3"/>
+	</data>
+</odoo>
