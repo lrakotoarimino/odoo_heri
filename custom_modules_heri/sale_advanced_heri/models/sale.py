@@ -32,7 +32,7 @@ class SaleOrder(models.Model):
             self.kiosk_id = self.partner_id.kiosk_id.id
     
     def get_order_line(self):
-        print 'error'
+        print 'Error'
         
         
         
