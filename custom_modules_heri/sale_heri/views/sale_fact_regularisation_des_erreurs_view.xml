@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+
+		<!-- Facturation tiers form -->
+		<record model="ir.ui.view" id="regularisation_facture_view">
+			<field name="name">Regularisation des erreurs sur factures emises</field>
+			<field name="model">sale.order</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="sale_order_form_view_advanced"/>
+			<field name="arch" type="xml"> 
+				<xpath expr="//field[@name='partner_id']" position="before">
+					<field 
+					    name="kiosque_id" domain="[('is_kiosque', '=', True)]" 
+					    attrs="{'required': [('facturation_type', '=', 'regularisation_facture')],'readonly': [('state', 'not in', ('draft'))]}"
+					    />
+				</xpath>
+				<xpath expr="//field[@name='partner_id']" position="after">
+					<field 
+					    name="facture_ids" 
+					    string="Facture emises" domain="[('partner_id', '=', partner_id)]" options="{'no_create': True}" />
+					    
+				</xpath>
+				<xpath expr="//field[@name='partner_id']" position="after">
+					<field 	name="facturation_type" invisible="1"/>
+				</xpath>
+				<xpath expr="//field[@name='state']" position="replace">
+					<field 	name="state"
+							widget="statusbar" 
+					    	statusbar_visible="draft,a_la_finance,observation_dg,facture_au_finance,valider_par_finance"/>
+				</xpath>
+				<xpath expr="//field[@name='order_line']" position="attributes">
+					<attribute name="options">{'no_create': True}</attribute>
+				</xpath>
+				<xpath expr="//button[@name='%(sale.action_view_sale_advance_payment_inv)d']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+		    	</xpath>
+				 <!--bouton regularisation -->
+				<xpath expr="//field[@name='state']" position="before">
+					<button 
+						name="accord_call_center"
+			      	    string="Valider" 
+			      	    groups="purchase_heri.group_call_center_heri"
+			      	    class="oe_highlight" 
+			      	    type="object"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft')),('facturation_type', 'not in', ('regularisation_facture'))]}"
+			      	 />
+			      	 <button 
+			      	 	name="refus_call_center"
+			      	    string="Refuser" 
+			      	    groups="purchase_heri.group_call_center_heri"
+			      	    class="oe_highlight" 
+			      	    type="object"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('draft')),('facturation_type', 'not in', ('regularisation_facture'))]}"
+			      	 />
+			      	 <button 
+			      	 	name="accord_finance"
+			      	    string="Valider" 
+			      	    groups="purchase_heri.group_finance_heri"
+			      	    class="oe_highlight" 
+			      	    type="object"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_la_finance')),('facturation_type', 'not in', ('regularisation_facture'))]}"
+			      	 />
+			      	 <button 
+			      	 	name="refus_finance"
+			      	    string="Refuser" 
+			      	    groups="purchase_heri.group_finance_heri"
+			      	    class="oe_highlight" 
+			      	    type="object"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_la_finance')),('facturation_type', 'not in', ('regularisation_facture'))]}"
+			      	 />
+			      	  <button 
+			      	 	name="accord_DG"
+			      	    string="Valider" 
+			      	    groups="purchase_heri.group_dg_heri"
+			      	    class="oe_highlight" 
+			      	    type="object"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg')),('facturation_type', 'not in', ('regularisation_facture'))]}"
+			      	 />
+			      	 <button 
+			      	 	name="refus_DG"
+			      	    string="Refuser" 
+			      	    groups="purchase_heri.group_dg_heri"
+			      	    class="oe_highlight" 
+			      	    type="object"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('observation_dg')),('facturation_type', 'not in', ('regularisation_facture'))]}"
+			      	 />
+			      	 <button 
+			      	 	name="accord_final_finance"
+			      	    string="Valider" 
+			      	    groups="purchase_heri.group_finance_heri"
+			      	    class="oe_highlight" 
+			      	    type="object"
+			      	    attrs="{'invisible': ['|',('state', 'not in', ('facture_au_finance')),('facturation_type', 'not in', ('regularisation_facture'))]}"
+			      	 />
+				<!--End bouton pour regularisation -->
+		      	 
+				</xpath>
+                <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="replace">
+			      <button name="action_view_invoice"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            invisible="1">
+                            <field name="invoice_count" widget="statinfo" string="Invoices"/>
+                  </button>
+                </xpath>
+                <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="before">
+			      <button name="action_impayee_facture"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            attrs="{'invisible': [('impayee_count','=',0)]}"
+                            >
+                            <field name="impayee_count" widget="statinfo" string="Impayées"/>
+                  </button>
+                </xpath>
+                <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="before">
+			      <button name="action_avoir_regularisation"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            attrs="{'invisible': [('avoir_regularisation_count','=',0)]}"
+                            >
+                            <field name="avoir_regularisation_count" widget="statinfo" string="Avoir/regularisation"/>
+                  </button>
+                </xpath>
+                <xpath expr="//div[@name='button_box']//button[@name='action_view_invoice']" position="after">
+			      <button name="action_sale_heri_lie_facture"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                            attrs="{'invisible': [('invoice_count', '=', 0)]}">
+                            <field name="invoice_count" widget="statinfo" string="Facture"/>
+                  </button>
+                </xpath>
+
+			</field>
+		</record>
+		<record model="ir.actions.act_window" id="action_regularisation_facture">
+	       	<field name="name">Regularisation des erreurs sur factures emises</field>
+	       	<field name="res_model">sale.order</field>
+			<field name="domain">[('facturation_type','=','regularisation_facture')]</field>  	
+			<field name="context">{'default_facturation_type': 'regularisation_facture'}</field> 
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	       	<field name="help" type="html">
+          	<p class="oe_view_nocontent_create">
+              Cliquer ici pour créer une regularisation des erreurs sur factures emises.
+          	</p>
+        </field>
+	   	</record>
+	   	
+	   	<record id="action_regularisation_facture_tree_view" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="facturation_redevance_tree"/>
+            <field name="act_window_id" ref="action_regularisation_facture"/>
+        </record>
+
+        <record id="action_regularisation_facture_form_view" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="regularisation_facture_view"/>
+            <field name="act_window_id" ref="action_regularisation_facture"/>
+		</record>
+		<menuitem id="menu_regularisation_facture" name="Regularisation des erreurs sur factures emises" parent="sales_team.menu_sales" action="action_regularisation_facture" sequence="2"/>
+	</data>
+</odoo>

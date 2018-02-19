@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+	<data>
+		<!-- workflow -->
+		<record id="demande_de_retour_materiel_wkf" model="workflow">
+			<field name="name">Demande de retour des matériels retournés par l'entrepreneur</field>
+			<field name="osv">sale.order</field>
+			<field name="on_create">True</field>
+		</record>
+		
+		<!-- workflow activity-->
+		<record id="act_demande_retour_draft" model="workflow.activity">
+			<field name="wkf_id" ref="demande_de_retour_materiel_wkf"/>
+			<field name="flow_start">True</field>
+			<field name="name">Nouveau</field>
+			<field name="kind">function</field>
+			<field name="action">action_set_draft()</field>
+		</record>
+		
+		<record id="act_controle_technicien" model="workflow.activity">
+			<field name="wkf_id" ref="demande_de_retour_materiel_wkf"/>
+			<field name="name">Contrôle du technicien</field>
+			<field name="kind">function</field>
+			<field name="action">action_controle_technicien()</field>
+		</record>
+		
+		<record id="act_materiel_bon_etat" model="workflow.activity">
+			<field name="wkf_id" ref="demande_de_retour_materiel_wkf"/>
+			<field name="name">Materiel en bon etat</field>
+			<field name="kind">function</field>
+			<field name="action">action_materiel_bon_etat()</field>
+		</record>
+		
+		<record id="act_materiel_mauvais_etat" model="workflow.activity">
+			<field name="wkf_id" ref="demande_de_retour_materiel_wkf"/>
+			<field name="name">Materiel en mauvais etat</field>
+			<field name="kind">function</field>
+			<field name="action">action_materiel_mauvais_etat()</field>
+		</record>
+		
+		<!-- workflow transition-->
+		<record id="act_draft_to_act_controle_technicien" model="workflow.transition">
+            <field name="act_from" ref="act_demande_retour_draft"/>
+            <field name="act_to" ref="act_controle_technicien"/>
+            <field name="signal">action_controle_technicien</field>
+        </record>
+        
+        <record id="act_controle_technicien_to_act_materiel_bon_etat" model="workflow.transition">
+            <field name="act_from" ref="act_controle_technicien"/>
+            <field name="act_to" ref="act_materiel_bon_etat"/>
+            <field name="signal">action_bon_etat</field>
+        </record>      
+        
+        <record id="act_controle_technicien_to_act_materiel_mauvais_etat" model="workflow.transition">
+            <field name="act_from" ref="act_controle_technicien"/>
+            <field name="act_to" ref="act_materiel_mauvais_etat"/>
+            <field name="signal">action_mauvais_etat</field>
+        </record>
+        
+        <record id="act_controle_technicien_to_act_demande_retour_draft" model="workflow.transition">
+            <field name="act_from" ref="act_controle_technicien"/>
+            <field name="act_to" ref="act_demande_retour_draft"/>
+            <field name="signal">action_revoir_call</field>
+        </record>
+		<!--End workflow transition-->
+		<!--End workflow -->
+	</data>
+</odoo>

@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_a_facturer_dg,a.facturer.dg,sale_heri.model_a_facturer,purchase_heri.group_dg_heri,1,1,1,0
+access_res_calendar,res.calendar.Acces,sale_heri.model_res_calendar,purchase_heri.group_achat_heri,1,1,1,0
+access_res_region,res.region.Access,purchase_heri.model_res_region,purchase_heri.group_achat_heri,1,1,1,0
