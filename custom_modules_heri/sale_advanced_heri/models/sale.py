@@ -24,11 +24,8 @@ class SaleOrder(models.Model):
      
     @api.onchange('partner_id')
     def onchange_partner_id(self):
-        if not self.partner_id:
-            self.kiosk_id = False
-            return
-         
-        if self.partner_id.kiosk_id:
+        super(SaleOrder,self).onchange_partner_id()
+        if self.partner_id and self.partner_id.kiosk_id:
             self.kiosk_id = self.partner_id.kiosk_id.id
     
     def get_order_line(self):
