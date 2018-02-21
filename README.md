@@ -1,14 +1,14 @@
 ###
 NB : Créer une nouvelle base de données et choisir comme Country : France
 
-Installer module comptabilité et finance + account_assert
+-Installer module comptabilité et finance + account_assert
 
 ACHATS ET STOCK :
-Changer nom société, slogan, logo
-Activer devise MGA, Mettre la devise à MGA, EUR, USD
+- Changer nom société, slogan, logo
+- Activer devise MGA, Mettre la devise à MGA, EUR, USD
 
-Mettre le dossier purchase_discount dans le répértoire addons odoo
-Installation du module purchase_heri,referentiel_heri,stock_heri,sale_heri
+- Mettre le dossier purchase_discount dans le répértoire addons odoo
+- Installation du module purchase_heri,referentiel_heri,stock_heri,sale_heri
 
 ###Installation module comptabilité et finance et ajouter les journaux : airtel money, orange money, M Vola...###
 
@@ -16,9 +16,9 @@ Mettre devise dans comptabilité à MGA
 
 Masquer les menus Demande de prix et Bon de commande (Ajout groupe Personne)
 
-Manage several Warehouses, each one composed by several stock locations (Invventaire/Configuration)
-Some products may be sold/purchased in different units of measure (Invventaire/Configuration)
-Les articles peuvent avoir plusieurs attributs, définissant des variantes (exemple : taille, couleur, ...)
+- Manage several Warehouses, each one composed by several stock locations (Invventaire/Configuration)
+- Some products may be sold/purchased in different units of measure (Invventaire/Configuration)
+- Les articles peuvent avoir plusieurs attributs, définissant des variantes (exemple : taille, couleur, ...)
 
 Menu : Configuration/Technique/Précision décimale. Product Price : 2 ; Product Unit of Measure : 1  
 
@@ -58,7 +58,7 @@ Dans la traduction Description Commande fournisseur en Budget Request pour le ch
 Menu variantes articles à enlever (groupe personne) 
 
 
-BUDGET REQUEST stock : 
+BUDGET REQUEST STOCK : 
 Adresse du vendeur: A remplir dans le res.partner (Partenaire : Heri). Dans Client/(Onglet Ventes et Achats)/ (Champ : Adresse du vendeur)
 
 GENERAL :
