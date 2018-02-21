@@ -1,7 +1,7 @@
 ###
 NB : Créer une nouvelle base de données et choisir comme Country : France
 
-COMPTABILITE
+COMPTA
 -Installer module comptabilité et finance + account_assert
 
 ACHATS ET STOCK :
