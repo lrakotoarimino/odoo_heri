@@ -8,8 +8,8 @@
             <field name="view_type">form</field>
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
             <field eval="False" name="view_id"/>
-            <field name="domain">[('type','in',('out_invoice', 'out_refund'))]</field>
-            <field name="context">{'type':'out_invoice', 'journal_type': 'sale'}</field>
+            <field name="domain">[('type','in',('out_invoice', 'out_refund')),('invoice_type','=','rental')]</field>
+            <field name="context">{'type':'out_invoice', 'journal_type': 'sale', 'invoice_type': 'rental'}</field>
             <field name="search_view_id" ref="account.view_account_invoice_filter"/>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
