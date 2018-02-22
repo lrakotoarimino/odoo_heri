@@ -2,8 +2,8 @@
 NB : Créer une nouvelle base de données et choisir comme Country : France
 
 COMPTABILITE_INSTALLATION
--Installer module comptabilité et finance + account_assert
-
+- Installer module comptabilité et finance + account_assert
+- Installer le module "Cancel Journal Entries" et configurer les journaux en cochant "Autoriser l'annulation d'écriture" dans le menu "PARAMÈTRES AVANCÉS"
 ACHATS ET STOCK :
 - Changer nom société, slogan, logo
 - Activer devise MGA, Mettre la devise à MGA, EUR, USD
