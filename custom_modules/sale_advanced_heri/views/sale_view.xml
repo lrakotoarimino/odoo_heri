@@ -9,7 +9,7 @@
 	        <field name="arch" type="xml">
 	            <data>
 		            <!-- <field name="partner_id" position="after">
-		                <field name="kiosk_id" domain="[('is_kiosque', '=', True)]"/>
+		                <field name="kiosk_id" domain="[('is_kiosk', '=', True)]"/>
 						<field name="date_start"/>
 						<field name="date_end"/>
 					</field>
@@ -24,7 +24,9 @@
 	        </field>
 	    </record>
 	    
-	    <menuitem id="menu_rental_invoice" name="Rental invoices" parent="sale.menu_sale_invoicing" action="action_invoice_tree1" sequence="-1"/>
+	    <menuitem id="menu_rental_invoice" name="Rental invoices" parent="sale.menu_sale_invoicing" action="action_invoice_rental" sequence="-3"/>
+	    <menuitem id="menu_sale" name="Sales" parent="sale.menu_sale_invoicing" action="sale.action_quotations" sequence="-2"/>
+	    <menuitem id="menu_loss" name="Losses" parent="sale.menu_sale_invoicing" action="action_invoice_loss" sequence="-1"/>
 	    
     </data>
 </odoo>

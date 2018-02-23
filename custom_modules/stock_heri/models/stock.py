@@ -19,7 +19,7 @@ class StockPicking(models.Model):
     def _compute_is_received(self):
         for pick in self:
             if pick.mouvement_type in ('bs','be','bci'):
-                if pick.location_dest_id.is_kiosque :
+                if pick.location_dest_id.is_kiosk :
                     pick.is_received = True
     
     is_received = fields.Boolean('Est reçu', compute="_compute_is_received")
@@ -548,7 +548,7 @@ class StockPicking(models.Model):
         for pick in self:
             if pick.mouvement_type in ('bs','be','bci'):
                 after_vals = {}
-#                 if pick.location_dest_id.is_kiosque :
+#                 if pick.location_dest_id.is_kiosk :
 #                     pick.is_received = True
 #                     pick.picking_type_id = self.env.ref('purchase_heri.type_preparation_heri_kiosque')
                 if pick.location_dest_id:
