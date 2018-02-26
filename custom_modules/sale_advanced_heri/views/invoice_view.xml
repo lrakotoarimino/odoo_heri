@@ -9,11 +9,27 @@
             <field name="inherit_id" ref="account.invoice_form"/>
             <field name="arch" type="xml">
                 <field name="partner_id" position="before">
-				    <field name="kiosk_id"/>
+                    <field name="invoice_type" invisible="1"/>
+				    <field 
+				        name="kiosk_id" 
+				        domain="[('is_kiosk','=',True),('usage','=','internal')]" 
+				        attrs="{'invisible': [('invoice_type','not in',('rental','loss'))],'required': [('invoice_type','in',('rental','loss'))]}"/>
 				</field>
 				<field name="payment_term_id" position="after">
-				    <field name="date_start"/>
-				    <field name="date_end"/>
+				    <field name="date_start" attrs="{'invisible':[('invoice_type','!=','rental')],'required':[('invoice_type','=','rental')]}"/>
+				    <field name="date_end" attrs="{'invisible':[('invoice_type','!=','rental')],'required':[('invoice_type','=','rental')]}"/>
+				</field>
+				<button name="action_invoice_sent" position="before">
+				    <button name="get_invoice_line" type="object" string="Retrieve billing lines"/>
+				</button>
+				<field name="sequence" position="after">
+				    <field name="date"/>
+				</field>
+				<field name="uom_id" position="after">
+				    <field name="number_days"/>
+				</field>
+				<field name="discount" position="attributes">
+				    <attribute name="groups"></attribute>
 				</field>
 			</field>
         </record>
