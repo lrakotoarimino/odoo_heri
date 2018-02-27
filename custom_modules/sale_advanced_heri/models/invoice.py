@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 from odoo import models, fields, api, _
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT
 
 from odoo.exceptions import UserError
 
@@ -92,9 +95,17 @@ class AccountInvoice(models.Model):
     date_end = fields.Date(string='Billing end date')
     
     def get_invoice_line(self):
-        print 'Error'
-    
-
+        Inventory = self.env['stock.inventory']
+        date = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
+        date_start = fields.Date.to_string(date.replace(hour=0, minute=0, second=1))
+        date_end = fields.Date.to_string(date.replace(hour=23, minute=59, second=59))
+        domain = [('state', 'in', ('confirm', 'done')), ('location_id', '=', self.kiosk_id.id), ('date', '>=', date_start), ('date', '<=', date_end)]
+        inventory = Inventory.search(domain, order='date desc', limit=1)
+        if not inventory:
+            raise UserError(_('Error!/nNo inventory created for this kiosk'))
+        line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
+        
+         
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
     

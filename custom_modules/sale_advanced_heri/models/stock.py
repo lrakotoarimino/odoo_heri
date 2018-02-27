@@ -17,4 +17,4 @@ class StockInventory(models.Model):
                     'filter': 'none'}
             inventory_id = Inventory.create(vals)
             inventory_id.prepare_inventory()
-            inventory_id.action_done()
+            # inventory_id.action_done()
