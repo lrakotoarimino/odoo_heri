@@ -96,6 +96,7 @@ class AccountInvoice(models.Model):
     
     def get_invoice_line(self):
         Inventory = self.env['stock.inventory']
+        AccountInvoiceLine = self.env['account.invoice.line']
         date = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
         date_start = fields.Date.to_string(date.replace(hour=0, minute=0, second=1))
         date_end = fields.Date.to_string(date.replace(hour=23, minute=59, second=59))
@@ -104,6 +105,38 @@ class AccountInvoice(models.Model):
         if not inventory:
             raise UserError(_('Error!/nNo inventory created for this kiosk'))
         line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
+        for line in line_ids:
+            if line.state == 'confirm':
+                qty = line.theoretical_qty
+            elif line.state == 'done':
+                qty = line.product_qty
+            
+            invoice_type = self.type
+            product = line.product_id
+            fpos = self.fiscal_position_id
+            company = self.company_id
+            account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
+            account_id = False
+            if account:
+                account_id = account.id
+            name = product.partner_ref
+            if line.product_id.description_sale:
+                name += '\n' + product.description_sale
+            
+            price = line.product_id.rental_price
+            
+            vals = {'date': line.inventory_id.date,
+                    'product_id': product.id,
+                    'name': name,
+                    'account_id': account_id,
+                    'uom_id': line.product_uom_id.id,
+                    'quantity': qty,
+                    'number_days': 1.0,
+                    'price_unit': price,
+                    'invoice_id': self.id,
+                    'partner_id': self.partner_id.id,
+                    }
+            invoice = AccountInvoiceLine.create(vals)
         
          
 class AccountInvoiceLine(models.Model):
