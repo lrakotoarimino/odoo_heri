@@ -108,14 +108,15 @@ class AccountInvoice(models.Model):
         
         if type_move == 'out':
             domain.append(('location_id', '=', kiosk_id))
-            moves = StockMove.search(domain, order='date desc')
+            moves = StockMove.search(domain, order='product_id, date desc')
             sign = -1
         else:
             domain.append(('location_dest_id', '=', kiosk_id))
-            moves = StockMove.search(domain, order='date desc')
+            moves = StockMove.search(domain, order='product_id, date desc')
         
         todo_moves = []
         for move in moves:
+            name = move.product_id.name
             d1 = datetime.strptime(move.date, DEFAULT_SERVER_DATETIME_FORMAT).date()
             d2 = date1.date()
             delta = d2 - d1
@@ -124,10 +125,13 @@ class AccountInvoice(models.Model):
             account = AccountInvoiceLine.get_invoice_line_account(self.type, move.product_id, self.fiscal_position_id, self.company_id)
             if account:
                 account_id = account.id
-
+            
+            if move.product_id.description_sale:
+                name += '\n%s' % (move.product_id.description_sale)
+                
             vals = {'date': move.date,
                     'product_id': move.product_id.id,
-                    'name': move.product_id.name + '\n' + move.product_id.description_sale,
+                    'name': name,
                     'account_id': account_id,
                     'uom_id': move.product_id.uom_id.id,
                     'quantity': sign * move.product_uom_qty,
@@ -144,10 +148,15 @@ class AccountInvoice(models.Model):
         self.invoice_line_ids.unlink()
         Inventory = self.env['stock.inventory']
         AccountInvoiceLine = self.env['account.invoice.line']
-        date = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
-        date_start = fields.Date.to_string(date.replace(hour=0, minute=0, second=1))
-        date_end = fields.Date.to_string(date.replace(hour=23, minute=59, second=59))
-        domain = [('state', 'in', ('confirm', 'done')), ('location_id', '=', self.kiosk_id.id), ('date', '>=', date_start), ('date', '<=', date_end)]
+        BillingTableLine = self.env['billing.table.line']
+        
+        date_start = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
+        date_end = datetime.strptime(self.date_end, DEFAULT_SERVER_DATE_FORMAT)
+        
+        # Dates for inventory day
+        date1 = fields.Date.to_string(date_start.replace(hour=0, minute=0, second=1))
+        date2 = fields.Date.to_string(date_start.replace(hour=23, minute=59, second=59))
+        domain = [('state', 'in', ('confirm', 'done')), ('location_id', '=', self.kiosk_id.id), ('date', '>=', date1), ('date', '<=', date2)]
         inventory = Inventory.search(domain, order='date desc', limit=1)
         if not inventory:
             raise UserError(_('Error!/nNo inventory created for this kiosk'))
@@ -163,7 +172,7 @@ class AccountInvoice(models.Model):
         for move in moves:
             AccountInvoiceLine.create(move)
         
-        # Rental per day
+        # Get stock inventory
         vals = {}
         line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
         for line in line_ids:
@@ -182,13 +191,22 @@ class AccountInvoice(models.Model):
             account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
             if account:
                 account_id = account.id
+            
+            if not self.kiosk_id.billing_table_id:
+                raise UserError(_('Error!/nNo billing table created for this kiosk'))
+            table_id = self.kiosk_id.billing_table_id
+            current_month = date_end.month
+            table_line = BillingTableLine.search([('table_id', '=', table_id.id), ('month', '=', current_month)], limit=1)
+            if not table_line:
+                raise UserError(_('Error configuration!/nPlease configure billing table for this current month'))
+            number_days = table_line.number_days
             vals = {'date': line.inventory_id.date,
                     'product_id': product.id,
                     'name': name,
                     'account_id': account_id,
                     'uom_id': line.product_uom_id.id,
                     'quantity': qty,
-                    'number_days': 1.0,
+                    'number_days': number_days,
                     'price_unit': price,
                     'invoice_id': self.id,
                     }

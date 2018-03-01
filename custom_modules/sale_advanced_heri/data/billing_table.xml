@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+ 	<record id="billing_table_1" model="billing.table">
+    	<field name="name">Billing Table</field>
+    </record>
+    
+    <record id="billing_table_line_1" model="billing.table.line">
+    	<field name="name">January</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="1"/>
+    	<field name="number_days">30.0</field>
+    </record>
+    
+    <record id="billing_table_line_2" model="billing.table.line">
+    	<field name="name">February</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="2"/>
+    	<field name="number_days">29.0</field>
+    </record>
+    
+    <record id="billing_table_line_3" model="billing.table.line">
+    	<field name="name">March</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="3"/>
+    	<field name="number_days">30.0</field>
+    </record>
+    
+    <record id="billing_table_line_4" model="billing.table.line">
+    	<field name="name">April</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="4"/>
+    	<field name="number_days">29.0</field>
+    </record>
+    
+    <record id="billing_table_line_5" model="billing.table.line">
+    	<field name="name">May</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="5"/>
+    	<field name="number_days">30.0</field>
+    </record>
+    
+    <record id="billing_table_line_6" model="billing.table.line">
+    	<field name="name">June</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="6"/>
+    	<field name="number_days">29.0</field>
+    </record>
+    
+    <record id="billing_table_line_7" model="billing.table.line">
+    	<field name="name">July</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="7"/>
+    	<field name="number_days">30.0</field>
+    </record>
+    
+    <record id="billing_table_line_8" model="billing.table.line">
+    	<field name="name">August</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="8"/>
+    	<field name="number_days">30.0</field>
+    </record>
+    
+    <record id="billing_table_line_9" model="billing.table.line">
+    	<field name="name">September</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="9"/>
+    	<field name="number_days">29.0</field>
+    </record>
+    
+    <record id="billing_table_line_10" model="billing.table.line">
+    	<field name="name">October</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="10"/>
+    	<field name="number_days">30.0</field>
+    </record>
+    
+    <record id="billing_table_line_11" model="billing.table.line">
+    	<field name="name">November</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="11"/>
+    	<field name="number_days">29.0</field>
+    </record>
+    
+    <record id="billing_table_line_12" model="billing.table.line">
+    	<field name="name">December</field>
+    	<field name="table_id" ref="billing_table_1"/>
+    	<field name="month" eval="12"/>
+    	<field name="number_days">30.0</field>
+    </record>
+</odoo>
