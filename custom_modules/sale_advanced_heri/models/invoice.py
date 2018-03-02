@@ -94,6 +94,21 @@ class AccountInvoice(models.Model):
     date_start = fields.Date(string='Billing start date')
     date_end = fields.Date(string='Billing end date')
     
+    state = fields.Selection([
+            ('draft', 'Draft'),
+            ('proforma2', 'Open'),
+            ('open', 'Validated'),
+            ('partially', 'Partially'),
+            ('paid', 'Paid'),
+            ('cancel', 'Cancelled'),
+        ], string='Status', index=True, readonly=True, default='draft',
+        track_visibility='onchange', copy=False,
+        help=" * The 'Draft' status is used when a user is encoding a new and unconfirmed Invoice.\n"
+             " * The 'Pro-forma' status is used when the invoice does not have an invoice number.\n"
+             " * The 'Open' status is used when user creates invoice, an invoice number is generated. It stays in the open status till the user pays the invoice.\n"
+             " * The 'Paid' status is set automatically when the invoice is paid. Its related journal entries may or may not be reconciled.\n"
+             " * The 'Cancelled' status is used when user cancel invoice.")
+    
     def get_move_lines(self, type_move='in'):
         if not self.kiosk_id:
             UserError(_('Please specify the kiosk'))
@@ -257,3 +272,9 @@ class AccountInvoiceLine(models.Model):
 class AccountJournal(models.Model):
         _inherit = "account.journal"
         _sql_constraints = [('code_uniq', 'unique(code)', "A code must be unique !")]
+        
+
+class account_payment(models.Model):
+    _inherit = "account.payment"
+
+    payment_difference_handling = fields.Selection([('open', 'Keep validated'), ('reconcile', 'Mark invoice as fully paid')], default='open', string="Payment Difference", copy=False)

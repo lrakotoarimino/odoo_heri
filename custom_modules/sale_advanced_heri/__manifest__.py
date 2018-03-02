@@ -6,7 +6,7 @@
     'sequence': 0,
     'description': """Sales module for HERi Madagascar""",
     'website': 'https://www.heri.com',
-    'depends': ['sale', 'base', 'product', 'stock'],
+    'depends': ['sale', 'base', 'product', 'stock', 'account'],
     'data': ['views/invoice_view.xml',
              'views/sale_view.xml',
              'views/res_partner_view.xml',
