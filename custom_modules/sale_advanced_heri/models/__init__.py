@@ -4,3 +4,4 @@ import invoice
 import stock
 import product
 import billing_table
+import company
