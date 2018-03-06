@@ -17,7 +17,7 @@
              'data/paperformat_data.xml',
              'data/inventory_data.xml',
              'data/product_product.xml',
-             'data/billing_table.xml'
+             'data/billing_table.xml',
 
              'report/report_invoice_redevance.xml',
              ],

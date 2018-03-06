@@ -5,7 +5,7 @@ from datetime import datetime
 from odoo import models, fields, api, _
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 import odoo.addons.decimal_precision as dp
 
@@ -98,7 +98,7 @@ class AccountInvoice(models.Model):
             ('draft', 'Draft'),
             ('proforma2', 'Open'),
             ('open', 'Validated'),
-            ('partially', 'Partially'),
+            ('partially_paid', 'Partially paid'),
             ('paid', 'Paid'),
             ('cancel', 'Cancelled'),
         ], string='Status', index=True, readonly=True, default='draft',
@@ -245,10 +245,42 @@ class AccountInvoice(models.Model):
                 }
         AccountInvoiceLine.create(vals)
         
-         
+    # redefinition
+    @api.multi
+    def _write(self, vals):
+        pre_not_reconciled = self.filtered(lambda invoice: not invoice.reconciled)
+        pre_reconciled = self - pre_not_reconciled
+        res = super(AccountInvoice, self)._write(vals)
+        reconciled = self.filtered(lambda invoice: invoice.reconciled)
+        not_reconciled = self - reconciled
+        
+        # redefinition : consider the state partially paid
+        (reconciled & pre_reconciled).filtered(lambda invoice: invoice.state in ('open', 'partially_paid')).action_invoice_paid()
+        #
+        
+        (not_reconciled & pre_not_reconciled).filtered(lambda invoice: invoice.state == 'paid').action_invoice_re_open()
+        return res
+    
+    # redefinition
+    @api.multi
+    def action_invoice_paid(self):
+        # lots of duplicate calls to action_invoice_paid, so we remove those already paid
+        to_pay_invoices = self.filtered(lambda inv: inv.state != 'paid')
+        
+        # redefinition : consider the state partially paid
+        if to_pay_invoices.filtered(lambda inv: inv.state not in ('open', 'partially_paid')):
+            raise UserError(_('Invoice must be validated in order to set it to register payment.'))
+        #
+        
+        if to_pay_invoices.filtered(lambda inv: not inv.reconciled):
+            raise UserError(_('You cannot pay an invoice which is partially paid. You need to reconcile payment entries first.'))
+        return to_pay_invoices.write({'state': 'paid'})
+    
+    
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
     
+    # redefinition
     @api.one
     @api.depends('price_unit', 'discount', 'invoice_line_tax_ids', 'quantity',
     'product_id', 'invoice_id.partner_id', 'invoice_id.currency_id', 'invoice_id.company_id',
@@ -274,7 +306,66 @@ class AccountJournal(models.Model):
         _sql_constraints = [('code_uniq', 'unique(code)', "A code must be unique !")]
         
 
-class account_payment(models.Model):
+class AccountPayment(models.Model):
     _inherit = "account.payment"
 
-    payment_difference_handling = fields.Selection([('open', 'Keep validated'), ('reconcile', 'Mark invoice as fully paid')], default='open', string="Payment Difference", copy=False)
+    payment_difference_handling = fields.Selection([('open', 'Set partially paid'), ('reconcile', 'Mark invoice as fully paid')], default='open', string="Payment Difference", copy=False)
+
+    # redefinition
+    @api.multi
+    def post(self):
+        """ Create the journal items for the payment and update the payment's state to 'posted'.
+            A journal entry is created containing an item in the source liquidity account (selected journal's default_debit or default_credit)
+            and another in the destination reconciliable account (see _compute_destination_account_id).
+            If invoice_ids is not empty, there will be one reconciliable move line per invoice to reconcile with.
+            If the payment is a transfer, a second journal entry is created in the destination journal to receive money from the transfer account.
+        """
+        for rec in self:
+
+            if rec.state != 'draft':
+                raise UserError(_("Only a draft payment can be posted. Trying to post a payment in state %s.") % rec.state)
+            
+            # redefinition : consider the state partially paid
+            if any(inv.state not in ('open', 'partially_paid') for inv in rec.invoice_ids):
+                raise ValidationError(_("The payment cannot be processed because the invoice is not open!"))
+            #
+            
+            # Use the right sequence to set the name
+            if rec.payment_type == 'transfer':
+                sequence_code = 'account.payment.transfer'
+            else:
+                if rec.partner_type == 'customer':
+                    if rec.payment_type == 'inbound':
+                        sequence_code = 'account.payment.customer.invoice'
+                    if rec.payment_type == 'outbound':
+                        sequence_code = 'account.payment.customer.refund'
+                if rec.partner_type == 'supplier':
+                    if rec.payment_type == 'inbound':
+                        sequence_code = 'account.payment.supplier.refund'
+                    if rec.payment_type == 'outbound':
+                        sequence_code = 'account.payment.supplier.invoice'
+            rec.name = self.env['ir.sequence'].with_context(ir_sequence_date=rec.payment_date).next_by_code(sequence_code)
+
+            # Create the journal entry
+            amount = rec.amount * (rec.payment_type in ('outbound', 'transfer') and 1 or -1)
+            move = rec._create_payment_entry(amount)
+
+            # In case of a transfer, the first journal entry created debited the source liquidity account and credited
+            # the transfer account. Now we debit the transfer account and credit the destination liquidity account.
+            if rec.payment_type == 'transfer':
+                transfer_credit_aml = move.line_ids.filtered(lambda r: r.account_id == rec.company_id.transfer_account_id)
+                transfer_debit_aml = rec._create_transfer_entry(amount)
+                (transfer_credit_aml + transfer_debit_aml).reconcile()
+
+            rec.write({'state': 'posted', 'move_name': move.name})
+            
+    # redefinition
+    def _create_payment_entry(self, amount):
+        res = super(AccountPayment, self)._create_payment_entry(amount)
+        
+        # redefinition : consider the state partially paid
+        if self.payment_difference_handling == 'open' and self.payment_difference:
+            self.invoice_ids.write({'state': 'partially_paid'})
+        #
+        
+        return res

@@ -1,119 +1,137 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-	<data>
-	    
-	            
-   		<record id="invoice_form" model="ir.ui.view">
-            <field name="name">account.invoice.form</field>
-            <field name="model">account.invoice</field>
-            <field name="inherit_id" ref="account.invoice_form"/>
-            <field name="arch" type="xml">
-                <!-- Header -->
-                <button name="action_invoice_sent" position="before">
-				    <button name="get_invoice_line" type="object" string="Retrieve billing lines" states="draft" class="oe_highlight"/>
-				</button>
-				
-				<button name="action_invoice_proforma2" position="replace">
-                	<button name="action_invoice_proforma2" type="object" states="draft" string="Open" class="oe_highlight"/>
-                </button>
-                
-                <xpath expr="//button[@name='action_invoice_open'][2]" position="replace">
-					<button name="action_invoice_open" type="object" states="proforma2" string="Validate" class="oe_highlight"/>
-				</xpath>
-                
-				<button name="action_invoice_open" position="attributes">
-					<attribute name="invisible">1</attribute>
-				</button>
-				
-				<field name="state" position="replace">
-					<field name="state" widget="statusbar" nolabel="1" statusbar_visible="draft,proforma2,open,paid"/>
-				</field>
-				<!--  -->
-				
-                <field name="partner_id" position="before">
-                    <field name="invoice_type" invisible="1"/>
-				    <field 
-				        name="kiosk_id" 
-				        domain="[('is_kiosk','=',True),('usage','=','internal')]" 
-				        attrs="{'invisible': [('invoice_type','not in',('rental','loss'))],'required': [('invoice_type','in',('rental','loss'))]}"/>
-				</field>
-				
-				<field name="payment_term_id" position="after">
-				    <field name="date_start" attrs="{'invisible':[('invoice_type','!=','rental')],'required':[('invoice_type','=','rental')]}"/>
-				    <field name="date_end" attrs="{'invisible':[('invoice_type','!=','rental')],'required':[('invoice_type','=','rental')]}"/>
-				</field>
-				
-				<field name="sequence" position="after">
-				    <field name="date"/>
-				</field>
-				<field name="uom_id" position="after">
-				    <field name="number_days"/>
-				</field>
-				<field name="discount" position="attributes">
-				    <attribute name="groups"></attribute>
-				</field>
-			</field>
-        </record>
-	    
-    	<record id="action_invoice_rental" model="ir.actions.act_window">
-            <field name="name">Rental Invoices</field>
-            <field name="res_model">account.invoice</field>
-            <field name="view_type">form</field>
-            <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
-            <field eval="False" name="view_id"/>
-            <field name="domain">[('type','in',('out_invoice', 'out_refund')),('invoice_type','=','rental')]</field>
-            <field name="context">{'type':'out_invoice', 'journal_type': 'sale', 'invoice_type': 'rental'}</field>
-            <field name="search_view_id" ref="account.view_account_invoice_filter"/>
-            <field name="help" type="html">
-              <p class="oe_view_nocontent_create">
-                Click to create a customer invoice.
-              </p>
-            </field>
-        </record>
-        
-        <record id="action_invoice_tree_rental_view" model="ir.actions.act_window.view">
-            <field eval="1" name="sequence"/>
-            <field name="view_mode">tree</field>
-            <field name="view_id" ref="account.invoice_tree"/>
-            <field name="act_window_id" ref="action_invoice_rental"/>
-        </record>
+	<record id="invoice_form" model="ir.ui.view">
+		<field name="name">account.invoice.form</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_form"/>
+        <field name="arch" type="xml">
+       	
+       	<!-- Header -->
+    	<button name="action_invoice_sent" position="attributes">
+           <attribute name="attrs">{'invisible':['|',('sent','=',True), ('state', 'not in', ('open','partially_paid'))]}</attribute>
+		</button>
+               
+      	<button name="action_invoice_sent" position="before">
+  			<button name="get_invoice_line" type="object" string="Retrieve billing lines" states="draft" class="oe_highlight"/>
+		</button>
+			
+        <button name="%(account.action_account_invoice_refund)d" position="attributes">
+            <attribute name="attrs">{'invisible': ['|',('type', '=', 'out_refund'), ('state', 'not in', ('open','proforma2','paid','partially_paid'))]}</attribute>
+        </button>
+               
+        <button name="action_invoice_cancel" position="attributes">
+            <attribute name="states">draft,proforma2,open,partially_paid</attribute>
+        </button>
+            
+		<button name="action_invoice_proforma2" position="attributes">
+       		<attribute name="string">Open</attribute>
+       	</button>
+               
+       	<button name="action_invoice_sent" position="attributes">
+			<attribute name="attrs">{'invisible':['|',('sent','=',True), ('state', 'not in', ('open', 'partially_paid'))]}</attribute>
+		</button>
+               
+        <xpath expr="//button[@name='action_invoice_open'][2]" position="attributes">
+	        <attribute name="class">oe_highlight</attribute>
+	        <attribute name="groups"></attribute>
+		</xpath>
+               
+		<button name="action_invoice_open" position="attributes">
+			<attribute name="invisible">1</attribute>
+		</button>
+			
+		<button name="%(account.action_account_invoice_payment)d" position="attributes">
+			<attribute name="states">open,partially_paid</attribute>
+		</button>
+			
+		<field name="state" position="attributes">
+			<attribute name="statusbar_visible">draft,proforma2,open,paid</attribute>
+		</field>
+		<!-- End header -->
+			
+      	<field name="partner_id" position="before">
+      		<field name="invoice_type" invisible="1"/>
+      		<field 
+		       name="kiosk_id" 
+		       domain="[('is_kiosk','=',True),('usage','=','internal')]" 
+		       attrs="{'invisible': [('invoice_type','not in',('rental','loss'))],'required': [('invoice_type','in',('rental','loss'))],'readonly': [('state','!=','draft')]}"/>
+		</field>
+			
+		<field name="payment_term_id" position="after">
+		    <field name="date_start" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
+		    <field name="date_end" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
+		</field>
+			
+		<field name="sequence" position="after">
+		    <field name="date"/>
+		</field>
+		<field name="uom_id" position="after">
+		    <field name="number_days"/>
+		</field>
+		<field name="discount" position="attributes">
+		    <attribute name="groups"></attribute>
+		</field>
+		</field>
+    </record>
+    
+   	<record id="action_invoice_rental" model="ir.actions.act_window">
+           <field name="name">Rental Invoices</field>
+           <field name="res_model">account.invoice</field>
+           <field name="view_type">form</field>
+           <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
+           <field eval="False" name="view_id"/>
+           <field name="domain">[('type','in',('out_invoice', 'out_refund')),('invoice_type','=','rental')]</field>
+           <field name="context">{'type':'out_invoice', 'journal_type': 'sale', 'invoice_type': 'rental'}</field>
+           <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+           <field name="help" type="html">
+             <p class="oe_view_nocontent_create">
+               Click to create a customer invoice.
+             </p>
+           </field>
+       </record>
+       
+       <record id="action_invoice_tree_rental_view" model="ir.actions.act_window.view">
+           <field eval="1" name="sequence"/>
+           <field name="view_mode">tree</field>
+           <field name="view_id" ref="account.invoice_tree"/>
+           <field name="act_window_id" ref="action_invoice_rental"/>
+       </record>
 
-        <record id="action_invoice_form_rental_view" model="ir.actions.act_window.view">
-            <field eval="2" name="sequence"/>
-            <field name="view_mode">form</field>
-            <field name="view_id" ref="invoice_form"/>
-            <field name="act_window_id" ref="action_invoice_rental"/>
-        </record>
-        
-       	<record id="action_invoice_loss" model="ir.actions.act_window">
-            <field name="name">Losses</field>
-            <field name="res_model">account.invoice</field>
-            <field name="view_type">form</field>
-            <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
-            <field eval="False" name="view_id"/>
-            <field name="domain">[('type','in',('out_invoice', 'out_refund')),('invoice_type','=','loss')]</field>
-            <field name="context">{'type':'out_invoice', 'journal_type': 'sale', 'invoice_type': 'loss'}</field>
-            <field name="search_view_id" ref="account.view_account_invoice_filter"/>
-            <field name="help" type="html">
-              <p class="oe_view_nocontent_create">
-                Click to create a customer invoice.
-              </p>
-            </field>
-        </record>
-        
-        <record id="action_invoice_tree_loss_view" model="ir.actions.act_window.view">
-            <field eval="1" name="sequence"/>
-            <field name="view_mode">tree</field>
-            <field name="view_id" ref="account.invoice_tree"/>
-            <field name="act_window_id" ref="action_invoice_loss"/>
-        </record>
+       <record id="action_invoice_form_rental_view" model="ir.actions.act_window.view">
+           <field eval="2" name="sequence"/>
+           <field name="view_mode">form</field>
+           <field name="view_id" ref="invoice_form"/>
+           <field name="act_window_id" ref="action_invoice_rental"/>
+       </record>
+       
+      	<record id="action_invoice_loss" model="ir.actions.act_window">
+           <field name="name">Losses</field>
+           <field name="res_model">account.invoice</field>
+           <field name="view_type">form</field>
+           <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
+           <field eval="False" name="view_id"/>
+           <field name="domain">[('type','in',('out_invoice', 'out_refund')),('invoice_type','=','loss')]</field>
+           <field name="context">{'type':'out_invoice', 'journal_type': 'sale', 'invoice_type': 'loss'}</field>
+           <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+           <field name="help" type="html">
+             <p class="oe_view_nocontent_create">
+               Click to create a customer invoice.
+             </p>
+           </field>
+       </record>
+       
+       <record id="action_invoice_tree_loss_view" model="ir.actions.act_window.view">
+           <field eval="1" name="sequence"/>
+           <field name="view_mode">tree</field>
+           <field name="view_id" ref="account.invoice_tree"/>
+           <field name="act_window_id" ref="action_invoice_loss"/>
+       </record>
 
-        <record id="action_invoice_form_loss_view" model="ir.actions.act_window.view">
-            <field eval="2" name="sequence"/>
-            <field name="view_mode">form</field>
-            <field name="view_id" ref="account.invoice_form"/>
-            <field name="act_window_id" ref="action_invoice_loss"/>
-        </record>
+       <record id="action_invoice_form_loss_view" model="ir.actions.act_window.view">
+           <field eval="2" name="sequence"/>
+           <field name="view_mode">form</field>
+           <field name="view_id" ref="account.invoice_form"/>
+           <field name="act_window_id" ref="action_invoice_loss"/>
+       </record>
         
-    </data>
 </odoo>
