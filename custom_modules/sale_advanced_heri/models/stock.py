@@ -25,5 +25,6 @@ class StockLocation(models.Model):
     
     def _default_billing_table_id(self):
         return self.env.ref('sale_advanced_heri.billing_table_1').id
-        
+    
+    is_kiosk = fields.Boolean(string='Is a kiosk ?')
     billing_table_id = fields.Many2one('billing.table', string='Billing table', default=_default_billing_table_id)

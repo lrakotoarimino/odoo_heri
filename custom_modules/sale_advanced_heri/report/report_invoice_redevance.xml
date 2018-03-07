@@ -94,8 +94,8 @@
                                     Email:
                                 </div>
                                 <div class="col-xs-9">
-                                    <span t-field="o.partner_id.phone" /><br/>
-                                    <span t-field="o.partner_id.email" />
+                                    <span t-field="company.phone" /><br/>
+                                    <span t-field="company.email" />
                                 </div>
                             </div>
                             
@@ -107,13 +107,13 @@
                         <div class="col-xs-6">
                             <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="col-xs-12 text-center">KIOSQUE</div>
                             <div class="col-xs-4">Localité</div>
-                            <div class="col-xs-8">: TODO</div>
+                            <div class="col-xs-8">: <span t-field="o.kiosk_id.name" /></div>
                             <div class="col-xs-4">Entrepreneur</div>
-                            <div class="col-xs-8">: <span t-field="o.kiosk_id" /></div>
+                            <div class="col-xs-8">: <span t-field="o.partner_id" /></div>
                             <div class="col-xs-4">Adresse</div>
-                            <div class="col-xs-8">: TODO</div>
+                            <div class="col-xs-8">: <span t-field="o.partner_id.street" /></div>
                             <div class="col-xs-4">Téléphone</div>
-                            <div class="col-xs-8">: TODO</div>
+                            <div class="col-xs-8">: <span t-field="o.partner_id.phone" /></div>
                         </div>
                     </div>
 
@@ -146,7 +146,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-xs-8" style="font-weight:bold;">
+                        <div class="col-xs-7" style="font-weight:bold;">
                             <div class="text-center col-xs-12" style="background-color:#3E3E3E; color:white; border:solid #3E3E3E 1px;">CONDITIONS DE VENTE</div>
                             <div class="col-xs-12" style="border:solid #3E3E3E 1px;">
                                 <u>Mode de règlement: </u><span t-field="o.payment_term_id" />
@@ -160,26 +160,26 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xs-4">
-                            <div class="row">
-                                <div class="col-xs-7 text-right"><b>TOTAL HT en <span t-field="o.currency_id.symbol" />:</b></div>
+                        <div class="col-xs-5">
+                            <div class="row mt4">
+                                <div class="col-xs-7 text-right"><b>TOTAL HT en <span t-field="o.currency_id.symbol" /> :</b></div>
                                 <div class="col-xs-5 text-center"><t t-esc="o.amount_untaxed" t-options="{'widget': 'float', 'precision': currency_precision}"/></div>
                             </div>
-                            <div class="row">
-                                <div class="col-xs-7 text-right"><b>TVA en <span t-field="o.currency_id.symbol" />:</b></div>
+                            <div class="row mt4">
+                                <div class="col-xs-7 text-right"><b>TVA en <span t-field="o.currency_id.symbol" /> :</b></div>
                                 <div class="col-xs-5 text-center"><t t-esc="o.amount_tax" t-options="{'widget': 'float', 'precision': currency_precision}" /></div>
                             </div>
-                            <div class="row">
-                                <div class="col-xs-7 text-right"><b>TOTAL TTC en <span t-field="o.currency_id.symbol" />:</b></div>
+                            <div class="row mt4">
+                                <div class="col-xs-7 text-right"><b>TOTAL TTC en <span t-field="o.currency_id.symbol" /> :</b></div>
                                 <div class="col-xs-5 text-center"><t t-esc="o.amount_total" t-options="{'widget': 'float', 'precision': currency_precision}" /></div>
                             </div>
-                            <div class="row">
-                                <div class="col-xs-7 text-right"><b>Avance en <span t-field="o.currency_id.symbol" />:</b></div>
+                            <div class="row mt4">
+                                <div class="col-xs-7 text-right"><b>Acompte versé en <span t-field="o.currency_id.symbol" /> :</b></div>
                                 <t t-set="amount_paid" t-value="'{:10,.2f}'.format(o.amount_total-o.residual).replace(',', ' ').replace('.', ',')"/>
                                 <div class="col-xs-5 text-center"><t t-esc="amount_paid"/></div>
                             </div>
-                            <div class="row">
-                                <div class="col-xs-7 text-right"><b>Net à payer en <span t-field="o.currency_id.symbol" />:</b></div>
+                            <div class="row mt4">
+                                <div class="col-xs-7 text-right"><b>Net à payer en <span t-field="o.currency_id.symbol" /> :</b></div>
                                 <div class="col-xs-5 text-center"><t t-esc="o.residual" t-options="{'widget': 'float', 'precision': currency_precision}" /></div>
                             </div>
                         </div>
@@ -187,7 +187,7 @@
 
                     <div class="row mb8 mt8">
                         <div class="col-xs-12">
-                            <div>Arrêtée la présente facture à la somme de : <b>TODO</b></div>
+                            <div>Arrêtée la présente facture à la somme de : <b><i><span t-field="o.amount_in_word"/></i></b></div>
                         </div>
                     </div>
                     <div class="row mb8">

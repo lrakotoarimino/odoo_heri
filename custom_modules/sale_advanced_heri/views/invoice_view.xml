@@ -6,71 +6,74 @@
         <field name="inherit_id" ref="account.invoice_form"/>
         <field name="arch" type="xml">
        	
-       	<!-- Header -->
-    	<button name="action_invoice_sent" position="attributes">
-           <attribute name="attrs">{'invisible':['|',('sent','=',True), ('state', 'not in', ('open','partially_paid'))]}</attribute>
-		</button>
-               
-      	<button name="action_invoice_sent" position="before">
-  			<button name="get_invoice_line" type="object" string="Retrieve billing lines" states="draft" class="oe_highlight"/>
-		</button>
+	       	<!-- Header -->
+	    	<button name="action_invoice_sent" position="attributes">
+	           <attribute name="attrs">{'invisible':['|',('sent','=',True), ('state', 'not in', ('open','partially_paid'))]}</attribute>
+			</button>
+	               
+	      	<button name="action_invoice_sent" position="before">
+	  			<button name="get_invoice_line" type="object" string="Retrieve billing lines" states="draft" class="oe_highlight"/>
+			</button>
+				
+	        <button name="%(account.action_account_invoice_refund)d" position="attributes">
+	            <attribute name="attrs">{'invisible': ['|',('type', '=', 'out_refund'), ('state', 'not in', ('open','proforma2','paid','partially_paid'))]}</attribute>
+	        </button>
+	               
+	        <button name="action_invoice_cancel" position="attributes">
+	            <attribute name="states">draft,proforma2,open,partially_paid</attribute>
+	        </button>
+	            
+			<button name="action_invoice_proforma2" position="attributes">
+	       		<attribute name="string">Open</attribute>
+	       	</button>
+	               
+	       	<button name="action_invoice_sent" position="attributes">
+				<attribute name="attrs">{'invisible':['|',('sent','=',True), ('state', 'not in', ('open', 'partially_paid'))]}</attribute>
+			</button>
+	               
+	        <xpath expr="//button[@name='action_invoice_open'][2]" position="attributes">
+		        <attribute name="class">oe_highlight</attribute>
+		        <attribute name="groups"></attribute>
+			</xpath>
+	               
+			<button name="action_invoice_open" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</button>
+				
+			<button name="%(account.action_account_invoice_payment)d" position="attributes">
+				<attribute name="states">open,partially_paid</attribute>
+			</button>
+				
+			<field name="state" position="attributes">
+				<attribute name="statusbar_visible">draft,proforma2,open,paid</attribute>
+			</field>
+			<!-- End header -->
+				
+	      	<field name="partner_id" position="before">
+	      		<field name="invoice_type" invisible="1"/>
+	      		<field 
+			       name="kiosk_id" 
+			       domain="[('is_kiosk','=',True),('usage','=','internal')]" 
+			       attrs="{'invisible': [('invoice_type','not in',('rental','loss'))],'required': [('invoice_type','in',('rental','loss'))],'readonly': [('state','!=','draft')]}"/>
+			</field>
+				
+			<field name="payment_term_id" position="after">
+			    <field name="date_start" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
+			    <field name="date_end" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
+				<field name="amount_in_word"/>
+			</field>
 			
-        <button name="%(account.action_account_invoice_refund)d" position="attributes">
-            <attribute name="attrs">{'invisible': ['|',('type', '=', 'out_refund'), ('state', 'not in', ('open','proforma2','paid','partially_paid'))]}</attribute>
-        </button>
-               
-        <button name="action_invoice_cancel" position="attributes">
-            <attribute name="states">draft,proforma2,open,partially_paid</attribute>
-        </button>
-            
-		<button name="action_invoice_proforma2" position="attributes">
-       		<attribute name="string">Open</attribute>
-       	</button>
-               
-       	<button name="action_invoice_sent" position="attributes">
-			<attribute name="attrs">{'invisible':['|',('sent','=',True), ('state', 'not in', ('open', 'partially_paid'))]}</attribute>
-		</button>
-               
-        <xpath expr="//button[@name='action_invoice_open'][2]" position="attributes">
-	        <attribute name="class">oe_highlight</attribute>
-	        <attribute name="groups"></attribute>
-		</xpath>
-               
-		<button name="action_invoice_open" position="attributes">
-			<attribute name="invisible">1</attribute>
-		</button>
+			<field name="sequence" position="after">
+			    <field name="date"/>
+			</field>
 			
-		<button name="%(account.action_account_invoice_payment)d" position="attributes">
-			<attribute name="states">open,partially_paid</attribute>
-		</button>
+			<field name="uom_id" position="after">
+			    <field name="number_days"/>
+			</field>
 			
-		<field name="state" position="attributes">
-			<attribute name="statusbar_visible">draft,proforma2,open,paid</attribute>
-		</field>
-		<!-- End header -->
-			
-      	<field name="partner_id" position="before">
-      		<field name="invoice_type" invisible="1"/>
-      		<field 
-		       name="kiosk_id" 
-		       domain="[('is_kiosk','=',True),('usage','=','internal')]" 
-		       attrs="{'invisible': [('invoice_type','not in',('rental','loss'))],'required': [('invoice_type','in',('rental','loss'))],'readonly': [('state','!=','draft')]}"/>
-		</field>
-			
-		<field name="payment_term_id" position="after">
-		    <field name="date_start" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
-		    <field name="date_end" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
-		</field>
-			
-		<field name="sequence" position="after">
-		    <field name="date"/>
-		</field>
-		<field name="uom_id" position="after">
-		    <field name="number_days"/>
-		</field>
-		<field name="discount" position="attributes">
-		    <attribute name="groups"></attribute>
-		</field>
+			<field name="discount" position="attributes">
+			    <attribute name="groups"></attribute>
+			</field>
 		</field>
     </record>
     

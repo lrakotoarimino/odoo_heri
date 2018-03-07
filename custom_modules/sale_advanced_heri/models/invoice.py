@@ -2,8 +2,10 @@
 
 from datetime import datetime
 
+from num2words import num2words
+
 from odoo import models, fields, api, _
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, amount_to_text
 
 from odoo.exceptions import UserError, ValidationError
 
@@ -80,7 +82,18 @@ class AccountInvoice(models.Model):
                 'warning': {'title': _('Error!'), 'message': _('The start date must be strictly less than the end date'), },
                 'value': {'date_start': False, 'date_end': False, }
                 }
-                 
+    
+    @api.one
+    @api.depends('amount_total')
+    def _amount_in_word(self):
+        monetary = 'Ariary'
+        amount_text = num2words(self.amount_total, lang='fr')
+        amount_text = 'virgule' in amount_text and amount_text.capitalize().replace('virgule', monetary) or amount_text.capitalize() + " " + monetary
+        self.amount_in_word = amount_text
+    
+    def _convert(self, amount, lang, cur):
+        return amount_to_text(amount, lang=lang, currency=cur)
+                
     journal_id = fields.Many2one('account.journal', string='Journal',
         required=True, readonly=True, states={'draft': [('readonly', False)]},
         default=_default_journal,
@@ -96,9 +109,9 @@ class AccountInvoice(models.Model):
     
     state = fields.Selection([
             ('draft', 'Draft'),
-            ('proforma2', 'Open'),
-            ('open', 'Validated'),
-            ('partially_paid', 'Partially paid'),
+            ('proforma2', 'Ouvertes'),
+            ('open', u'Validé'),
+            ('partially_paid', u'Partiellement payé'),
             ('paid', 'Paid'),
             ('cancel', 'Cancelled'),
         ], string='Status', index=True, readonly=True, default='draft',
@@ -109,7 +122,9 @@ class AccountInvoice(models.Model):
              " * The 'Paid' status is set automatically when the invoice is paid. Its related journal entries may or may not be reconciled.\n"
              " * The 'Cancelled' status is used when user cancel invoice.")
     
-    def get_move_lines(self, type_move='in'):
+    amount_in_word = fields.Char(string='Amount in word', store=True, readonly=True, compute='_amount_in_word')
+    
+    def get_move_lines(self, type_move='in', number_days_max=0.0):
         if not self.kiosk_id:
             UserError(_('Please specify the kiosk'))
         kiosk_id = self.kiosk_id.id
@@ -150,7 +165,7 @@ class AccountInvoice(models.Model):
                     'account_id': account_id,
                     'uom_id': move.product_id.uom_id.id,
                     'quantity': sign * move.product_uom_qty,
-                    'number_days': delta.days + 1,
+                    'number_days': number_days_max < delta.days + 1 and number_days_max or delta.days + 1,
                     'price_unit': move.product_id.rental_price,
                     'invoice_id': self.id,
                     }
@@ -168,6 +183,15 @@ class AccountInvoice(models.Model):
         date_start = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
         date_end = datetime.strptime(self.date_end, DEFAULT_SERVER_DATE_FORMAT)
         
+        if not self.kiosk_id.billing_table_id:
+                raise UserError(_('Error!/nNo billing table created for this kiosk'))
+        table_id = self.kiosk_id.billing_table_id
+        current_month = date_end.month
+        table_line = BillingTableLine.search([('table_id', '=', table_id.id), ('month', '=', current_month)], limit=1)
+        if not table_line:
+            raise UserError(_('Error configuration!/nPlease configure billing table for this current month'))
+        number_days = table_line.number_days
+        
         # Dates for inventory day
         date1 = fields.Date.to_string(date_start.replace(hour=0, minute=0, second=1))
         date2 = fields.Date.to_string(date_start.replace(hour=23, minute=59, second=59))
@@ -182,8 +206,8 @@ class AccountInvoice(models.Model):
         
         # Get stock move
         moves = []
-        moves += self.get_move_lines('in')
-        moves += self.get_move_lines('out')
+        moves += self.get_move_lines('in', number_days)
+        moves += self.get_move_lines('out', number_days)
         for move in moves:
             AccountInvoiceLine.create(move)
         
@@ -207,14 +231,6 @@ class AccountInvoice(models.Model):
             if account:
                 account_id = account.id
             
-            if not self.kiosk_id.billing_table_id:
-                raise UserError(_('Error!/nNo billing table created for this kiosk'))
-            table_id = self.kiosk_id.billing_table_id
-            current_month = date_end.month
-            table_line = BillingTableLine.search([('table_id', '=', table_id.id), ('month', '=', current_month)], limit=1)
-            if not table_line:
-                raise UserError(_('Error configuration!/nPlease configure billing table for this current month'))
-            number_days = table_line.number_days
             vals = {'date': line.inventory_id.date,
                     'product_id': product.id,
                     'name': name,
@@ -291,7 +307,7 @@ class AccountInvoiceLine(models.Model):
         taxes = False
         if self.invoice_line_tax_ids:
             taxes = self.invoice_line_tax_ids.compute_all(price, currency, self.quantity, product=self.product_id, partner=self.invoice_id.partner_id)
-        self.price_subtotal = price_subtotal_signed = "{:.0f}".format(taxes['total_excluded'] if taxes else self.quantity * price)
+        self.price_subtotal = price_subtotal_signed = taxes['total_excluded'] if taxes else self.quantity * price
         if self.invoice_id.currency_id and self.invoice_id.company_id and self.invoice_id.currency_id != self.invoice_id.company_id.currency_id:
             price_subtotal_signed = self.invoice_id.currency_id.with_context(date=self.invoice_id.date_invoice).compute(price_subtotal_signed, self.invoice_id.company_id.currency_id)
         sign = self.invoice_id.type in ['in_refund', 'out_refund'] and -1 or 1
