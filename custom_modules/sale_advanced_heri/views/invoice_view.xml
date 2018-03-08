@@ -39,7 +39,15 @@
 			<button name="action_invoice_open" position="attributes">
 				<attribute name="invisible">1</attribute>
 			</button>
-				
+			
+			<xpath expr="//button[@name='invoice_print'][2]" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			
+			<xpath expr="//button[@name='invoice_print'][2]" position="after">
+				<button name="invoice_print_new" type="object" string="Print" class="oe_highlight"/>
+			</xpath>
+			
 			<button name="%(account.action_account_invoice_payment)d" position="attributes">
 				<attribute name="states">open,partially_paid</attribute>
 			</button>

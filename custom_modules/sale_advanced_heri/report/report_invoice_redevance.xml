@@ -122,7 +122,7 @@
                         <div class="col-xs-12">
                             <table class="table table-condensed table-bordered" style="table-layout:fixed;">
                                 <thead>
-                                    <tr style="background-color:#3E3E3E; color:white;">
+                                    <tr style="background-color:#3E3E3E; color:white; border-top:solid #3E3E3E 4px;">
                                         <th class="text-center" style="width:12%; border-color:#3E3E3E !important;">Date</th>
                                         <th class="text-center" style="width:38%; border-color:#3E3E3E !important;">Description</th>
                                         <th class="text-center" style="width:10%; border-color:#3E3E3E !important;">Quantité</th>
@@ -209,6 +209,7 @@
         string="Facture Redevance"
         paperformat="sale_advanced_heri.invoice_redevance_paperformat"
         name="sale_advanced_heri.report_invoice_redevance"
-        file="sale_advanced_heri.report_invoice_redevance" />
+        file="sale_advanced_heri.report_invoice_redevance" 
+        menu="False"/>
 
 </odoo>

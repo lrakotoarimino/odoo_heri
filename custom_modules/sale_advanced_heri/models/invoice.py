@@ -261,6 +261,12 @@ class AccountInvoice(models.Model):
                 }
         AccountInvoiceLine.create(vals)
         
+        invoice_lines = AccountInvoiceLine.search([('invoice_id', '=', self.id)], order='product_id, date desc')
+        sequence = 0
+        for inv in invoice_lines:
+            inv.write({'sequence': sequence})
+            sequence += 1
+            
     # redefinition
     @api.multi
     def _write(self, vals):
@@ -291,6 +297,12 @@ class AccountInvoice(models.Model):
         if to_pay_invoices.filtered(lambda inv: not inv.reconciled):
             raise UserError(_('You cannot pay an invoice which is partially paid. You need to reconcile payment entries first.'))
         return to_pay_invoices.write({'state': 'paid'})
+    
+    @api.multi
+    def invoice_print_new(self):
+        self.ensure_one()
+        self.sent = True
+        return self.env['report'].get_action(self, 'sale_advanced_heri.report_invoice_redevance')
     
     
 class AccountInvoiceLine(models.Model):
