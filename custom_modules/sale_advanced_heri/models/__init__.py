@@ -5,3 +5,4 @@ import stock
 import product
 import billing_table
 import company
+import res_currency

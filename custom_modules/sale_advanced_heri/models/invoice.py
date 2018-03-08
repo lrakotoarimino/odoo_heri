@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+import json
 
 from datetime import datetime
+from dateutil import relativedelta
 
 from num2words import num2words
 
 from odoo import models, fields, api, _
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, amount_to_text
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, float_is_zero, amount_to_text
 
 from odoo.exceptions import UserError, ValidationError
 
@@ -28,6 +30,59 @@ INVOICETYPE2CODE = {
 
 class AccountInvoice(models.Model):
     _inherit = "account.invoice"
+    
+    # redefinition
+    @api.one
+    @api.depends('payment_move_line_ids.amount_residual')
+    def _get_payment_info_JSON(self):
+        self.payments_widget = json.dumps(False)
+        if self.payment_move_line_ids:
+            info = {'title': _('Less Payment'), 'outstanding': False, 'content': []}
+            currency_id = self.currency_id
+            
+            # redefinition
+            advance = 0.0
+            
+            for payment in self.payment_move_line_ids:
+                payment_currency_id = False
+                if self.type in ('out_invoice', 'in_refund'):
+                    amount = sum([p.amount for p in payment.matched_debit_ids if p.debit_move_id in self.move_id.line_ids])
+                    amount_currency = sum([p.amount_currency for p in payment.matched_debit_ids if p.debit_move_id in self.move_id.line_ids])
+                    if payment.matched_debit_ids:
+                        payment_currency_id = all([p.currency_id == payment.matched_debit_ids[0].currency_id for p in payment.matched_debit_ids]) and payment.matched_debit_ids[0].currency_id or False
+                elif self.type in ('in_invoice', 'out_refund'):
+                    amount = sum([p.amount for p in payment.matched_credit_ids if p.credit_move_id in self.move_id.line_ids])
+                    amount_currency = sum([p.amount_currency for p in payment.matched_credit_ids if p.credit_move_id in self.move_id.line_ids])
+                    if payment.matched_credit_ids:
+                        payment_currency_id = all([p.currency_id == payment.matched_credit_ids[0].currency_id for p in payment.matched_credit_ids]) and payment.matched_credit_ids[0].currency_id or False
+                # get the payment value in invoice currency
+                if payment_currency_id and payment_currency_id == self.currency_id:
+                    amount_to_show = amount_currency
+                else:
+                    amount_to_show = payment.company_id.currency_id.with_context(date=payment.date).compute(amount, self.currency_id)
+                if float_is_zero(amount_to_show, precision_rounding=self.currency_id.rounding):
+                    continue
+                payment_ref = payment.move_id.name
+                if payment.move_id.ref:
+                    payment_ref += ' (' + payment.move_id.ref + ')'
+                info['content'].append({
+                    'name': payment.name,
+                    'journal_name': payment.journal_id.name,
+                    'amount': amount_to_show,
+                    'currency': currency_id.symbol,
+                    'digits': [69, currency_id.decimal_places],
+                    'position': currency_id.position,
+                    'date': payment.date,
+                    'payment_id': payment.id,
+                    'move_id': payment.move_id.id,
+                    'ref': payment_ref,
+                })
+                
+                # redefinition
+                advance += amount_to_show
+            self.advance = advance
+            
+            self.payments_widget = json.dumps(info)
     
     @api.model
     def _default_account_type(self):
@@ -86,13 +141,21 @@ class AccountInvoice(models.Model):
     @api.one
     @api.depends('amount_total')
     def _amount_in_word(self):
-        monetary = 'Ariary'
-        amount_text = num2words(self.amount_total, lang='fr')
-        amount_text = 'virgule' in amount_text and amount_text.capitalize().replace('virgule', monetary) or amount_text.capitalize() + " " + monetary
-        self.amount_in_word = amount_text
-    
-    def _convert(self, amount, lang, cur):
-        return amount_to_text(amount, lang=lang, currency=cur)
+        monetary = self.currency_id.full_name or 'Ariary'
+        amount = "{:.2f}".format(self.amount_total)
+        amount_str = str(amount)
+        str_int = amount_str.split('.')[0]
+        part_int = num2words(int(str_int), lang='fr')
+        
+        str_dec = amount_str.split('.')[1]
+        str_dec_new = str(int(str_dec))
+        part_dec = num2words(int(str_dec), lang='fr')
+        nbr_zero = len(str_dec) - len(str_dec_new)
+        if nbr_zero > 0:
+            for i in range(nbr_zero):
+                part_dec = u'zéro ' + part_dec
+        
+        self.amount_in_word = part_int.capitalize() + " " + monetary + " " + part_dec
                 
     journal_id = fields.Many2one('account.journal', string='Journal',
         required=True, readonly=True, states={'draft': [('readonly', False)]},
@@ -104,8 +167,8 @@ class AccountInvoice(models.Model):
     invoice_type = fields.Selection([('rental', 'Rental'), ('sale', 'Sale'), ('loss', 'Loss')], string="Type invoice", default=_default_account_type)
     
     kiosk_id = fields.Many2one('stock.location', string='Kiosk *')
-    date_start = fields.Date(string='Billing start date')
-    date_end = fields.Date(string='Billing end date')
+    date_start = fields.Date(string='Billing start date', default=str(datetime.now() + relativedelta.relativedelta(months=-2, day=26))[:10])
+    date_end = fields.Date(string='Billing end date', default=str(datetime.now() + relativedelta.relativedelta(months=-1, day=25))[:10])
     
     state = fields.Selection([
             ('draft', 'Draft'),
@@ -123,6 +186,7 @@ class AccountInvoice(models.Model):
              " * The 'Cancelled' status is used when user cancel invoice.")
     
     amount_in_word = fields.Char(string='Amount in word', store=True, readonly=True, compute='_amount_in_word')
+    advance = fields.Monetary(string='Advance', compute='_get_payment_info_JSON', store=True)
     
     def get_move_lines(self, type_move='in', number_days_max=0.0):
         if not self.kiosk_id:
@@ -303,8 +367,8 @@ class AccountInvoice(models.Model):
         self.ensure_one()
         self.sent = True
         return self.env['report'].get_action(self, 'sale_advanced_heri.report_invoice_redevance')
-    
-    
+
+            
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
     

@@ -45,7 +45,7 @@
 			</xpath>
 			
 			<xpath expr="//button[@name='invoice_print'][2]" position="after">
-				<button name="invoice_print_new" type="object" string="Print" class="oe_highlight"/>
+				<button name="invoice_print_new" type="object" attrs="{'invisible':[('state', 'not in', ('open', 'partially_paid','paid'))]}" string="Print" class="oe_highlight"/>
 			</xpath>
 			
 			<button name="%(account.action_account_invoice_payment)d" position="attributes">
@@ -71,6 +71,11 @@
 				<field name="amount_in_word"/>
 			</field>
 			
+			<field name="payments_widget" position="after">
+			    <field name="advance" class="oe_subtotal_footer_separator"/>
+			</field>
+			
+			<!-- Invoice lines -->
 			<field name="sequence" position="after">
 			    <field name="date"/>
 			</field>

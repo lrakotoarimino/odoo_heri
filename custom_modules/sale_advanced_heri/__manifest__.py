@@ -13,6 +13,7 @@
              'views/product_view.xml',
              'views/stock_view.xml',
              'views/company_view.xml',
+             'views/res_currency_view.xml',
              
              'data/paperformat_data.xml',
              'data/inventory_data.xml',

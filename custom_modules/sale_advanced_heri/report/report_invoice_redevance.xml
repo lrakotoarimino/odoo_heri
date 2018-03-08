@@ -86,7 +86,7 @@
                     </div>
 
                     <div class="row mt16 mb16">
-                        <div class="col-xs-6">
+                        <div class="col-xs-5">
                             <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="text-center">VOTRE INTERLOCUTEUR</div>
                             <div class="row">
                                 <div class="col-xs-3 text-right">
@@ -104,16 +104,16 @@
                                 <div style="height:50px;"/>
                             </div>
                         </div>
-                        <div class="col-xs-6">
+                        <div class="col-xs-7">
                             <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="col-xs-12 text-center">KIOSQUE</div>
-                            <div class="col-xs-4">Localité</div>
-                            <div class="col-xs-8">: <span t-field="o.kiosk_id.name" /></div>
-                            <div class="col-xs-4">Entrepreneur</div>
-                            <div class="col-xs-8">: <span t-field="o.partner_id" /></div>
-                            <div class="col-xs-4">Adresse</div>
-                            <div class="col-xs-8">: <span t-field="o.partner_id.street" /></div>
-                            <div class="col-xs-4">Téléphone</div>
-                            <div class="col-xs-8">: <span t-field="o.partner_id.phone" /></div>
+                            <div class="col-xs-3">Localité</div>
+                            <div class="col-xs-9">: <span t-field="o.kiosk_id.name" /></div>
+                            <div class="col-xs-3">Entrepreneur</div>
+                            <div class="col-xs-9">: <span t-field="o.partner_id" /></div>
+                            <div class="col-xs-3">Adresse</div>
+                            <div class="col-xs-9">: <span t-field="o.partner_id.street" /></div>
+                            <div class="col-xs-3">Téléphone</div>
+                            <div class="col-xs-9">: <span t-field="o.partner_id.phone" /></div>
                         </div>
                     </div>
 
@@ -155,6 +155,7 @@
                                         <span t-field="o.date_invoice" />
                                     </div>
                                     <div class="col-xs-5 col-xs-offset-1">
+                                        <!-- <t t-set="amount_to_pay" t-value="'{:10,.2f}'.format(o.amount_total-o.advance).replace(',', ' ').replace('.', ',')"/> -->
                                         <span t-esc="o.residual" t-options="{'widget': 'float', 'precision': currency_precision}" />
                                     </div>
                                 </div>
@@ -175,8 +176,7 @@
                             </div>
                             <div class="row mt4">
                                 <div class="col-xs-7 text-right"><b>Acompte versé en <span t-field="o.currency_id.symbol" /> :</b></div>
-                                <t t-set="amount_paid" t-value="'{:10,.2f}'.format(o.amount_total-o.residual).replace(',', ' ').replace('.', ',')"/>
-                                <div class="col-xs-5 text-center"><t t-esc="amount_paid"/></div>
+                                <div class="col-xs-5 text-center"><t t-esc="o.advance" t-options="{'widget': 'float', 'precision': currency_precision}" /></div>
                             </div>
                             <div class="row mt4">
                                 <div class="col-xs-7 text-right"><b>Net à payer en <span t-field="o.currency_id.symbol" /> :</b></div>
