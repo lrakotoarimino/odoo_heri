@@ -4,8 +4,6 @@ import json
 from datetime import datetime
 from dateutil import relativedelta
 
-from num2words import num2words
-
 from odoo import models, fields, api, _
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, float_is_zero, amount_to_text
 
@@ -26,6 +24,89 @@ INVOICETYPE2CODE = {
     'sale': 'VTE',
     'loss': 'PRT',
 }
+
+# -*- coding: utf-8 -*-
+
+to_19_fr = (u'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six',
+          'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize',
+          'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf')
+tens_fr = ('vingt', 'trente', 'quarante', 'Cinquante', 'Soixante', 'Soixante-dix', 'Quatre-vingts', 'Quatre-vingt Dix')
+denom_fr = ('',
+          'Mille', 'Millions', 'Milliards', 'Billions', 'Quadrillions',
+          'Quintillion', 'Sextillion', 'Septillion', 'Octillion', 'Nonillion',
+          'Décillion', 'Undecillion', 'Duodecillion', 'Tredecillion', 'Quattuordecillion',
+          'Sexdecillion', 'Septendecillion', 'Octodecillion', 'Icosillion', 'Vigintillion')
+
+def _convert_nn_fr(val):
+    """ convert a value < 100 to French
+    """
+    if val < 20:
+        return to_19_fr[val]
+    for (dcap, dval) in ((k, 20 + (10 * v)) for (v, k) in enumerate(tens_fr)):
+        if dval + 10 > val:
+            if val % 10:
+                if dval == 70 or dval == 90:
+                    return tens_fr[dval / 10 - 3] + '-' + to_19_fr[val % 10 + 10]
+                else:
+                    return dcap + '-' + to_19_fr[val % 10]
+            return dcap
+
+def _convert_nnn_fr(val):
+    """ convert a value < 1000 to french
+    
+        special cased because it is the level that kicks 
+        off the < 100 special case.  The rest are more general.  This also allows you to
+        get strings in the form of 'forty-five hundred' if called directly.
+    """
+    word = ''
+    (mod, rem) = (val % 100, val // 100)
+    if rem > 0:
+        if rem == 1:
+            word = 'Cent'
+        else:
+            word = to_19_fr[rem] + ' Cent'
+        if mod > 0:
+            word += ' '
+    if mod > 0:
+        word += _convert_nn_fr(mod)
+    return word
+
+def french_number(val):
+    if val < 100:
+        return _convert_nn_fr(val)
+    if val < 1000:
+        return _convert_nnn_fr(val)
+    for (didx, dval) in ((v - 1, 1000 ** v) for v in range(len(denom_fr))):
+        if dval > val:
+            mod = 1000 ** didx
+            l = val // mod
+            r = val - (l * mod)
+            if l == 1:
+                ret = denom_fr[didx]
+            else:
+                ret = _convert_nnn_fr(l) + ' ' + denom_fr[didx]
+            if r > 0:
+                ret = ret + ', ' + french_number(r)
+            return ret
+
+def amount_to_text(numbers, currency):
+    number = '%.2f' % numbers
+    units_name = currency
+    liste = str(number).split('.')
+    start_word = french_number(abs(int(liste[0])))
+    end_word = ''
+    str_dec = liste[1]
+    if int(liste[1]) != 0:
+        end_word = french_number(int(str_dec))
+        str_dec_new = str(int(str_dec))
+        nbr_zero = len(str_dec) - len(str_dec_new)
+        if nbr_zero > 0:
+            for i in range(nbr_zero):
+                end_word = to_19_fr[0] + ' ' + end_word
+    
+    result = start_word.capitalize() + ' ' + units_name + ' ' + end_word
+    final_result = result.strip()
+    return final_result
 
 
 class AccountInvoice(models.Model):
@@ -139,23 +220,15 @@ class AccountInvoice(models.Model):
                 }
     
     @api.one
-    @api.depends('amount_total')
-    def _amount_in_word(self):
-        monetary = self.currency_id.full_name or 'Ariary'
-        amount = "{:.2f}".format(self.amount_total)
-        amount_str = str(amount)
-        str_int = amount_str.split('.')[0]
-        part_int = num2words(int(str_int), lang='fr')
-        
-        str_dec = amount_str.split('.')[1]
-        str_dec_new = str(int(str_dec))
-        part_dec = num2words(int(str_dec), lang='fr')
-        nbr_zero = len(str_dec) - len(str_dec_new)
-        if nbr_zero > 0:
-            for i in range(nbr_zero):
-                part_dec = u'zéro ' + part_dec
-        
-        self.amount_in_word = part_int.capitalize() + " " + monetary + " " + part_dec
+    @api.depends('amount_total', 'residual')
+    def _compute_amount_in_word(self):
+        if not self.currency_id.full_name:
+            raise UserError(_("Error!\nPlease complete monetary name in currency configuration"))
+        monetary = self.currency_id.full_name
+        amount = self.amount_total
+        if self.residual != 0.0:
+            amount = self.residual
+        self.amount_in_word = amount_to_text(amount, monetary)
                 
     journal_id = fields.Many2one('account.journal', string='Journal',
         required=True, readonly=True, states={'draft': [('readonly', False)]},
@@ -185,7 +258,7 @@ class AccountInvoice(models.Model):
              " * The 'Paid' status is set automatically when the invoice is paid. Its related journal entries may or may not be reconciled.\n"
              " * The 'Cancelled' status is used when user cancel invoice.")
     
-    amount_in_word = fields.Char(string='Amount in word', store=True, readonly=True, compute='_amount_in_word')
+    amount_in_word = fields.Char(string='Amount in word', store=True, readonly=True, compute='_compute_amount_in_word')
     advance = fields.Monetary(string='Advance', compute='_get_payment_info_JSON', store=True)
     
     def get_move_lines(self, type_move='in', number_days_max=0.0):
