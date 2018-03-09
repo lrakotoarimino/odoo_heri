@@ -7,7 +7,12 @@
     'description': """Sales module for HERi Madagascar""",
     'website': 'https://www.heri.com',
     'depends': ['sale', 'base', 'product', 'stock', 'account', 'report_qweb_element_page_visibility'],
-    'data': ['views/invoice_view.xml',
+    'data': ['data/paperformat_data.xml',
+             'data/inventory_data.xml',
+             'data/product_product.xml',
+             'data/billing_table.xml',
+             
+             'views/invoice_view.xml',
              'views/sale_view.xml',
              'views/res_partner_view.xml',
              'views/product_view.xml',
@@ -15,12 +20,8 @@
              'views/company_view.xml',
              'views/res_currency_view.xml',
              
-             'data/paperformat_data.xml',
-             'data/inventory_data.xml',
-             'data/product_product.xml',
-             'data/billing_table.xml',
-
              'report/report_invoice_redevance.xml',
+             
              ],
     'demo': [],
     'test': [],

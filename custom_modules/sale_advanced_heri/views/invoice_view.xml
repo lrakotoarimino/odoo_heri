@@ -84,13 +84,13 @@
 			    <field name="number_days"/>
 			</xpath> -->
 			
-			<!-- <field name="sequence" position="after">
+			<field name="sequence" position="after">
 			    <field name="date"/>
 			</field>
 			
 			<field name="uom_id" position="after">
 			    <field name="number_days"/>
-			</field> -->
+			</field>
 			
 			<field name="discount" position="attributes">
 			    <attribute name="groups"></attribute>
