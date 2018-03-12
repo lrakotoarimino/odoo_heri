@@ -25,7 +25,6 @@ INVOICETYPE2CODE = {
     'loss': 'PRT',
 }
 
-# -*- coding: utf-8 -*-
 
 to_19_fr = (u'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six',
           'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize',
