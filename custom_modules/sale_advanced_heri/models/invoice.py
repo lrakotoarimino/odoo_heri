@@ -24,9 +24,9 @@ INVOICETYPE2CODE = {
     'rental': 'RED',
     'sale': 'VTE',
     'loss': 'PRT',
+    'refund': 'AVR',
 }
 
-# -*- coding: utf-8 -*-
 
 to_19_fr = (u'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six',
           'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize',
@@ -186,7 +186,7 @@ class AccountInvoice(models.Model):
         # redefinition
         if self._context.get('invoice_type', False):
             invoice_type = self._context.get('invoice_type')
-            if invoice_type in ('rental', 'sale', 'loss'):
+            if invoice_type in ('rental', 'sale', 'loss', 'refund'):
                 domain.append(('code', '=', INVOICETYPE2CODE[invoice_type]))
                 if not self.env['account.journal'].search(domain, limit=1):
                     raise UserError(_("Configuration error!\nCould not find account journal with code %s") % INVOICETYPE2CODE[invoice_type])
@@ -238,7 +238,7 @@ class AccountInvoice(models.Model):
     kiosk_id = fields.Many2one('stock.location', string='Kiosk *')
     date_start = fields.Datetime(string='Start date')
     date_end = fields.Datetime(string='End date')
-    invoice_type = fields.Selection([('rental', 'Rental'), ('sale', 'Sale'), ('loss', 'Loss')], string="Type invoice", default=_default_account_type)
+    invoice_type = fields.Selection([('rental', 'Rental'), ('sale', 'Sale'), ('loss', 'Loss'), ('refund', 'Refund')], string="Type invoice", default=_default_account_type)
     
     kiosk_id = fields.Many2one('stock.location', string='Kiosk *')
     date_start = fields.Date(string='Billing start date', default=str(datetime.now() + relativedelta.relativedelta(months=-2, day=26))[:10])
@@ -480,6 +480,26 @@ class AccountInvoice(models.Model):
             action['res_id'] = scraps.id
         return action
             
+    # redefinition
+    @api.model
+    def _prepare_refund(self, invoice, date_invoice=None, date=None, description=None, journal_id=None):
+        values = super(AccountInvoice, self)._prepare_refund(invoice, date_invoice, date, description, journal_id)
+        if invoice.type != 'out_invoice':
+            return values
+        
+        values['kiosk_id'] = invoice.kiosk_id.id
+        values['invoice_type'] = 'refund'
+        
+        company_id = self._context.get('company_id', self.env.user.company_id.id)
+        domain = [('company_id', '=', company_id), ('code', '=', INVOICETYPE2CODE['refund'])]
+        journal = self.env['account.journal'].search(domain, limit=1)
+        if not journal:
+            raise UserError(_("Configuration error!\nCould not find account journal with code %s") % INVOICETYPE2CODE['refund'])
+        values['journal_id'] = journal.id
+        
+        return values
+    
+        
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
     
