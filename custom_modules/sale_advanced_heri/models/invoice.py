@@ -11,6 +11,7 @@ from odoo.exceptions import UserError, ValidationError
 
 import odoo.addons.decimal_precision as dp
 
+
 # mapping invoice type to journal type
 TYPE2JOURNAL = {
     'out_invoice': 'sale',
@@ -260,6 +261,7 @@ class AccountInvoice(models.Model):
     
     amount_in_word = fields.Char(string='Amount in word', store=True, readonly=True, compute='_compute_amount_in_word')
     advance = fields.Monetary(string='Advance', compute='_get_payment_info_JSON', store=True)
+    stock_scrap_ids = fields.Many2many(string="Scraps", comodel_name="stock.scrap", copy=False)
     
     def get_move_lines(self, type_move='in', number_days_max=0.0):
         if not self.kiosk_id:
@@ -441,6 +443,43 @@ class AccountInvoice(models.Model):
         self.sent = True
         return self.env['report'].get_action(self, 'sale_advanced_heri.report_invoice_redevance')
 
+    @api.multi
+    def action_invoice_open(self):
+        """ Pertes: If type is Loss, mark products as scrapped:
+                - Create stock scrap
+                - Validate it
+        """
+        res = super(AccountInvoice, self).action_invoice_open()
+        for inv in self:
+            if inv.invoice_type == 'loss':
+                if not any([l.product_id.type in ['product', 'consu'] for l in inv.invoice_line_ids]):
+                    raise exceptions.ValidationError(_("No consumables or storables products found."))
+
+                # Create a stock scrap for each line and attach them to the invoice
+                scraps = self.env['stock.scrap'].browse()
+                for inv_line in inv.invoice_line_ids:
+                    scraps += inv_line._create_stock_scrap()
+                inv.stock_scrap_ids = scraps
+        return res
+
+
+    @api.multi
+    def action_view_scrap(self):
+        '''
+        This function returns an action that display existing scraps
+        of given account invoice ids. It can either be a in a list or in a form
+        view, if there is only one scrap to show.
+        '''
+        action = self.env.ref('stock.action_stock_scrap').read()[0]
+
+        scraps = self.mapped('stock_scrap_ids')
+        if len(scraps) > 1:
+            action['domain'] = [('id', 'in', scraps.ids)]
+        elif scraps:
+            action['views'] = [(self.env.ref('stock.stock_scrap_form_view').id, 'form')]
+            action['res_id'] = scraps.id
+        return action
+            
     # redefinition
     @api.model
     def _prepare_refund(self, invoice, date_invoice=None, date=None, description=None, journal_id=None):
@@ -483,6 +522,34 @@ class AccountInvoiceLine(models.Model):
     
     date = fields.Date(string='Date', default=fields.Date.context_today)
     number_days = fields.Float(string='Days', digits=dp.get_precision('Product Unit of Measure'), default=1.0)
+
+    @api.model
+    def _prepare_scrap(self):
+        """
+            Prepare value to create stock scrap
+            :return dictionnary ready to be created
+        """
+        scrapped_location = self.env['ir.model.data'].xmlid_to_object('stock.stock_location_scrapped')
+
+        return {
+            'name': _('New'),
+            'product_id': self.product_id.id,
+            'product_uom_id': self.uom_id.id,
+            'scrap_qty': self.quantity,
+            'location_id': self.invoice_id.kiosk_id.id,
+            'scrap_location_id': scrapped_location.id,
+            'origin': unicode(self.invoice_id.number),
+            'date_expected': self.invoice_id.date_invoice,
+        }
+
+    @api.multi
+    def _create_stock_scrap(self):
+        scraps = self.env['stock.scrap']
+        done = scraps.browse()
+        for line in self:
+            val = line._prepare_scrap()
+            done += scraps.create(val)
+        return done
 
 
 class AccountJournal(models.Model):
