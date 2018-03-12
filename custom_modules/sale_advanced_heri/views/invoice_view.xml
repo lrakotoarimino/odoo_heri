@@ -12,7 +12,9 @@
 			</button>
 	               
 	      	<button name="action_invoice_sent" position="before">
-	  			<button name="get_invoice_line" type="object" string="Retrieve billing lines" states="draft" class="oe_highlight"/>
+	  			<button 
+	  			    name="get_invoice_line" type="object" string="Retrieve billing lines" 
+	  			    attrs="{'invisible':[('state','!=','draft'),('invoice_type','!=','rental')]}" class="oe_highlight"/>
 			</button>
 				
 	        <button name="%(account.action_account_invoice_refund)d" position="attributes">
@@ -58,7 +60,7 @@
 			<!-- End header -->
 				
 	      	<field name="partner_id" position="before">
-	      		<field name="invoice_type" invisible="1"/>
+	      		<field name="invoice_type" />
 	      		<field 
 			       name="kiosk_id" 
 			       domain="[('is_kiosk','=',True),('usage','=','internal')]" 
