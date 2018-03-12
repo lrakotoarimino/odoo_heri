@@ -17,7 +17,7 @@
 					<field name="taxe_douane"/>
 				</field>
 				<field name="lst_price" position="before">
-					<field name="frais_type" widget="radio" attrs="{'invisible': [('type', '=', ('service'))]}"/>
+					<field name="fee_type" widget="radio" attrs="{'invisible': [('type', '=', ('service'))]}"/>
 				</field>
 			</field>
 		</record>	

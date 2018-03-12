@@ -17,4 +17,14 @@ class StockInventory(models.Model):
                     'filter': 'none'}
             inventory_id = Inventory.create(vals)
             inventory_id.prepare_inventory()
-            inventory_id.action_done()
+            # inventory_id.action_done()
+            
+
+class StockLocation(models.Model):
+    _inherit = "stock.location"
+    
+    def _default_billing_table_id(self):
+        return self.env.ref('sale_advanced_heri.billing_table_1').id
+    
+    is_kiosk = fields.Boolean(string='Is a kiosk ?')
+    billing_table_id = fields.Many2one('billing.table', string='Billing table', default=_default_billing_table_id)

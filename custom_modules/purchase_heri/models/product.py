@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
-from odoo import api, models
+from odoo import api, models, fields
+
+from odoo.addons.base.res.res_partner import WARNING_MESSAGE, WARNING_HELP
+
 
 class ProductProduct(models.Model):
     _name = 'product.product'
@@ -18,3 +21,9 @@ class ProductProduct(models.Model):
         PurchaseOrderLines = self.env['purchase.order.line'].search(domain)
         for product in self:
             product.purchase_count = len(PurchaseOrderLines.filtered(lambda r: r.product_id == product).mapped('order_id'))
+            
+
+class ProductTemplate(models.Model):
+    _inherit = 'product.template'
+    
+    purchase_line_warn = fields.Selection(WARNING_MESSAGE, 'Purchase Order Line', help=WARNING_HELP, required=False, default="no-message")
