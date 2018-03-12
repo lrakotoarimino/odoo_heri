@@ -943,7 +943,8 @@
             <field name="prefix">BR N°</field>  
             <field name="padding">4</field>  
             <field eval="1" name="number_increment"/>  
-      	</record>  
+      	</record>
+        
         <!-- Menus -->
 		<menuitem id="menu_stoke" parent="purchase.menu_procurement_management" action="action_stoke" name="Achats locaux stockés" sequence="1"/>
 		<menuitem id="menu_non_stoke" parent="purchase.menu_procurement_management" action="action_non_stoke" name="Achats locaux non stockés" sequence="2"/>
@@ -951,5 +952,18 @@
 		<menuitem id="menu_purchase_res_region" parent="purchase.menu_purchase_config" action="purchase_heri.action_res_region" name="Région" sequence="0"/>
 		<!-- Fin Menus -->
 		
+		<!-- Product Suppliers-->
+        <record id="view_product_supplier_inherit" model="ir.ui.view">
+            <field name="name">product.template.supplier.form.inherit</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="purchase.view_product_supplier_inherit"/>
+            <field name="arch" type="xml">
+                <field name="purchase_line_warn" position="attributes">
+        			<attribute name="required">1</attribute>
+        		</field>
+       		</field>
+   		</record>
+   		<!--  -->
+   		
 	</data>
 </odoo>

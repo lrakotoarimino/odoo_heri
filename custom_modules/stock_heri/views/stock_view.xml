@@ -103,10 +103,10 @@
 				</xpath>
 				
 				<field name="location_dest_id" position="attributes">
-                    <attribute name="domain">[('is_kiosque','=',False)]</attribute>
+                    <attribute name="domain">[('is_kiosk','=',False)]</attribute>
 				</field>
 				<field name="location_id" position="attributes">
-				    <attribute name="domain">[('is_kiosque','=',False)]</attribute>
+				    <attribute name="domain">[('is_kiosk','=',False)]</attribute>
 				</field>
             </field>
         </record>

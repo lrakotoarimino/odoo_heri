@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <data>
+        
 	    <record model="ir.ui.view" id="view_order_form">
 	        <field name="name">sale.order.form</field>
 	        <field name="model">sale.order</field>
 	        <field name="inherit_id" ref="sale.view_order_form"/>
 	        <field name="arch" type="xml">
 	            <data>
-		            <field name="partner_id" position="after">
-		                <field name="kiosk_id" domain="[('is_kiosque', '=', True)]"/>
+		            <!-- <field name="partner_id" position="after">
+		                <field name="kiosk_id" domain="[('is_kiosk', '=', True)]"/>
 						<field name="date_start"/>
 						<field name="date_end"/>
 					</field>
@@ -18,9 +19,14 @@
 					        string="Get order line"
 					        class="oe_highlight" 
 			      	    	type="object"/>
-					</button>
+					</button> -->
 				</data>
 	        </field>
 	    </record>
+	    
+	    <menuitem id="menu_rental_invoice" name="Rental invoices" parent="sale.menu_sale_invoicing" action="action_invoice_rental" sequence="-3"/>
+	    <menuitem id="menu_sale" name="Sales" parent="sale.menu_sale_invoicing" action="sale.action_quotations" sequence="-2"/>
+	    <menuitem id="menu_loss" name="Losses" parent="sale.menu_sale_invoicing" action="action_invoice_loss" sequence="-1"/>
+	    
     </data>
 </odoo>

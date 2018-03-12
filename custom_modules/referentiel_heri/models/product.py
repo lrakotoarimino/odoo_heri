@@ -20,9 +20,9 @@ class ProductHeri(models.Model):
     ref_fournisseur = fields.Char("Référence fournisseur", size=50)
     desc_fournisseur = fields.Char("Description fournisseur", size=100)
     taxe_douane = fields.Float(string=u'Taxe de douane(%)')
-    frais_type = fields.Selection([
-        ('redevance', 'Redevance fixe pour matériels productifs'),
-        ('location', 'Frais de location'),
-        ('sans_frais', 'Sans frais')
+    fee_type = fields.Selection([
+        ('fix', 'Redevance fixe pour matériels productifs'),
+        ('variable', 'Frais de location'),
+        ('none', 'Sans frais')
         ], 'Type de frais',
-        default='sans_frais')
+        default='none')

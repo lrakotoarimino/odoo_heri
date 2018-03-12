@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+ 	<record id="product_product_0" model="product.product">
+    	<field name="categ_id" ref="product.product_category_all"/>
+    	<field name="name">Redevance Fixe sur Produit de Base</field>
+    	<field name="rental_price">30000.0</field>
+	    <field name="type">service</field>
+	    <field name="uom_id" ref="product.product_uom_unit"/>
+	    <field name="uom_po_id" ref="product.product_uom_unit"/>
+	</record>
+</odoo>
