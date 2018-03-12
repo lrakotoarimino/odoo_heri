@@ -54,6 +54,14 @@
 				<attribute name="states">open,partially_paid</attribute>
 			</button>
 				
+            <xpath expr="//sheet/label[1]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button type="object" name="action_view_scrap" class="oe_stat_button" icon="fa-truck" attrs="{'invisible': [('stock_scrap_ids', '=', [])]}" groups="base.group_user" string="Rebuts">
+                        <field name="stock_scrap_ids" invisible="1"/>
+                    </button>
+                </div>
+            </xpath>
+
 			<field name="state" position="attributes">
 				<attribute name="statusbar_visible">draft,proforma2,open,paid</attribute>
 			</field>
