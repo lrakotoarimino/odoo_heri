@@ -7,3 +7,4 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
     
     kiosk_id = fields.Many2one('stock.location', string='Kiosk')
+    cin = fields.Char('CIN')

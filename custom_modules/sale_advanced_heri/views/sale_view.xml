@@ -24,9 +24,9 @@
 	        </field>
 	    </record>
 	    
-	    <menuitem id="menu_rental_invoice" name="Rental invoices" parent="sale.menu_sale_invoicing" action="action_invoice_rental" sequence="-3"/>
-	    <menuitem id="menu_sale" name="Sales" parent="sale.menu_sale_invoicing" action="sale.action_quotations" sequence="-2"/>
-	    <menuitem id="menu_loss" name="Losses" parent="sale.menu_sale_invoicing" action="action_invoice_loss" sequence="-1"/>
-	    
+	    <menuitem id="menu_rental_invoice" name="Rental invoices" parent="sale.menu_sale_invoicing" action="action_invoice_rental" sequence="-4"/>
+	    <menuitem id="menu_sale" name="Sales" parent="sale.menu_sale_invoicing" action="sale.action_quotations" sequence="-3"/>
+	    <menuitem id="menu_loss" name="Losses" parent="sale.menu_sale_invoicing" action="action_invoice_loss" sequence="-2"/>
+	    <menuitem id="menu_refund" name="Refund" parent="sale.menu_sale_invoicing" action="action_invoice_refund" sequence="-1"/>
     </data>
 </odoo>
