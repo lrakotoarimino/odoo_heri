@@ -161,7 +161,7 @@
                                          <td style="border-color:#3E3E3E !important;"><span t-field="line.name" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.quantity" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.number_days" /></td>
-                                         <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.price_unit" /></td>
+                                         <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.price_discounted" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><t t-esc="line.price_subtotal" t-options="{'widget': 'float', 'precision': currency_precision}" /></td>
                                      </tr>
                                 </tbody>

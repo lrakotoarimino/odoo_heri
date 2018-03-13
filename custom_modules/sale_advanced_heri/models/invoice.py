@@ -400,7 +400,7 @@ class AccountInvoice(models.Model):
                 }
         AccountInvoiceLine.create(vals)
         
-        invoice_lines = AccountInvoiceLine.search([('invoice_id', '=', self.id)], order='product_id, date desc')
+        invoice_lines = AccountInvoiceLine.search([('invoice_id', '=', self.id)], order='product_id desc, date desc')
         sequence = 0
         for inv in invoice_lines:
             inv.write({'sequence': sequence})
@@ -453,7 +453,7 @@ class AccountInvoice(models.Model):
         for inv in self:
             if inv.invoice_type == 'loss':
                 if not any([l.product_id.type in ['product', 'consu'] for l in inv.invoice_line_ids]):
-                    raise exceptions.ValidationError(_("No consumables or storables products found."))
+                    raise ValidationError(_("No consumables or storables products found."))
 
                 # Create a stock scrap for each line and attach them to the invoice
                 scraps = self.env['stock.scrap'].browse()
@@ -502,6 +502,7 @@ class AccountInvoice(models.Model):
         
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
+    _order = "product_id desc,date desc"
     
     # redefinition
     @api.one
@@ -510,7 +511,10 @@ class AccountInvoiceLine(models.Model):
     'invoice_id.date_invoice', 'number_days')
     def _compute_price(self):
         currency = self.invoice_id and self.invoice_id.currency_id or None
+        # Add number days into calculation and set price discounted
         price = self.number_days * self.price_unit * (1 - (self.discount or 0.0) / 100.0)
+        self.price_discounted = self.price_unit * (1 - (self.discount or 0.0) / 100.0)
+        
         taxes = False
         if self.invoice_line_tax_ids:
             taxes = self.invoice_line_tax_ids.compute_all(price, currency, self.quantity, product=self.product_id, partner=self.invoice_id.partner_id)
@@ -522,7 +526,8 @@ class AccountInvoiceLine(models.Model):
     
     date = fields.Date(string='Date', default=fields.Date.context_today)
     number_days = fields.Float(string='Days', digits=dp.get_precision('Product Unit of Measure'), default=1.0)
-
+    price_discounted = fields.Float(string='Price discounted', digits=dp.get_precision('Product Unit of Measure'), compute='_compute_price')
+    
     @api.model
     def _prepare_scrap(self):
         """

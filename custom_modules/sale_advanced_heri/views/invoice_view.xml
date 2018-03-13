@@ -76,7 +76,10 @@
 			<field name="payment_term_id" position="after">
 			    <field name="date_start" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
 			    <field name="date_end" attrs="{'invisible': [('invoice_type','!=','rental')],'required': [('invoice_type','=','rental')],'readonly': [('state','!=','draft')]}"/>
-				<field name="amount_in_word"/>
+			</field>
+			
+			<field name="comment" position="before">
+			    <br/><br/><br/><b>Arrêtée la présente facture à la somme de : </b><i><field states="open,paid" name="amount_in_word"/></i>
 			</field>
 			
 			<field name="payments_widget" position="after">
@@ -84,20 +87,16 @@
 			</field>
 			
 			<!-- Invoice lines -->
-			<!-- <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='sequence']" position="after">
-			    <field name="date"/>
-			</xpath>
-			
-			<xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='uom_id']" position="after">
-			    <field name="number_days"/>
-			</xpath> -->
-			
 			<field name="sequence" position="after">
 			    <field name="date"/>
 			</field>
 			
 			<field name="uom_id" position="after">
 			    <field name="number_days"/>
+			</field>
+			
+			<field name="discount" position="after">
+			    <field name="price_discounted"/>
 			</field>
 			
 			<field name="discount" position="attributes">
