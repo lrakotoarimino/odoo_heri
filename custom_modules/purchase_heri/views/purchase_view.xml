@@ -180,9 +180,9 @@
 					<field name="date_planned" invisible="1"/>
 				</xpath> -->
 								
-				<xpath expr="//label[5]" position="attributes">
+				<!-- <xpath expr="//label[5]" position="attributes">
 					<attribute name="for">none</attribute>
-				</xpath>
+				</xpath> -->
 				
 				<field name="partner_id" position="after">
 				    <field name="is_breq_stock" invisible="1"/>
