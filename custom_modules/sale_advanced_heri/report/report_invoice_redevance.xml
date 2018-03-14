@@ -92,7 +92,7 @@
                             <div class="row">
                                 <div class="col-xs-5 text-right">Facture N°:</div>
                                 <div class="col-xs-5 text-center">
-                                    <div style="border:1px solid #3E3E3E;">
+                                    <div style="border:1px solid #3E3E3E; border-top: 0px">
                                         <span t-if="o.number" t-field="o.number" />
                                         <t t-if="not o.number">
                                             <br/>
