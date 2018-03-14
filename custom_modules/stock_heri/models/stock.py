@@ -24,7 +24,11 @@ class StockPicking(models.Model):
     
     is_received = fields.Boolean('Est reçu', compute="_compute_is_received")
     product_received = fields.Many2one('hr.employee', string="Article reçu par :", readonly=1)
-    
+    min_date = fields.Datetime(
+        'Date', compute='_compute_dates', inverse='_set_min_date', store=True,
+        index=True, track_visibility='onchange',
+        states={'done': [('readonly', True)], 'cancel': [('readonly', True)]},
+        help="Scheduled time for the first part of the shipment to be processed. Setting manually a value here would set it as expected date for all the stock moves.")
     
     def action_received_call(self):
         for order in self :
@@ -68,7 +72,7 @@ class StockPicking(models.Model):
     is_returned = fields.Boolean('dejà retourner')
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie d\'origine")
     magasinier_id = fields.Many2one('hr.employee')
-    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels")  
+    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", default=datetime.now())  
     is_bci_sale_id = fields.Boolean('Est un bci venant sale order ?') 
     
     picking_ids_bret = fields.One2many('stock.picking', string="stock_ids_bret", compute='_compute_bret_lie')
@@ -201,14 +205,14 @@ class StockPicking(models.Model):
     @api.multi
     def do_print_BS(self):
         #Tester le champ la date d'arrivee reelle (date_arrivee_reelle) s'il est vide avant de valider une sortie de stock
-        if self.mouvement_type == 'bs':
-            if not self.date_arrivee_reelle:
-                raise UserError('Veuillez renseigner la date d\'arrivée réelle des matériels. ')
-        employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)])
+#         if self.mouvement_type == 'bs':
+#             if not self.date_arrivee_reelle:
+#                 raise UserError('Veuillez renseigner la date d\'arrivée réelle des matériels. ')
+        employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)])
         if employee_id:
             self.magasinier_id = employee_id[0].id
         self.do_new_transfer()
-        return self.do_print()   
+        return self.do_print()
     
     @api.multi
     def do_print(self):
@@ -560,7 +564,7 @@ class StockPicking(models.Model):
 class StockQuant(models.Model):
     _inherit = 'stock.quant'
     
-    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels")
+    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", default=datetime.now())
     
     @api.multi
     def _quant_update_from_move(self, move, location_dest_id, dest_package_id, lot_id=False, entire_pack=False):

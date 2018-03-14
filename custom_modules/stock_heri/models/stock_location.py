@@ -11,3 +11,9 @@ class Location(models.Model):
     _inherit = "stock.location"
    
     is_kiosk = fields.Boolean(string='Est un kiosque ?')
+
+
+class Warehouse(models.Model):
+    _inherit = "stock.warehouse"
+    
+    code = fields.Char('Short Name', required=True, size=100, help="Short name used to identify your warehouse")
