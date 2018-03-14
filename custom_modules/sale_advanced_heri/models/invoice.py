@@ -168,8 +168,7 @@ class AccountInvoice(models.Model):
     
     @api.model
     def _default_account_type(self):
-        if self._context.get('invoice_type', False):
-            return self._context.get('invoice_type', False)
+        return self._context.get('invoice_type', False)
         
     @api.model
     def _default_journal(self):

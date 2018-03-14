@@ -68,7 +68,7 @@
 			<!-- End header -->
 			
 			<field name="partner_id" position="before">
-				<field name="invoice_type" />
+				<field name="invoice_type" invisible="1"/>
 				<field name="kiosk_id" domain="[('is_kiosk','=',True),('usage','=','internal')]"
 					attrs="{'invisible': [('invoice_type','not in',('rental','loss'))],'required': [('invoice_type','in',('rental','loss'))],'readonly': [('state','!=','draft')]}" />
 			</field>
