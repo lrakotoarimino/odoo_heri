@@ -7,7 +7,6 @@ class StockInventory(models.Model):
     _inherit = "stock.inventory"
     
     def _cron_generate_inventories(self):
-        print 'Inventory is RUNNING!!!!!!!!'
         Location = self.env['stock.location']
         Inventory = self.env['stock.inventory']
         kiosk_ids = Location.search([('is_kiosk', '=', True)])

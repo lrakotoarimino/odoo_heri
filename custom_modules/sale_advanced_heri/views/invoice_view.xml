@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    
 	<record id="invoice_form" model="ir.ui.view">
 		<field name="name">account.invoice.form</field>
         <field name="model">account.invoice</field>
@@ -26,10 +27,11 @@
 	        </button>
 	               
 	        <button name="action_invoice_cancel" position="attributes">
-	            <attribute name="states">draft,proforma2,open,partially_paid</attribute>
+	            <attribute name="states">draft,proforma2,open</attribute>
 	        </button>
 	            
 			<button name="action_invoice_proforma2" position="attributes">
+			    <attribute name="class">oe_highlight</attribute>
 	       		<attribute name="string">Open</attribute>
 	       	</button>
 	               
@@ -204,5 +206,6 @@
 		    <field name="view_mode">form</field>
 		    <field name="view_id" ref="account.invoice_form"/>
 		    <field name="act_window_id" ref="action_invoice_refund"/>
-		</record>    
+		</record>
+		 
 </odoo>

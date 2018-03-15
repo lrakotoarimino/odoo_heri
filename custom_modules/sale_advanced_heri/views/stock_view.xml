@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    
 	<record model="ir.ui.view" id="stock_location_form_view">
 		<field name="name">stock.location.heri.form</field>
 		<field name="model">stock.location</field>
@@ -9,5 +10,6 @@
 				<field name="billing_table_id" attrs="{'invisible': [('is_kiosk','!=',True)],'required':[('is_kiosk','=',True)]}" />
 			</xpath>
 		</field>
-	</record>	
+	</record>
+	
 </odoo>
