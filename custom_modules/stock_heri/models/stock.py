@@ -703,10 +703,10 @@ class ReturnPickingHeri(models.TransientModel):
         new_picking = picking.copy({
             'move_lines': [],
             'picking_type_id': picking_type_id,
-            'name' : br_name,
+            'name': br_name,
             'state': 'draft',
             'mouvement_type': 'br',
-            'bs_id' : picking.id,
+            'bs_id': picking.id,
             'origin': picking.name,
             'location_id': picking.location_dest_id.id,
             'location_dest_id': self.location_id.id})

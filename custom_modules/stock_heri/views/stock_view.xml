@@ -338,7 +338,7 @@
                 <xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">
 		    		<attribute name="string">Retourner</attribute>
 		    		<attribute name="states"></attribute>
-		    		<attribute name="attrs">{'invisible': ['|',('state','not in',('done')),'|',('is_returned', '=', True),('is_creator', '=', False)]}</attribute>
+		    		<attribute name="attrs">{'invisible': ['|',('state','!=','done'),'|',('is_returned','=',True),('is_creator','=',False)]}</attribute>
 	    		</xpath>
 	    		
 	    		<xpath expr="//button[@name='%(stock.action_report_delivery)d']" position="attributes">
@@ -393,14 +393,14 @@
 					string="Accorder" 
 					type="object" 
 					class="oe_highlight"
-					attrs="{'invisible': ['|',('state', 'not in', ('attente_hierarchie')),'|',('is_manager', '=', False),('mouvement_type', 'not in', ('br'))]}"
+					attrs="{'invisible': ['|',('state', 'not in', ('attente_hierarchie','confirmed')),'|',('is_manager', '=', False),('mouvement_type', 'not in', ('br'))]}"
 					/>
 					
 					<button name="action_cancel_sup" 
 					string="Refus" 
 					type="object" 
 					class="oe_highlight"
-					attrs="{'invisible': ['|',('state', 'not in', ('attente_hierarchie')),'|',('is_manager','=',False),('mouvement_type', 'not in', ('br'))]}"
+					attrs="{'invisible': ['|',('state', 'not in', ('attente_hierarchie','confirmed')),'|',('is_manager','=',False),('mouvement_type', 'not in', ('br'))]}"
 					/>
 				</button>
 	    		<button name="do_new_transfer" position="replace">

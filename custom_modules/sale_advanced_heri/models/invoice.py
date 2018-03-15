@@ -273,7 +273,7 @@ class AccountInvoice(models.Model):
         date1 = datetime.strptime(self.date_end, DEFAULT_SERVER_DATE_FORMAT)
         date_start = fields.Date.to_string(date0.replace(hour=23, minute=59, second=59))
         date_end = fields.Date.to_string(date1.replace(hour=23, minute=59, second=59))
-        domain = [('date_expected', '>=', date_start), ('date_expected', '<=', date_end)]
+        domain = [('state', '=', 'done'), ('date_expected', '>=', date_start), ('date_expected', '<=', date_end)]
         sign = 1
         
         if type_move == 'out':
@@ -299,7 +299,7 @@ class AccountInvoice(models.Model):
             if move.product_id.description_sale:
                 name += '\n%s' % (move.product_id.description_sale)
                 
-            vals = {'date': move.date,
+            vals = {'date': move.date_expected,
                     'product_id': move.product_id.id,
                     'name': name,
                     'account_id': account_id,
