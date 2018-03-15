@@ -64,6 +64,10 @@
 				
             <xpath expr="//sheet/label[1]" position="before">
                 <div class="oe_button_box" name="button_box">
+                    <button type="object" name="action_view_refund" class="oe_stat_button" icon="fa-minus-circle" attrs="{'invisible': [('refund_ids', '=', [])]}">
+                        <field name="refund_count" widget="statinfo" string="Avoir"/>
+                        <field name="refund_ids" invisible="1"/>
+                    </button>
                     <button type="object" name="action_view_scrap" class="oe_stat_button" icon="fa-truck" attrs="{'invisible': [('stock_scrap_ids', '=', [])]}" groups="base.group_user" string="Rebuts">
                         <field name="stock_scrap_ids" invisible="1"/>
                     </button>

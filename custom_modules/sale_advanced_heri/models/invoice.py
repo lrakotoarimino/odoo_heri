@@ -229,7 +229,15 @@ class AccountInvoice(models.Model):
         if self.residual != 0.0:
             amount = self.residual
         self.amount_in_word = amount_to_text(amount, monetary)
-                
+    
+    @api.depends('refund_ids')
+    def _compute_refund_count(self):
+        """
+        Compute the refunds of the account invoice.
+        """
+        for inv in self:
+            inv.refund_count = len(inv.refund_ids)
+        
     journal_id = fields.Many2one('account.journal', string='Journal',
         required=True, readonly=True, states={'draft': [('readonly', False)]},
         default=_default_journal,
@@ -261,6 +269,8 @@ class AccountInvoice(models.Model):
     amount_in_word = fields.Char(string='Amount in word', store=True, readonly=True, compute='_compute_amount_in_word')
     advance = fields.Monetary(string='Advance', compute='_get_payment_info_JSON', store=True)
     stock_scrap_ids = fields.Many2many(string="Scraps", comodel_name="stock.scrap", copy=False)
+    refund_ids = fields.One2many('account.invoice', 'refund_invoice_id', string='Refund invoice')
+    refund_count = fields.Integer(compute='_compute_refund_count', string='Refund count')
     
     def get_move_lines(self, type_move='in', number_days_max=0.0):
         if not self.kiosk_id:
@@ -480,7 +490,7 @@ class AccountInvoice(models.Model):
             action['views'] = [(self.env.ref('stock.stock_scrap_form_view').id, 'form')]
             action['res_id'] = scraps.id
         return action
-            
+    
     # redefinition
     @api.model
     def _prepare_refund(self, invoice, date_invoice=None, date=None, description=None, journal_id=None):
@@ -500,6 +510,22 @@ class AccountInvoice(models.Model):
         
         return values
     
+    @api.multi
+    def action_view_refund(self):
+        '''
+        This function returns the action that displays the refunds of account incoice
+        '''
+        self.ensure_one()
+        action = self.env.ref('sale_advanced_heri.action_invoice_refund').read()[0]
+        
+        refunds = self.mapped('refund_ids')
+        if len(refunds) > 1:
+            action['domain'] = [('id', 'in', refunds.ids)]
+        elif refunds:
+            action['views'] = [(self.env.ref('account.invoice_form').id, 'form')]
+            action['res_id'] = refunds.id
+        return action
+
         
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
