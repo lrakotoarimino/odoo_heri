@@ -297,7 +297,7 @@ class AccountInvoice(models.Model):
         todo_moves = []
         for move in moves:
             name = move.product_id.name
-            d1 = datetime.strptime(move.date, DEFAULT_SERVER_DATETIME_FORMAT).date()
+            d1 = datetime.strptime(move.date_expected, DEFAULT_SERVER_DATETIME_FORMAT).date()
             d2 = date1.date()
             delta = d2 - d1
             
@@ -333,22 +333,15 @@ class AccountInvoice(models.Model):
         date_start = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
         date_end = datetime.strptime(self.date_end, DEFAULT_SERVER_DATE_FORMAT)
         
-        if not self.kiosk_id.billing_table_id:
-                raise UserError(_('Error!/nNo billing table created for this kiosk'))
-        table_id = self.kiosk_id.billing_table_id
+        table_id = self.env.ref('sale_advanced_heri.billing_table_1').id
+        if self.kiosk_id.billing_table_id:
+            table_id = self.kiosk_id.billing_table_id
+            
         current_month = date_end.month
         table_line = BillingTableLine.search([('table_id', '=', table_id.id), ('month', '=', current_month)], limit=1)
         if not table_line:
             raise UserError(_('Error configuration!/nPlease configure billing table for this current month'))
         number_days = table_line.number_days
-        
-        # Dates for inventory day
-        date1 = fields.Date.to_string(date_start.replace(hour=0, minute=0, second=1))
-        date2 = fields.Date.to_string(date_start.replace(hour=23, minute=59, second=59))
-        domain = [('state', 'in', ('confirm', 'done')), ('location_id', '=', self.kiosk_id.id), ('date', '>=', date1), ('date', '<=', date2)]
-        inventory = Inventory.search(domain, order='date desc', limit=1)
-        if not inventory:
-            raise UserError(_('Error!/nNo inventory created for this kiosk'))
 
         invoice_type = self.type
         fpos = self.fiscal_position_id
@@ -361,37 +354,44 @@ class AccountInvoice(models.Model):
         for move in moves:
             AccountInvoiceLine.create(move)
         
-        # Get stock inventory
-        vals = {}
-        line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
-        for line in line_ids:
-            if line.state == 'confirm':
-                qty = line.theoretical_qty
-            elif line.state == 'done':
-                qty = line.product_qty
-            
-            product = line.product_id
-            name = product.partner_ref
-            if line.product_id.description_sale:
-                name += '\n' + product.description_sale
-            price = line.product_id.rental_price
-            
-            account_id = False
-            account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
-            if account:
-                account_id = account.id
-            
-            vals = {'date': line.inventory_id.date,
-                    'product_id': product.id,
-                    'name': name,
-                    'account_id': account_id,
-                    'uom_id': line.product_uom_id.id,
-                    'quantity': qty,
-                    'number_days': number_days,
-                    'price_unit': price,
-                    'invoice_id': self.id,
-                    }
-            AccountInvoiceLine.create(vals)
+        # Get stock inventory 26 of month M-2
+        # Dates for inventory day
+        date1 = fields.Date.to_string(date_start.replace(hour=0, minute=0, second=0))
+        date2 = fields.Date.to_string(date_start.replace(hour=23, minute=59, second=59))
+        domain = [('state', 'in', ('confirm', 'done')), ('location_id', '=', self.kiosk_id.id), ('date', '>=', date1), ('date', '<=', date2)]
+        inventory = Inventory.search(domain, order='date desc', limit=1)
+        if inventory:
+            # raise UserError(_('Error!/nNo inventory created for this kiosk'))
+            vals = {}
+            line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
+            for line in line_ids:
+                if line.state == 'confirm':
+                    qty = line.theoretical_qty
+                elif line.state == 'done':
+                    qty = line.product_qty
+                
+                product = line.product_id
+                name = product.partner_ref
+                if line.product_id.description_sale:
+                    name += '\n' + product.description_sale
+                price = line.product_id.rental_price
+                
+                account_id = False
+                account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
+                if account:
+                    account_id = account.id
+                
+                vals = {'date': line.inventory_id.date,
+                        'product_id': product.id,
+                        'name': name,
+                        'account_id': account_id,
+                        'uom_id': line.product_uom_id.id,
+                        'quantity': qty,
+                        'number_days': number_days,
+                        'price_unit': price,
+                        'invoice_id': self.id,
+                        }
+                AccountInvoiceLine.create(vals)
             
         # Fee rental fix
         product_fix_id = self.env['product.product'].browse(self.env.ref('sale_advanced_heri.product_product_0').id)
@@ -399,7 +399,8 @@ class AccountInvoice(models.Model):
         account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product_fix_id, fpos, company)
         if account:
             account_id = account.id
-        vals = {'date': inventory.date,
+        
+        vals = {'date': date_start,
                 'product_id': product_fix_id.id,
                 'name': product_fix_id.name + ' ' + str(self.kiosk_id.name),
                 'account_id': account_id,

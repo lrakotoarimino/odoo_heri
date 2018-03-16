@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-	<record id="invoice_redevance_paperformat2" model="report.paperformat">
+	<record id="invoice_sale_paperformat" model="report.paperformat">
         <field name="name">Invoice Redevance Paperformat</field>
         <field name="format">A4</field>
         <field name="page_height">0</field>

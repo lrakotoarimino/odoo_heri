@@ -8,7 +8,7 @@ class SaleOrder(models.Model):
     
     state = fields.Selection([
         ('draft', 'Brouillon'),
-        ('sent', 'Pro-forma'),
+        ('sent', 'Proforma'),
         ('sale', u'Validé'),
         ('done', 'Terminé'),
         ('cancel', 'Annulé'),

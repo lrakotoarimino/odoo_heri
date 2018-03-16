@@ -234,7 +234,7 @@
         model="account.invoice"
         report_type="qweb-pdf"
         string="Facture Redevance"
-        paperformat="sale_advanced_heri.invoice_redevance_paperformat2"
+        paperformat="sale_advanced_heri.invoice_sale_paperformat"
         name="sale_advanced_heri.report_invoice_redevance"
         file="sale_advanced_heri.report_invoice_redevance" 
         menu="False"/>

@@ -68,13 +68,15 @@ Module document à installer pour les pièces jointes
 
 VENTES : 
 ###Configurer les kiosques et les clients
+Configuration > Permettre les remises sur les lignes de commande
+Créer les quatre journaux pour les ventes
+Compléter les noms des devises (Full name)
 Mettre les personnes responsable de la ventes : dans le Ventes/Gestionnaire
 Mettre les personnes responsable de la ventes dans le groupe Listes de prix de vente
 Créer liste de prix de vente en Ariary et ajouter aux entrepreneurs###
 
 Dans groupe call center ajouter res.region dans les droits d'accès.
-Configuration > Permettre les remises sur les lignes de commande
-Créer les quatre journaux pour les ventes
+
 
 IMMOBILISATION :
 Installer le module account_asset (Lien utile : https://www.odoo.com/documentation/user/10.0/fr/accounting/others/adviser/assets.html)
