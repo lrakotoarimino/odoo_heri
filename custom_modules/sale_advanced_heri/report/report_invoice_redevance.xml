@@ -148,11 +148,12 @@
                                 <thead>
                                     <tr style="background-color:#3E3E3E; color:white; border-top:solid #3E3E3E 4px;">
                                         <th class="text-center" style="width:10%; border-color:#3E3E3E !important;">Date</th>
-                                        <th class="text-center" style="width:48%; border-color:#3E3E3E !important;">Description</th>
-                                        <th class="text-center" style="width:10%; border-color:#3E3E3E !important;">Quantité</th>
-                                        <th class="text-center" style="width:7%; border-color:#3E3E3E !important;">Jours</th>
+                                        <th class="text-center" style="width:45%; border-color:#3E3E3E !important;">Description</th>
+                                        <th class="text-center" style="width:8%; border-color:#3E3E3E !important;">Quantité</th>
+                                        <th class="text-center" style="width:8%; border-color:#3E3E3E !important;">Unité</th>
+                                        <th class="text-center" style="width:6%; border-color:#3E3E3E !important;">Jours</th>
                                         <th class="text-center" style="width:10%; border-color:#3E3E3E !important;">PU HT</th>
-                                        <th class="text-center" style="width:15%; border-color:#3E3E3E !important;">Total HT</th>
+                                        <th class="text-center" style="width:13%; border-color:#3E3E3E !important;">Total HT</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -160,6 +161,7 @@
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.date" /></td>
                                          <td style="border-color:#3E3E3E !important;"><span t-field="line.name" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.quantity" /></td>
+                                         <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.uom_id" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.number_days" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.price_discounted" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><t t-esc="line.price_subtotal" t-options="{'widget': 'float', 'precision': currency_precision}" /></td>
