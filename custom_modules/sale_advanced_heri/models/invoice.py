@@ -11,6 +11,7 @@ from odoo.exceptions import UserError, ValidationError
 
 import odoo.addons.decimal_precision as dp
 
+
 # mapping invoice type to journal type
 TYPE2JOURNAL = {
     'out_invoice': 'sale',
@@ -23,9 +24,9 @@ INVOICETYPE2CODE = {
     'rental': 'RED',
     'sale': 'VTE',
     'loss': 'PRT',
+    'refund': 'AVR',
 }
 
-# -*- coding: utf-8 -*-
 
 to_19_fr = (u'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six',
           'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize',
@@ -167,8 +168,7 @@ class AccountInvoice(models.Model):
     
     @api.model
     def _default_account_type(self):
-        if self._context.get('invoice_type', False):
-            return self._context.get('invoice_type', False)
+        return self._context.get('invoice_type', False)
         
     @api.model
     def _default_journal(self):
@@ -185,7 +185,7 @@ class AccountInvoice(models.Model):
         # redefinition
         if self._context.get('invoice_type', False):
             invoice_type = self._context.get('invoice_type')
-            if invoice_type in ('rental', 'sale', 'loss'):
+            if invoice_type in ('rental', 'sale', 'loss', 'refund'):
                 domain.append(('code', '=', INVOICETYPE2CODE[invoice_type]))
                 if not self.env['account.journal'].search(domain, limit=1):
                     raise UserError(_("Configuration error!\nCould not find account journal with code %s") % INVOICETYPE2CODE[invoice_type])
@@ -229,7 +229,15 @@ class AccountInvoice(models.Model):
         if self.residual != 0.0:
             amount = self.residual
         self.amount_in_word = amount_to_text(amount, monetary)
-                
+    
+    @api.depends('refund_ids')
+    def _compute_refund_count(self):
+        """
+        Compute the refunds of the account invoice.
+        """
+        for inv in self:
+            inv.refund_count = len(inv.refund_ids)
+        
     journal_id = fields.Many2one('account.journal', string='Journal',
         required=True, readonly=True, states={'draft': [('readonly', False)]},
         default=_default_journal,
@@ -237,7 +245,7 @@ class AccountInvoice(models.Model):
     kiosk_id = fields.Many2one('stock.location', string='Kiosk *')
     date_start = fields.Datetime(string='Start date')
     date_end = fields.Datetime(string='End date')
-    invoice_type = fields.Selection([('rental', 'Rental'), ('sale', 'Sale'), ('loss', 'Loss')], string="Type invoice", default=_default_account_type)
+    invoice_type = fields.Selection([('rental', 'Rental'), ('sale', 'Sale'), ('loss', 'Loss'), ('refund', 'Refund')], string="Type invoice", default=_default_account_type)
     
     kiosk_id = fields.Many2one('stock.location', string='Kiosk *')
     date_start = fields.Date(string='Billing start date', default=str(datetime.now() + relativedelta.relativedelta(months=-2, day=26))[:10])
@@ -260,6 +268,9 @@ class AccountInvoice(models.Model):
     
     amount_in_word = fields.Char(string='Amount in word', store=True, readonly=True, compute='_compute_amount_in_word')
     advance = fields.Monetary(string='Advance', compute='_get_payment_info_JSON', store=True)
+    stock_scrap_ids = fields.Many2many(string="Scraps", comodel_name="stock.scrap", copy=False)
+    refund_ids = fields.One2many('account.invoice', 'refund_invoice_id', string='Refund invoice')
+    refund_count = fields.Integer(compute='_compute_refund_count', string='Refund count')
     
     def get_move_lines(self, type_move='in', number_days_max=0.0):
         if not self.kiosk_id:
@@ -268,9 +279,11 @@ class AccountInvoice(models.Model):
         StockMove = self.env['stock.move']
         AccountInvoiceLine = self.env['account.invoice.line']
                 
-        date0, date1 = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT), datetime.strptime(self.date_end, DEFAULT_SERVER_DATE_FORMAT)
-        date_start, date_end = fields.Date.to_string(date0.replace(hour=23, minute=59, second=59)), fields.Date.to_string(date1.replace(hour=23, minute=59, second=59))
-        domain = [('date', '>=', date_start), ('date', '<=', date_end)]
+        date0 = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
+        date1 = datetime.strptime(self.date_end, DEFAULT_SERVER_DATE_FORMAT)
+        date_start = fields.Date.to_string(date0.replace(hour=23, minute=59, second=59))
+        date_end = fields.Date.to_string(date1.replace(hour=23, minute=59, second=59))
+        domain = [('state', '=', 'done'), ('date_expected', '>=', date_start), ('date_expected', '<=', date_end)]
         sign = 1
         
         if type_move == 'out':
@@ -284,7 +297,7 @@ class AccountInvoice(models.Model):
         todo_moves = []
         for move in moves:
             name = move.product_id.name
-            d1 = datetime.strptime(move.date, DEFAULT_SERVER_DATETIME_FORMAT).date()
+            d1 = datetime.strptime(move.date_expected, DEFAULT_SERVER_DATETIME_FORMAT).date()
             d2 = date1.date()
             delta = d2 - d1
             
@@ -296,7 +309,7 @@ class AccountInvoice(models.Model):
             if move.product_id.description_sale:
                 name += '\n%s' % (move.product_id.description_sale)
                 
-            vals = {'date': move.date,
+            vals = {'date': move.date_expected,
                     'product_id': move.product_id.id,
                     'name': name,
                     'account_id': account_id,
@@ -320,22 +333,15 @@ class AccountInvoice(models.Model):
         date_start = datetime.strptime(self.date_start, DEFAULT_SERVER_DATE_FORMAT)
         date_end = datetime.strptime(self.date_end, DEFAULT_SERVER_DATE_FORMAT)
         
-        if not self.kiosk_id.billing_table_id:
-                raise UserError(_('Error!/nNo billing table created for this kiosk'))
-        table_id = self.kiosk_id.billing_table_id
+        table_id = self.env.ref('sale_advanced_heri.billing_table_1').id
+        if self.kiosk_id.billing_table_id:
+            table_id = self.kiosk_id.billing_table_id
+            
         current_month = date_end.month
         table_line = BillingTableLine.search([('table_id', '=', table_id.id), ('month', '=', current_month)], limit=1)
         if not table_line:
             raise UserError(_('Error configuration!/nPlease configure billing table for this current month'))
         number_days = table_line.number_days
-        
-        # Dates for inventory day
-        date1 = fields.Date.to_string(date_start.replace(hour=0, minute=0, second=1))
-        date2 = fields.Date.to_string(date_start.replace(hour=23, minute=59, second=59))
-        domain = [('state', 'in', ('confirm', 'done')), ('location_id', '=', self.kiosk_id.id), ('date', '>=', date1), ('date', '<=', date2)]
-        inventory = Inventory.search(domain, order='date desc', limit=1)
-        if not inventory:
-            raise UserError(_('Error!/nNo inventory created for this kiosk'))
 
         invoice_type = self.type
         fpos = self.fiscal_position_id
@@ -348,37 +354,44 @@ class AccountInvoice(models.Model):
         for move in moves:
             AccountInvoiceLine.create(move)
         
-        # Get stock inventory
-        vals = {}
-        line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
-        for line in line_ids:
-            if line.state == 'confirm':
-                qty = line.theoretical_qty
-            elif line.state == 'done':
-                qty = line.product_qty
-            
-            product = line.product_id
-            name = product.partner_ref
-            if line.product_id.description_sale:
-                name += '\n' + product.description_sale
-            price = line.product_id.rental_price
-            
-            account_id = False
-            account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
-            if account:
-                account_id = account.id
-            
-            vals = {'date': line.inventory_id.date,
-                    'product_id': product.id,
-                    'name': name,
-                    'account_id': account_id,
-                    'uom_id': line.product_uom_id.id,
-                    'quantity': qty,
-                    'number_days': number_days,
-                    'price_unit': price,
-                    'invoice_id': self.id,
-                    }
-            AccountInvoiceLine.create(vals)
+        # Get stock inventory 26 of month M-2
+        # Dates for inventory day
+        date1 = fields.Date.to_string(date_start.replace(hour=0, minute=0, second=0))
+        date2 = fields.Date.to_string(date_start.replace(hour=23, minute=59, second=59))
+        domain = [('state', 'in', ('confirm', 'done')), ('location_id', '=', self.kiosk_id.id), ('date', '>=', date1), ('date', '<=', date2)]
+        inventory = Inventory.search(domain, order='date desc', limit=1)
+        if inventory:
+            # raise UserError(_('Error!/nNo inventory created for this kiosk'))
+            vals = {}
+            line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
+            for line in line_ids:
+                if line.state == 'confirm':
+                    qty = line.theoretical_qty
+                elif line.state == 'done':
+                    qty = line.product_qty
+                
+                product = line.product_id
+                name = product.partner_ref
+                if line.product_id.description_sale:
+                    name += '\n' + product.description_sale
+                price = line.product_id.rental_price
+                
+                account_id = False
+                account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
+                if account:
+                    account_id = account.id
+                
+                vals = {'date': line.inventory_id.date,
+                        'product_id': product.id,
+                        'name': name,
+                        'account_id': account_id,
+                        'uom_id': line.product_uom_id.id,
+                        'quantity': qty,
+                        'number_days': number_days,
+                        'price_unit': price,
+                        'invoice_id': self.id,
+                        }
+                AccountInvoiceLine.create(vals)
             
         # Fee rental fix
         product_fix_id = self.env['product.product'].browse(self.env.ref('sale_advanced_heri.product_product_0').id)
@@ -386,7 +399,8 @@ class AccountInvoice(models.Model):
         account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product_fix_id, fpos, company)
         if account:
             account_id = account.id
-        vals = {'date': inventory.date,
+        
+        vals = {'date': date_start,
                 'product_id': product_fix_id.id,
                 'name': product_fix_id.name + ' ' + str(self.kiosk_id.name),
                 'account_id': account_id,
@@ -398,7 +412,7 @@ class AccountInvoice(models.Model):
                 }
         AccountInvoiceLine.create(vals)
         
-        invoice_lines = AccountInvoiceLine.search([('invoice_id', '=', self.id)], order='product_id, date desc')
+        invoice_lines = AccountInvoiceLine.search([('invoice_id', '=', self.id)], order='product_id desc, date desc')
         sequence = 0
         for inv in invoice_lines:
             inv.write({'sequence': sequence})
@@ -441,9 +455,82 @@ class AccountInvoice(models.Model):
         self.sent = True
         return self.env['report'].get_action(self, 'sale_advanced_heri.report_invoice_redevance')
 
-            
+    @api.multi
+    def action_invoice_open(self):
+        """ Pertes: If type is Loss, mark products as scrapped:
+                - Create stock scrap
+                - Validate it
+        """
+        res = super(AccountInvoice, self).action_invoice_open()
+        for inv in self:
+            if inv.invoice_type == 'loss':
+                if not any([l.product_id.type in ['product', 'consu'] for l in inv.invoice_line_ids]):
+                    raise ValidationError(_("No consumables or storables products found."))
+
+                # Create a stock scrap for each line and attach them to the invoice
+                scraps = self.env['stock.scrap'].browse()
+                for inv_line in inv.invoice_line_ids:
+                    scraps += inv_line._create_stock_scrap()
+                inv.stock_scrap_ids = scraps
+        return res
+
+
+    @api.multi
+    def action_view_scrap(self):
+        '''
+        This function returns an action that display existing scraps
+        of given account invoice ids. It can either be a in a list or in a form
+        view, if there is only one scrap to show.
+        '''
+        action = self.env.ref('stock.action_stock_scrap').read()[0]
+
+        scraps = self.mapped('stock_scrap_ids')
+        if len(scraps) > 1:
+            action['domain'] = [('id', 'in', scraps.ids)]
+        elif scraps:
+            action['views'] = [(self.env.ref('stock.stock_scrap_form_view').id, 'form')]
+            action['res_id'] = scraps.id
+        return action
+    
+    # redefinition
+    @api.model
+    def _prepare_refund(self, invoice, date_invoice=None, date=None, description=None, journal_id=None):
+        values = super(AccountInvoice, self)._prepare_refund(invoice, date_invoice, date, description, journal_id)
+        if invoice.type != 'out_invoice':
+            return values
+        
+        values['kiosk_id'] = invoice.kiosk_id.id
+        values['invoice_type'] = 'refund'
+        
+        company_id = self._context.get('company_id', self.env.user.company_id.id)
+        domain = [('company_id', '=', company_id), ('code', '=', INVOICETYPE2CODE['refund'])]
+        journal = self.env['account.journal'].search(domain, limit=1)
+        if not journal:
+            raise UserError(_("Configuration error!\nCould not find account journal with code %s") % INVOICETYPE2CODE['refund'])
+        values['journal_id'] = journal.id
+        
+        return values
+    
+    @api.multi
+    def action_view_refund(self):
+        '''
+        This function returns the action that displays the refunds of account incoice
+        '''
+        self.ensure_one()
+        action = self.env.ref('sale_advanced_heri.action_invoice_refund').read()[0]
+        
+        refunds = self.mapped('refund_ids')
+        if len(refunds) > 1:
+            action['domain'] = [('id', 'in', refunds.ids)]
+        elif refunds:
+            action['views'] = [(self.env.ref('account.invoice_form').id, 'form')]
+            action['res_id'] = refunds.id
+        return action
+
+        
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
+    _order = "product_id desc,date desc"
     
     # redefinition
     @api.one
@@ -452,7 +539,10 @@ class AccountInvoiceLine(models.Model):
     'invoice_id.date_invoice', 'number_days')
     def _compute_price(self):
         currency = self.invoice_id and self.invoice_id.currency_id or None
+        # Add number days into calculation and set price discounted
         price = self.number_days * self.price_unit * (1 - (self.discount or 0.0) / 100.0)
+        self.price_discounted = self.price_unit * (1 - (self.discount or 0.0) / 100.0)
+        
         taxes = False
         if self.invoice_line_tax_ids:
             taxes = self.invoice_line_tax_ids.compute_all(price, currency, self.quantity, product=self.product_id, partner=self.invoice_id.partner_id)
@@ -464,6 +554,35 @@ class AccountInvoiceLine(models.Model):
     
     date = fields.Date(string='Date', default=fields.Date.context_today)
     number_days = fields.Float(string='Days', digits=dp.get_precision('Product Unit of Measure'), default=1.0)
+    price_discounted = fields.Float(string='Price discounted', digits=dp.get_precision('Product Unit of Measure'), compute='_compute_price')
+    
+    @api.model
+    def _prepare_scrap(self):
+        """
+            Prepare value to create stock scrap
+            :return dictionnary ready to be created
+        """
+        scrapped_location = self.env['ir.model.data'].xmlid_to_object('stock.stock_location_scrapped')
+
+        return {
+            'name': _('New'),
+            'product_id': self.product_id.id,
+            'product_uom_id': self.uom_id.id,
+            'scrap_qty': self.quantity,
+            'location_id': self.invoice_id.kiosk_id.id,
+            'scrap_location_id': scrapped_location.id,
+            'origin': unicode(self.invoice_id.number),
+            'date_expected': self.invoice_id.date_invoice,
+        }
+
+    @api.multi
+    def _create_stock_scrap(self):
+        scraps = self.env['stock.scrap']
+        done = scraps.browse()
+        for line in self:
+            val = line._prepare_scrap()
+            done += scraps.create(val)
+        return done
 
 
 class AccountJournal(models.Model):

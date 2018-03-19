@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-	<data>
-    <!-- <data noupdate="1"> -->
+	<data noupdate="1">
         <record id="cron_date_facturation_redevance" model="ir.cron">
             <field name="name">Generate Inventories</field>
             <field name="active" eval="True" />

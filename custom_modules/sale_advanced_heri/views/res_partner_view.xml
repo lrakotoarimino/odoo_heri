@@ -9,6 +9,7 @@
 			<field name="arch" type="xml">
 				<field name="function" position="before">
 					<field name="kiosk_id" attrs="{'invisible': [('company_type','!=', 'person')]}" domain="[('is_kiosk','=',True)]"/>
+					<field name="cin" />
 				</field>
 			</field>
 		</record>	

@@ -68,7 +68,10 @@
                 		</div>
             			
                         <div class='col-xs-6 pull-right mt64'>
-                            <p class="text-center" style="font-size:31px;"><b>FACTURE REDEVANCE</b></p>
+                            <p t-if="o.invoice_type == 'rental'" class="text-center" style="font-size:31px;"><b>FACTURE REDEVANCE</b></p>
+                            <p t-if="o.invoice_type == 'sale'" class="text-center" style="font-size:31px;"><b>FACTURE VENTE</b></p>
+                            <p t-if="o.invoice_type == 'loss'" class="text-center" style="font-size:31px;"><b>FACTURE PERTE</b></p>
+                            <p t-if="o.invoice_type == 'refund'" class="text-center" style="font-size:31px;"><b>FACTURE D'AVOIR</b></p>
                             
                             <div class="row">
                                 <div class="col-xs-5 text-right">MOIS DE:</div>
@@ -78,7 +81,7 @@
                             <div class="row mt16">
                                 <div class="col-xs-5 text-right">DATE: </div>
                                 <div class="col-xs-5 text-center">
-                                    <div style="border:1px solid black;">
+                                    <div style="border:1px solid #3E3E3E;">
                                         <span t-if="o.date_invoice" t-field="o.date_invoice" />
                                         <t t-if="not o.date_invoice">
                                             <br/>
@@ -89,7 +92,7 @@
                             <div class="row">
                                 <div class="col-xs-5 text-right">Facture N°:</div>
                                 <div class="col-xs-5 text-center">
-                                    <div style="border:1px solid black;">
+                                    <div style="border:1px solid #3E3E3E; border-top: 0px">
                                         <span t-if="o.number" t-field="o.number" />
                                         <t t-if="not o.number">
                                             <br/>
@@ -102,7 +105,7 @@
 
                     <div class="row mt16 mb16">
                         <div class="col-xs-5">
-                            <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="text-center">VOTRE INTERLOCUTEUR</div>
+                            <!-- <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="text-center">VOTRE INTERLOCUTEUR</div>
                             <div class="row">
                                 <div class="col-xs-3 text-right">
                                     Tél:<br/>
@@ -112,15 +115,17 @@
                                     <span t-field="company.phone" /><br/>
                                     <span t-field="company.email" />
                                 </div>
-                            </div>
+                            </div> -->
                             
                             <div style="border:solid #3E3E3E 1px;">
                                 <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="text-center">HISTORIQUE</div>
-                                <div style="height:50px;"/>
+                                <div style="height:115px;">
+                                    <i><span t-field="o.comment" /></i>
+                                </div>
                             </div>
                         </div>
                         <div class="col-xs-7">
-                            <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="col-xs-12 text-center">KIOSQUE</div>
+                            <div style="background-color:#3E3E3E; color:white; font-weight:bold;" class="col-xs-12 text-center">FACTURÉ À : </div>
                             <div class="col-xs-3">Localité</div>
                             <div class="col-xs-9">: <span t-field="o.kiosk_id.name" /></div>
                             <div class="col-xs-3">Entrepreneur</div>
@@ -129,6 +134,10 @@
                             <div class="col-xs-9">: <span t-field="o.partner_id.street" /></div>
                             <div class="col-xs-3">Téléphone</div>
                             <div class="col-xs-9">: <span t-field="o.partner_id.phone" /></div>
+                            <div class="col-xs-3">Email</div>
+                            <div class="col-xs-9">: <span t-field="o.partner_id.email" /></div>
+                            <div class="col-xs-3">CIN</div>
+                            <div class="col-xs-9">: <span t-field="o.partner_id.cin" /></div>
                         </div>
                     </div>
 
@@ -139,11 +148,12 @@
                                 <thead>
                                     <tr style="background-color:#3E3E3E; color:white; border-top:solid #3E3E3E 4px;">
                                         <th class="text-center" style="width:10%; border-color:#3E3E3E !important;">Date</th>
-                                        <th class="text-center" style="width:48%; border-color:#3E3E3E !important;">Description</th>
-                                        <th class="text-center" style="width:10%; border-color:#3E3E3E !important;">Quantité</th>
-                                        <th class="text-center" style="width:7%; border-color:#3E3E3E !important;">Jours</th>
+                                        <th class="text-center" style="width:45%; border-color:#3E3E3E !important;">Description</th>
+                                        <th class="text-center" style="width:8%; border-color:#3E3E3E !important;">Quantité</th>
+                                        <th class="text-center" style="width:8%; border-color:#3E3E3E !important;">Unité</th>
+                                        <th class="text-center" style="width:6%; border-color:#3E3E3E !important;">Jours</th>
                                         <th class="text-center" style="width:10%; border-color:#3E3E3E !important;">PU HT</th>
-                                        <th class="text-center" style="width:15%; border-color:#3E3E3E !important;">Total HT</th>
+                                        <th class="text-center" style="width:13%; border-color:#3E3E3E !important;">Total HT</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -151,8 +161,9 @@
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.date" /></td>
                                          <td style="border-color:#3E3E3E !important;"><span t-field="line.name" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.quantity" /></td>
+                                         <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.uom_id" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.number_days" /></td>
-                                         <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.price_unit" /></td>
+                                         <td class="text-center" style="border-color:#3E3E3E !important;"><span t-field="line.price_discounted" /></td>
                                          <td class="text-center" style="border-color:#3E3E3E !important;"><t t-esc="line.price_subtotal" t-options="{'widget': 'float', 'precision': currency_precision}" /></td>
                                      </tr>
                                 </tbody>
@@ -171,7 +182,7 @@
                                     </div>
                                     <div class="col-xs-5 col-xs-offset-1">
                                         <!-- <t t-set="amount_to_pay" t-value="'{:10,.2f}'.format(o.amount_total-o.advance).replace(',', ' ').replace('.', ',')"/> -->
-                                        <span t-esc="o.residual" t-options="{'widget': 'float', 'precision': currency_precision}" />
+                                        <span t-if="o.invoice_type == 'refund'">-</span><span t-esc="o.residual" t-options="{'widget': 'float', 'precision': currency_precision}" />
                                     </div>
                                 </div>
                             </div>
@@ -206,10 +217,13 @@
                         </div>
                     </div>
                     <div class="row mb8">
-                        <div class="col-xs-4">
+                        <div class="col-xs-4" >
                             <div class="col-xs-12" style="background-color:#3E3E3E; color:white;">Payable avant le <span t-field="o.date_due" /></div>
                         </div>
                     </div>
+                    <div t-if="o.invoice_type == 'refund'" class="row">
+                        <div class="col-xs-12" style="color:black;"><b>Objet de l'avoir : </b><span t-field="o.origin" /></div>
+                 	</div>
                 </div>
 
                 <t t-call="sale_advanced_heri.external_layout_footer_heri" />
@@ -222,7 +236,7 @@
         model="account.invoice"
         report_type="qweb-pdf"
         string="Facture Redevance"
-        paperformat="sale_advanced_heri.invoice_redevance_paperformat2"
+        paperformat="sale_advanced_heri.invoice_sale_paperformat"
         name="sale_advanced_heri.report_invoice_redevance"
         file="sale_advanced_heri.report_invoice_redevance" 
         menu="False"/>
