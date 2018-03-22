@@ -520,8 +520,22 @@ class StockPicking(models.Model):
                     after_vals['location_dest_id'] = pick.location_dest_id.id
                 if after_vals:
                     pick.pack_operation_product_ids.write(after_vals)
-                    
     
+    # redefinition
+    @api.multi
+    def action_confirm(self):
+        for pick in self:
+            if pick.mouvement_type == 'bci':
+                if not pick.move_lines:
+                    raise UserError('Veuillez insérer les articles à transférer.')
+                for line in pick.move_lines:
+                    if line.product_uom_qty > line.qte_prevu:
+                        raise UserError("La quantité en stock du magasin d\'origine est insuffisante pour l'article " + str(line.product_id.name))
+                    if line.product_uom_qty <= 0.0:
+                        raise UserError('La quantité à transférer ne devrait pas être inférieure ou égale à 0.0.')
+        return super(StockPicking, self).action_confirm()
+
+
 class StockQuant(models.Model):
     _inherit = 'stock.quant'
     
@@ -712,35 +726,15 @@ class ReturnPickingHeri(models.TransientModel):
         if not returned_lines:
             raise UserError("Please specify at least one non-zero quantity.")
         
-        new_picking.action_aviser()
+        #new_picking.action_aviser()
         return new_picking.id, picking_type_id
     
     @api.multi
     def create_returns(self):
-        for wizard in self:
-            new_picking_id, pick_type_id = wizard._create_returns()
-        # Override the context to disable all the potential filters that could have been set previously
-        ctx = dict(self.env.context)
-        ctx.update({
-            'search_default_picking_type_id': pick_type_id,
-            'search_default_draft': False,
-            'search_default_assigned': False,
-            'search_default_confirmed': False,
-            'search_default_ready': False,
-            'search_default_late': False,
-            'search_default_available': False,
-        })
-        res = self.env.ref('stock.view_picking_form', False)
-        return {
-            'name': 'Returned Picking',
-            'view_type': 'form',
-            'view_mode': 'form,tree,calendar',
-            'res_model': 'stock.picking',
-            'res_id': new_picking_id,
-            'type': 'ir.actions.act_window',
-            'context': ctx,
-            'views': [(res and res.id or False, 'form')]
-        }
+        res = self.env.ref('stock_heri.view_picking_form_br', False)
+        result = super(ReturnPickingHeri, self).create_returns()
+        result['views'] = [(res and res.id or False, 'form')]
+        return result
 
 
 class StockPickingtypeHeri(models.Model):
