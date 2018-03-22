@@ -422,8 +422,10 @@ class PurchaseHeri(models.Model):
       
     @api.multi
     def action_bs_lie(self):
-        action = self.env.ref('stock_heri.action_bon_de_sortie_lie')
+        self.ensure_one()
+        action = self.env.ref('stock_heri.action_bs')
         result = action.read()[0]
+        result['domain'] = [('breq_id', '=', self.id), ('mouvement_type', '=', 'bs')]
         return result
     
     @api.multi

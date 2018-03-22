@@ -33,6 +33,7 @@
 			<button name="action_invoice_proforma2" position="attributes">
 			    <attribute name="class">oe_highlight</attribute>
 	       		<attribute name="string">Open</attribute>
+	       		<attribute name="groups"></attribute>
 	       	</button>
 	               
 	       	<button name="action_invoice_sent" position="attributes">
@@ -90,7 +91,7 @@
 			</field>
 			
 			<field name="comment" position="before">
-			    <br/><br/><br/><b>Arrêtée la présente facture à la somme de : </b><i><field states="open,paid" name="amount_in_word"/></i>
+			    <br/><br/><br/><b>Arrêtée la présente facture à la somme de : </b><i><field states="open,paid,partially_paid" name="amount_in_word"/></i>
 			</field>
 			
 			<field name="payments_widget" position="after">

@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<data>
+	    
+		<!-- Début form de base stock.picking -->
+		<record id="view_picking_form_inherit" model="ir.ui.view">
+			<field name="name">stock.picking.form.inherit</field>
+			<field name="model">stock.picking</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="stock.view_picking_form" />
+			<field name="arch" type="xml">
+			    
+			    <!-- Début modification des éléments -->
+			    <field name="min_date" position="attributes">
+                    <attribute name="required">1</attribute>
+                    <attribute name="string">Date</attribute>
+                </field>
+                
+                <!-- <button name="action_confirm" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                
+                <button name="action_assign" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				
+                <xpath expr="//button[@name='action_assign'][2]" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</xpath>
+				
+				<button name="force_assign" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				
+				<button name="%(stock.action_report_delivery)d" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				
+				<button name="do_unreserve" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				
+				<button name="do_prepare_partial" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				
+				<button name="button_scrap" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				
+				<button name="force_assign" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</button>
+				
+				<button name="show_details" position="attributes">
+					<attribute name="invisible">1</attribute>
+				</button> -->
+				
+				<button name="do_new_transfer" position="attributes">
+				    <attribute name="states"></attribute>
+	    			<attribute name="attrs">{'invisible':['|',('state','not in',('partially_available','assigned')),('mouvement_type','=','bs')]}</attribute>
+	    			<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
+				</button>
+				
+				<field name="location_id" position="attributes">
+				    <attribute name="string">Magasin d'origine</attribute>
+				</field>
+				
+				<field name="location_dest_id" position="attributes">
+				    <attribute name="string">Magasin de destination</attribute>
+                </field>
+                
+				<xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">
+		    		<attribute name="states"></attribute>
+		    		<attribute name="attrs">{'invisible': ['|',('state','!=','done'),'|',('is_creator','=',False)]}</attribute>
+	    		</xpath>
+	    		
+	    		<!-- <xpath expr="//header" position="inside">
+				    <button name="action_aviser_logistique" string="Envoyer au logistique" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('draft')),('mouvement_type','!=','bci')]}" type="object"/>
+				    <button name="action_aviser_magasinier" string="Envoyer au magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('confirmed')),('mouvement_type','!=','bci')]}" groups="purchase_heri.group_logistique_heri" type="object"/>
+				</xpath> -->
+				<!-- Fin modifiaction des éléments -->
+				
+				<!-- A ajouter -->
+				<xpath expr="//field[@name='origin']" position="after">
+                    <field name="is_creator" invisible="1"/>
+                    <field name="is_manager" invisible="1"/>
+                    <field name="employee_id"/>
+                    <field name="section" invisible="1"/>
+                    <field name="is_bs" invisible="1"/>
+                    <field name="is_returned" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+			    	<field name="mouvement_type" invisible="1"/>
+			    	<field name="is_received" invisible="1"/>
+			    	<field name="bs_id" attrs="{'invisible': [('mouvement_type','!=','br')]}" context="{'form_view_ref':'stock_heri.view_picking_form_bs'}"/>
+                </xpath>
+                
+               	<xpath expr="//field[@name='min_date']" position="after">
+					 <field name="product_received" states="done"/>
+				</xpath>
+				
+				<xpath expr="//div[@name='button_box']/button[@name='action_see_move_scrap']" position="after">
+	                <button 
+	               		name="action_bret_lie"
+	               		type="object"
+	                   	class="oe_stat_button"
+	                   	icon="fa-truck"
+	                   	attrs="{'invisible':['|',('mouvement_type','!=','bs'),('picking_ids_bret','=',[])]}">
+	              		<field name="picking_count_bret" widget="statinfo" string="Bons de retour" help="Bons de retour rattaché au BS stock"/>
+	                    <field name="picking_ids_bret" invisible="1"/>
+	               	</button>
+ 				</xpath>
+ 				
+ 				<!-- <xpath expr="//page[1]" position="attributes">
+ 				 	<attribute name="states"></attribute>
+                	<attribute name="attrs">{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting','attente_hierarchie'))]}</attribute> 
+                </xpath> -->
+	    		
+	    		<xpath expr="//header" position="inside">
+				    <button 
+				        name="action_received_call" 
+				        type="object"  
+				        string="Récéption d'article" 
+				        attrs="{'invisible': ['|',('is_received','=',False),'|',('product_received', '!=',False),('state','!=','done')]}" 
+				        groups="purchase_heri.group_call_center_heri"/>
+				    <button 
+				        name="action_received_log" 
+				        type="object" 
+				        string="Récéption d'article" 
+				        attrs="{'invisible': ['|',('is_received', '=',True), '|',('product_received', '!=',False),('state','!=','done')]}" 
+				        groups="purchase_heri.group_logistique_heri"/>
+                    <button 
+			    	    type="object"  
+			    	    name="do_print_BS" 
+			    	    string="Valider et imprimer" 
+			    	    attrs="{'invisible': ['|',('state','not in',('partially_available','assigned')),('mouvement_type','!=','bs')]}"
+			    	    groups="purchase_heri.group_magasinier_heri"
+			    	    class="oe_highlight"/>
+			    	<button 
+			    	    type="object"  
+			    	    name="do_print" 
+			    	    string="Imprimer" 
+			    	    attrs="{'invisible': ['|',('state','not in',('done')),('mouvement_type','!=','bs')]}"/>
+                </xpath>
+				<!-- A ajouter -->
+				
+			</field>
+		</record>
+		<!-- Fin form de base stock.picking -->
+		
+		<!-- Début bon de sortie form view -->
+		<record id="view_picking_form_bs" model="ir.ui.view">
+            <field name="name">stock.picking.form.bs</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="view_picking_form_inherit"/>
+            <field name="arch" type="xml">
+                
+                <xpath expr="//form" position="attributes">
+                    <attribute name="create">0</attribute>
+                </xpath>
+                
+                <xpath expr="//button[@name='do_print_picking']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+	    		</xpath>
+	    		
+                <xpath expr="//button[@name='%(stock.action_report_delivery)d']" position="attributes">
+		    		<attribute name="invisible">1</attribute>
+	    		</xpath>
+	    		
+				<field name="move_lines" position="attributes">
+					<attribute name="readonly">1</attribute>
+				</field>
+				
+   				<field name="location_id" position="attributes">
+				    <attribute name="readonly">1</attribute>
+				</field>
+				
+				<field name="qty_done" position="replace">
+				    <field name="qty_done" readonly="1"/>
+				</field>
+				
+			</field>
+		</record>
+        <!-- Fin bon de sortie form view -->
+		
+		<!-- Début vpicktree no create no edit -->
+	   	<record id="vpicktree_nocreate_noedit" model="ir.ui.view">
+            <field name="name">stock.picking.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="stock.vpicktree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//tree" position="attributes">
+                    <attribute name="create">0</attribute>
+                    <attribute name="edit">0</attribute>
+                </xpath> 
+			</field>
+        </record>
+        <!-- Fin vpicktree no create no edit -->
+		
+		<!-- Début Action bon de sortie -->
+		<record id="action_bs" model="ir.actions.act_window">
+	       	<field name="name">Bon de sortie</field>
+	       	<field name="res_model">stock.picking</field>
+			<field name="domain">[('mouvement_type','=','bs')]</field>  
+			<field name="context">{'default_mouvement_type': 'bs'}</field> 	
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	   	</record>
+	    <record id="action_bs_tree" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="vpicktree_nocreate_noedit"/>
+            <field name="act_window_id" ref="action_bs"/>
+        </record>
+        <record id="action_bs_form" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_picking_form_bs"/>
+            <field name="act_window_id" ref="action_bs"/>
+		</record>
+		<!-- Fin action bon de sortie -->
+		
+		<!-- Début bon d'entree -->
+	   	<record id="view_picking_form_be" model="ir.ui.view">
+            <field name="name">stock.picking.form.be</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="view_picking_form_inherit"/>
+            <field name="arch" type="xml">
+                
+                <xpath expr="//form" position="attributes">
+                    <attribute name="create">0</attribute>
+                    <attribute name="edit">0</attribute>
+                </xpath>        
+                
+                <!-- <field name="location_id" position="attributes">
+				    <attribute name="invisible">1</attribute>
+				</field> -->
+				
+				<field name="location_dest_id" position="attributes">
+				    <attribute name="readonly">1</attribute>
+				</field>
+				
+				<field name="move_lines" position="attributes">
+					<attribute name="readonly">1</attribute>
+				</field>
+				
+			</field>
+		</record>
+		
+	   	<record id="action_be" model="ir.actions.act_window">
+	       	<field name="name">Bon d'entrée</field>
+	       	<field name="res_model">stock.picking</field>
+			<field name="domain">[('mouvement_type','=','be')]</field>  	
+			<field name="context">{'default_mouvement_type': 'be'}</field> 
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	   	</record>
+	   	<record id="action_be_tree" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="vpicktree_nocreate_noedit"/>
+            <field name="act_window_id" ref="action_be"/>
+        </record>
+        <record id="action_be_form" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_picking_form_be"/>
+            <field name="act_window_id" ref="action_be"/>
+		</record>
+	   	<!-- Fin bon d'entree -->
+		
+		<!-- Début bon de cession interne form view -->
+		<record id="view_picking_form_bci" model="ir.ui.view">
+            <field name="name">stock.cession.interne.form</field>
+            <field name="model">stock.picking</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="view_picking_form_inherit"/>
+            <field name="arch" type="xml">
+                
+            	<xpath expr="//field[@name='picking_type_id']" position="attributes">
+				    <attribute name="domain">[('code','=','internal')]</attribute>
+				</xpath> 
+			    
+			    <field name="location_dest_id" position="attributes">
+                    <attribute name="domain">[('is_kiosk','=',False)]</attribute>
+				</field>
+				
+				<field name="location_id" position="attributes">
+				    <attribute name="domain">[('is_kiosk','=',False)]</attribute>
+				</field>
+				
+            </field>
+        </record>
+		<!-- Fin bon de cession interne form view -->
+		
+		<!-- Début action bon de cession interne -->
+	   	<record id="action_bci" model="ir.actions.act_window">
+	       	<field name="name">Bon de cession interne</field>
+	       	<field name="res_model">stock.picking</field>
+			<field name="domain">[('mouvement_type','=','bci')]</field>  
+			<field name="context" eval="{'default_mouvement_type': 'bci', 'default_state': 'draft', 'default_picking_type_id': ref('stock.picking_type_internal')}"/>
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	   	</record>
+		<record id="action_bci_tree" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="stock.vpicktree"/>
+            <field name="act_window_id" ref="action_bci"/>
+        </record>
+		<record id="action_bci_form" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_picking_form_bci"/>
+            <field name="act_window_id" ref="action_bci"/>
+        </record>
+		<!-- Fin action bon de cession interne -->
+		
+		<!-- Début ajout du champ qte_prevu dans move_lines -->
+		<record model="ir.ui.view" id="view_move_picking_tree_inherit">
+			<field name="name">stock.move.tree.inherit</field>
+			<field name="model">stock.move</field>
+			<field name="inherit_id" ref="stock.view_move_picking_tree"/>
+			<field name="arch" type="xml"> 
+			    
+		        <xpath expr="//field[@name='product_uom_qty']" position="after">
+			    	<field name="qte_prevu" readonly="1"/>
+			    </xpath>
+			    
+	    	</field>
+    	</record>
+	    <!-- Fin ajout du champ qte_prevu dans move_lines -->
+	    
+   	   	<!-- Debut action bon de retour -->
+	   	<record id="view_picking_form_br" model="ir.ui.view">
+			<field name="name">stock.picking.form.br</field>
+			<field name="model">stock.picking</field>
+			<field name="mode">primary</field>
+			<field name="inherit_id" ref="view_picking_form_inherit"/>
+			<field name="arch" type="xml">
+			    
+			    <xpath expr="//form" position="attributes">
+					<attribute name="create">0</attribute>
+				</xpath>
+				
+				<!-- <button name="action_confirm" position="after">	
+					<button name="action_aviser" 
+					string="Envoyer au supérieur hiérarchique" 
+					type="object" 
+					class="oe_highlight"
+					attrs="{'invisible': ['|',('state', 'not in', ('draft')),('is_creator','=',False)]}"
+					/>
+					
+					<button name="approuver_br" 
+					string="Accord du supérieur hiérachique"
+					type="object" 
+					class="oe_highlight"
+					attrs="{'invisible': ['|',('state','not in',('confirmed')),('is_manager','=', False)]}"
+					/>
+					
+					<button name="action_valider_magasinier" 
+					string="Validation du magasinier"
+					type="object" 
+					class="oe_highlight"
+					attrs="{'invisible':[('state','not in',('partially_available','assigned'))]}"
+					groups="purchase_heri.group_magasinier_heri"
+					/>
+				</button> -->
+				
+			</field>
+		</record>
+	    <!-- Fin action bon de retour -->
+	   	
+	    <!-- Début action bon de retour -->
+   	   	<record id="action_br" model="ir.actions.act_window">
+	       	<field name="name">Bon de retour en stock lié</field>
+	       	<field name="res_model">stock.picking</field>
+			<field name="domain">[('mouvement_type','=','br')]</field>
+	       	<field name="view_type">form</field>
+	       	<field name="view_mode">tree,form</field>
+	   	</record>
+	   	<record id="action_br_tree" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="stock.vpicktree"/>
+            <field name="act_window_id" ref="action_br"/>
+        </record>
+        <record id="action_br_form" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_picking_form_br"/>
+            <field name="act_window_id" ref="action_br"/>
+		</record>
+	    <!-- Fin action bon de retour -->
+	    
+	    <!-- Début Menus -->
+		<menuitem id="menu_stock_picking_heri" parent="stock.menu_stock_root" sequence="-100" name="Stock"/>
+		<menuitem action="action_bs" id="menu_bon_sortie_stock_heri" parent="menu_stock_picking_heri" sequence="2" name="Bon de Sortie"/>
+		<menuitem action="action_be" id="menu_bon_entree_stock_heri" parent="menu_stock_picking_heri" sequence="3" name="Bon d'Entrée"/>
+		<menuitem action="action_bci" id="menu_bon_cession_stock_heri" parent="menu_stock_picking_heri" sequence="4" name="Bon de Cession Interne"/>
+		<menuitem action="action_br" id="menu_bon_retour_stock_heri" parent="menu_stock_picking_heri" sequence="5" name="Bon de Retour"/>
+		<!-- Fin Menus -->
+		
+		<!-- Sequence bon de sortie --> 
+        <record id="seq_bon_sortie" model="ir.sequence">
+            <field name="name">Séquence des bons de sortie</field>
+            <field name="code">bon.sortie</field>
+            <field name="domain">[('mouvement_type','=','bs')]</field>  
+            <field name="prefix">BS</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Fin sequence bon de sortie -->
+        
+        <!-- Sequence bon d'entrée --> 
+        <record id="seq_bon_entree" model="ir.sequence">
+            <field name="name">Séquence des bons d'entrée</field>
+            <field name="code">bon.entree</field>
+            <field name="domain">[('mouvement_type','=','be')]</field>
+            <field name="prefix">BE</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Fin sequence bon d'entrée -->
+        
+        <!-- Sequence bon de cession interne --> 
+        <record id="seq_bon_cession_interne" model="ir.sequence">
+            <field name="name">Séquence des bons de cession interne</field>
+            <field name="code">bon.cession.interne</field>
+            <field name="domain">[('mouvement_type','=','bci')]</field>  
+            <field name="prefix">BCI</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+       	<!-- Fin sequence bon de cession interne -->
+        
+        <!-- Sequence bon de retour --> 
+        <record id="seq_bon_retour" model="ir.sequence">
+            <field name="name">Séquence des bons de retour</field>
+            <field name="code">bon.retour</field>
+            <field name="domain">[('mouvement_type','=','br')]</field>  
+            <field name="prefix">BR</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Fin sequence bon de retour -->
+		
+	</data>
+</odoo>

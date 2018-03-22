@@ -93,7 +93,7 @@ class Bex(models.Model):
         if len(pick_ids) > 1:
             result['domain'] = "[('id','in',[" + ','.join(map(str, pick_ids)) + "])]"
         elif len(pick_ids) == 1:
-            res = self.env.ref('stock_heri.view_be_picking_form_advanced', False)
+            res = self.env.ref('stock_heri.view_picking_form_be', False)
             result['views'] = [(res and res.id or False, 'form')]
             result['res_id'] = pick_ids and pick_ids[0] or False
         return result

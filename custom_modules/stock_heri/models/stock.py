@@ -11,15 +11,16 @@ import re
 from odoo.exceptions import UserError
 import logging
 
+
 class StockPicking(models.Model):
-    _inherit = 'stock.picking' 
+    _inherit = 'stock.picking'
     _order = 'create_date desc'
     
     @api.depends('location_dest_id')
     def _compute_is_received(self):
         for pick in self:
-            if pick.mouvement_type in ('bs','be','bci'):
-                if pick.location_dest_id.is_kiosk :
+            if pick.mouvement_type in ('bs', 'be', 'bci'):
+                if pick.location_dest_id.is_kiosk:
                     pick.is_received = True
     
     is_received = fields.Boolean('Est reçu', compute="_compute_is_received")
@@ -31,17 +32,17 @@ class StockPicking(models.Model):
         help="Scheduled time for the first part of the shipment to be processed. Setting manually a value here would set it as expected date for all the stock moves.")
     
     def action_received_call(self):
-        for order in self :
+        for order in self:
             employee_obj = self.env['hr.employee']
-            #on cherche l'id de l'employe en cours dans la base hr_employee
-            employee_id = employee_obj.search([('user_id','=',self.env.uid)])
+            # On cherche l'id de l'employe en cours dans la base hr_employee
+            employee_id = employee_obj.search([('user_id', '=', self.env.uid)])
             order.update({'product_received': employee_id.id})
         
     def action_received_log(self):
-        for order in self :
+        for order in self:
             employee_obj = self.env['hr.employee']
-            #on cherche l'id de l'employe en cours dans la base hr_employee
-            employee_id = employee_obj.search([('user_id','=',self.env.uid)])
+            # On cherche l'id de l'employe en cours dans la base hr_employee
+            employee_id = employee_obj.search([('user_id', '=', self.env.uid)])
             order.update({'product_received': employee_id.id})
     
     @api.model
@@ -59,7 +60,7 @@ class StockPicking(models.Model):
         
         return super(StockPicking, self).create(vals)
         
-    is_bon_etat = fields.Boolean('Le materiel est-il en bon etat ?')       
+    is_bon_etat = fields.Boolean('Le materiel est-il en bon etat ?')
     breq_id = fields.Many2one('purchase.order')
     section = fields.Char("Section analytique d’imputation")
     amount_untaxed = fields.Float("Total")
@@ -72,26 +73,27 @@ class StockPicking(models.Model):
     is_returned = fields.Boolean('dejà retourner')
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie d\'origine")
     magasinier_id = fields.Many2one('hr.employee')
-    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", default=datetime.now())  
-    is_bci_sale_id = fields.Boolean('Est un bci venant sale order ?') 
+    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", default=datetime.now())
+    is_bci_sale_id = fields.Boolean('Est un bci venant sale order ?')
     
     picking_ids_bret = fields.One2many('stock.picking', string="stock_ids_bret", compute='_compute_bret_lie')
-    picking_count_bret = fields.Integer(compute='_compute_bret_lie') 
+    picking_count_bret = fields.Integer(compute='_compute_bret_lie')
     
     @api.multi
     def action_bret_lie(self):
-        action = self.env.ref('stock_heri.action_bon_de_retour_lie')
+        self.ensure_one()
+        action = self.env.ref('stock_heri.action_br')
         result = action.read()[0]
+        result['domain'] = [('bs_id', '=', self.id), ('mouvement_type', '=', 'br')]
         return result
     
     @api.multi
     def _compute_bret_lie(self):
         for br in self:
-            br_child_stock = self.env['stock.picking'].search(['&', ('breq_id','=',br.origin),('mouvement_type','=','br')])
+            br_child_stock = self.env['stock.picking'].search(['&', ('breq_id', '=', br.origin), ('mouvement_type', '=', 'br')])
             if br_child_stock:
                 br.picking_ids_bret = br_child_stock
                 br.picking_count_bret = len(br_child_stock)
-    
     
     mouvement_type = fields.Selection([
         ('bs', 'bon de sortie'),
@@ -102,11 +104,11 @@ class StockPicking(models.Model):
     
     state = fields.Selection([
         ('draft', 'Draft'), ('cancel', 'Cancelled'),
-        ('attente_hierarchie','Avis supérieur hierarchique'),
-        ('attente_call_center','Avis Call Center'),
-        ('attente_finance','Avis Finance'),
-        ('attente_logistique','Avis logistique'),
-        ('attente_magasinier','Avis Magasinier'),
+        ('attente_hierarchie', 'Avis supérieur hierarchique'),
+        ('attente_call_center', 'Avis Call Center'),
+        ('attente_finance', 'Avis Finance'),
+        ('attente_logistique', 'Avis logistique'),
+        ('attente_magasinier', 'Avis Magasinier'),
         ('waiting', 'Waiting Another Operation'),
         ('confirmed', 'Waiting Availability'),
         ('partially_available', 'Partially Available'),
@@ -119,63 +121,16 @@ class StockPicking(models.Model):
              " * Ready to Transfer: products reserved, simply waiting for confirmation.\n"
              " * Transferred: has been processed, can't be modified or cancelled anymore\n"
              " * Cancelled: has been cancelled, can't be confirmed anymore")
+    
     def approuver_br(self):
         self.action_assign()
-        self.write({'state':'attente_magasinier'})
+        # self.write({'state': 'attente_magasinier'})
     
     def action_aviser(self):
         self.action_confirm()
-        self.write({'state':'attente_hierarchie'})
+        # self.write({'state': 'attente_hierarchie'})
         
     def action_aviser_logistique(self):
-#         for pick in self:
-#             dict = {}
-#             product_list = []
-#             location_src_id = pick.location_id.id
-#             #Verifier la liste de produit dans move_lines si la quantite en stock est insuffisante lors de la demande sauf pour le bon d'entree qui n'a pas besoin de zone d'emplacement source
-#             for line in pick.move_lines:
-#                 if line.product_id not in product_list:
-#                     product_list.append(line.product_id)
-#                 if dict.get(line.product_id,False):
-#                     dict[line.product_id] += line.product_uom_qty
-#                 else: dict[line.product_id] = line.product_uom_qty  
-#             product_list_name = []   
-#             for product in product_list:
-#                 total_qty = 0.0
-#                 total_reserved = 0.0
-#                 liste_picking_ids = []
-#                 bci_ids = self.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
-#                                                                    ('picking_id.state','not in', ('done','cancel')), \
-#                                                                    ('product_id','=', product.id)
-#                                                                    ])  
-#                 line_ids = self.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
-#                                                                ('order_id.bs_id.state','not in', ('done','cancel')), \
-#                                                                ('product_id','=', product.id), ('location_id','=', location_src_id)
-#                                                                ])      
-#                 total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
-#                 total_breq_reserved = sum(x.product_qty for x in line_ids)
-#                 stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',product.id), ('location_id','=',location_src_id)])
-#                 for quant in stock_quant_ids:
-#                     total_qty += quant.qty
-#                 total_qty = total_qty - total_bci_reserved - total_breq_reserved
-#                 #recuperer tous les noms de produits qui sont insuffisants par rapport au quantite en stock disponible
-#                 if total_qty < dict[product]:
-#                     product_list_name.append(product.name)
-#             
-#             if product_list_name:
-#                 product_name = ''
-#                 product_name = "\n".join(product_list_name)
-#                 message = "La quantité en stock de l\'emplacement  source est insuffisante pour les articles ci-après: \n"+str(product_name)
-#                 raise UserError(message)
-#             elif not pick.move_lines:
-#                 raise UserError('Veuillez insérer les articles à transférer.')
-#             else:
-#                 for line in pick.move_lines:
-#                     if line.product_uom_qty <= 0.0:
-#                         raise UserError('La quantité à transférer ne devrait pas être inférieure ou égale à 0.0.')
-#                     else:
-#                         self.write({'state':'attente_logistique'})
-        
         
         for pick in self:
             if not pick.move_lines:
@@ -183,31 +138,35 @@ class StockPicking(models.Model):
             else:
                 for line in pick.move_lines:
                     if line.product_uom_qty > line.qte_prevu:
-                        raise UserError("La quantité en stock du magasin d\'origine est insuffisante pour l'article "+str(line.product_id.name))
+                        raise UserError("La quantité en stock du magasin d\'origine est insuffisante pour l'article " + str(line.product_id.name))
                     if line.product_uom_qty <= 0.0:
                         raise UserError('La quantité à transférer ne devrait pas être inférieure ou égale à 0.0.')
                     
-            pick.write({'state':'attente_logistique'})
-        
+            # pick.write({'state': 'attente_logistique'})
+            pick.action_confirm()
+            
     def action_aviser_magasinier(self):
-        self.write({'state':'attente_magasinier'})    
+        self.action_assign()
+        # self.write({'state': 'attente_magasinier'})
     
     def action_cancel_magasinier(self):
         self.action_confirm()
-        self.write({'state':'attente_hierarchie'})
+        self.write({'state': 'attente_hierarchie'})
         
     def action_cancel_sup(self):
-        self.write({'state':'draft'})
+        self.write({'state': 'draft'})
         
     def action_valider_magasinier(self):
+        
         return self.do_new_transfer()
         
     @api.multi
     def do_print_BS(self):
-        #Tester le champ la date d'arrivee reelle (date_arrivee_reelle) s'il est vide avant de valider une sortie de stock
-#         if self.mouvement_type == 'bs':
-#             if not self.date_arrivee_reelle:
-#                 raise UserError('Veuillez renseigner la date d\'arrivée réelle des matériels. ')
+        # Tester le champ la date d'arrivee reelle (date_arrivee_reelle) s'il est vide avant de valider une sortie de stock
+        # if self.mouvement_type == 'bs':
+            # if not self.date_arrivee_reelle:
+                # raise UserError('Veuillez renseigner la date d\'arrivée réelle des matériels. ')
+                
         employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)])
         if employee_id:
             self.magasinier_id = employee_id[0].id
@@ -216,7 +175,7 @@ class StockPicking(models.Model):
     
     @api.multi
     def do_print(self):
-        return self.env["report"].get_action(self, 'stock_heri.report_bon_de_sortie_template')   
+        return self.env["report"].get_action(self, 'stock_heri.report_bon_de_sortie_template')
     
     def _prepare_pack_ops(self, quants, forced_qties):
         """ Prepare pack_operations, returns a list of dict to give at create """
@@ -295,21 +254,22 @@ class StockPicking(models.Model):
 
         for move in self.move_lines.filtered(lambda move: move.state not in ('done', 'cancel')):
             values = product_id_to_vals.pop(move.product_id.id, [])
-            #insertion de prix unitaire et prix subtotal
-            if self.mouvement_type in ('bs','bci'):
+            
+            # Insertion de prix unitaire et prix subtotal
+            if self.mouvement_type in ('bs', 'bci'):
                 for val in values:
                     val.update({
                                 'price_unit': move.purchase_line_id.price_unit,
                                 'price_subtotal': move.purchase_line_id.price_subtotal,
                                 'qty_done': move.purchase_line_id.product_qty,
-                               }) 
+                               })
             elif self.mouvement_type == 'be':
                 for val in values:
                     val.update({
-                                    'price_unit': move.purchase_line_id.price_unit,
-                                    'price_subtotal': move.purchase_line_id.price_subtotal,
-                                    'qty_done': move.product_uom_qty,
-                                   })
+                                'price_unit': move.purchase_line_id.price_unit,
+                                'price_subtotal': move.purchase_line_id.price_subtotal,
+                                'qty_done': move.product_uom_qty,
+                               })
             ################################################
             pack_operation_values += values
         return pack_operation_values
@@ -317,7 +277,7 @@ class StockPicking(models.Model):
     @api.one
     def _get_is_creator(self):
         self.is_creator = False
-        current_employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)], limit=1).id
+        current_employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1).id
         employee_id = self.employee_id.id
         if current_employee_id == employee_id:
             self.is_creator = True
@@ -325,7 +285,7 @@ class StockPicking(models.Model):
     @api.one
     def _get_is_manager(self):
         self.is_manager = False
-        current_employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)]).id
+        current_employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)]).id
         manager_id = self.employee_id.coach_id.id
         if current_employee_id == manager_id:
             self.is_manager = True
@@ -387,42 +347,42 @@ class StockPicking(models.Model):
             if pack_operations_delete:
                 pack_operations_delete.unlink()
         self.do_transfer()
-        if self.mouvement_type == 'bs' :
-            return  self.env["report"].get_action(self, 'stock_heri.report_bon_de_sortie_template')
-        else :
+        if self.mouvement_type == 'bs':
+            return self.env["report"].get_action(self, 'stock_heri.report_bon_de_sortie_template')
+        else:
             return
         
     @api.multi
     def _create_breq_stock(self):
         breq_stock_obj = self.env['purchase.order']
         breq_line = self.env['purchase.order.line']
-        #Creer Breq stock
+        # Creer Breq stock
         for pick in self:
             vals = {
                     'partner_id': pick.partner_id.id,
                     'origin': pick.name,
-                    'employee_id': pick.employee_id.id,         
+                    'employee_id': pick.employee_id.id,
                     'company_id': pick.company_id.id,
                     'picking_bci_id': pick.id,
-                    #Le Budget Request Stock génère une facture pour les matériels retournés en mauvais état
+                    # Le Budget Request Stock génère une facture pour les matériels retournés en mauvais état
                     'to_invoice': True,
-                    #Pour dire que le Budget Request Stock est généré par un BCI lors de la facturation des matériels retournés en mauvais état
-                    'is_from_bci' : True,
-                    'is_breq_stock' : True,
-                    'is_breq_id_sale' : True,
+                    # Pour dire que le Budget Request Stock est généré par un BCI lors de la facturation des matériels retournés en mauvais état
+                    'is_from_bci': True,
+                    'is_breq_stock': True,
+                    'is_breq_id_sale': True,
                     'breq_id_sale': pick.sale_order_id.id,
                     'move_type': 'direct',
                     'location_id': pick.location_dest_id.id,
                     'company_id': pick.company_id.id,
                     'amount_untaxed': pick.amount_untaxed,
-                    'date_planned':fields.Datetime.now(),
-                    'mouvement_type':'bs',
+                    'date_planned': fields.Datetime.now(),
+                    'mouvement_type': 'bs',
                     'justificatif': "C'/est un justificatif",
                     'department_id': pick.employee_id.department_id.id,
                     }
             var = vals
-            budget_request_stock = breq_stock_obj.create(vals)    
-            #Creer order_line dans le breq_stock 
+            budget_request_stock = breq_stock_obj.create(vals)
+            # Creer order_line dans le breq_stock
             for line in pick.move_lines:
                 order_line = {
                     'order_id': budget_request_stock.id,
@@ -430,50 +390,51 @@ class StockPicking(models.Model):
                     'product_id': line.product_id.id,
                     'product_uom': line.product_uom.id,
                     'sale_line_id': line.id,
-                    'product_qty' : line.product_uom_qty,
+                    'product_qty': line.product_uom_qty,
                     'price_unit': line.price_unit,
-                    'date_planned':fields.Datetime.now(),
-                }     
+                    'date_planned': fields.Datetime.now(),
+                }
                 breq_lines = breq_line.create(order_line)
         return True
     
     @api.multi
     def do_stock_transfer(self):
         for pick in self:
-            #S'il s'agit d'un BCI lors des matériels retournés en mauvais état et le matériel est bien en mauvais état
+            # S'il s'agit d'un BCI lors des matériels retournés en mauvais état et le matériel est bien en mauvais état
             if pick.is_bci_sale_id and not pick.is_bon_etat:
                 pick._create_breq_stock()
             dict = {}
             product_list = []
             location_src_id = pick.location_id.id
-            #Verifier la liste de produit dans move_lines si la quantite en stock est insuffisante lors de la demande sauf pour le bon d'entree qui n'a pas besoin de zone d'emplacement source
+            # Verifier la liste de produit dans move_lines si la quantite en stock est insuffisante lors de la demande sauf pour le bon d'entree qui n'a pas besoin de zone d'emplacement source
             if pick.mouvement_type != 'be':
                 for line in pick.move_lines:
                     if line.product_id not in product_list:
                         product_list.append(line.product_id)
-                    if dict.get(line.product_id,False):
+                    if dict.get(line.product_id, False):
                         dict[line.product_id] += line.product_uom_qty
-                    else: dict[line.product_id] = line.product_uom_qty  
-                product_list_name = []   
+                    else:
+                        dict[line.product_id] = line.product_uom_qty
+                product_list_name = []
                 for product in product_list:
                     total_qty = 0.0
-                    stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',product.id), ('location_id','=',location_src_id)])
+                    stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id', '=', product.id), ('location_id', '=', location_src_id)])
                     for quant in stock_quant_ids:
                         total_qty += quant.qty
-                    #recuperer tous les noms de produits qui sont insuffisants par rapport au quantite en stock disponible
+                    # Recuperer tous les noms de produits qui sont insuffisants par rapport au quantite en stock disponible
                     if total_qty < dict[product]:
                         product_list_name.append(product.name)
                 
                 if product_list_name:
                     product_name = ''
                     product_name = "\n".join(product_list_name)
-                    message = "La quantité en stock de l\'emplacement  source est insuffisante pour les articles ci-après: \n"+str(product_name)
+                    message = "La quantité en stock de l\'emplacement source est insuffisante pour les articles ci-après: \n" + str(product_name)
                     raise UserError(message)
             
             pack_operations_delete = self.env['stock.pack.operation']
-            if not pick.move_lines and not pick.pack_operation_ids:
-                raise UserError('Veuillez créer la liste d\'article à transférer. ')
-            #In draft or with no pack operations edited yet, ask if we can just do everything
+            # if not pick.move_lines and not pick.pack_operation_ids:
+                # raise UserError('Veuillez créer la liste d\'article à transférer.')
+            # In draft or with no pack operations edited yet, ask if we can just do everything
             if pick.state == 'draft' or all([x.qty_done == 0.0 for x in pick.pack_operation_ids]):
                 # If no lots when needed, raise error
                 picking_type = pick.picking_type_id
@@ -485,7 +446,7 @@ class StockPicking(models.Model):
                 wiz = self.env['stock.immediate.transfer'].create({'pick_id': pick.id})
                 # TDE FIXME: a return in a loop, what a good idea. Really.
                 return {
-                    'name':'Immediate Transfer?',
+                    'name': 'Immediate Transfer?',
                     'type': 'ir.actions.act_window',
                     'view_type': 'form',
                     'view_mode': 'form',
@@ -524,17 +485,17 @@ class StockPicking(models.Model):
             if pack_operations_delete:
                 pack_operations_delete.unlink()
         self.do_transfer()
-        #Calcul PUMP pour le bon d'entree
+        # Calcul PUMP pour le bon d'entree
         if self.mouvement_type == 'be':
-            #calculer pump si le type de mouvement est bon d'entree
+            # Calculer pump si le type de mouvement est bon d'entree
             for line in self.bex_id.bex_lines:
                 qte_recu = line.qty_done
                 prix_unit = line.prix_unitaire
-                product_id = self.env['product.product'].search([('id','=',line.product_id.id)])
-                #Ici la quantite disponible prend en compte la quantite reservee en entree (d'ou on devrait soustraire par la quantite recue)
-                qte_total = product_id.qty_available-qte_recu
+                product_id = self.env['product.product'].search([('id', '=', line.product_id.id)])
+                # Ici la quantite disponible prend en compte la quantite reservee en entree (d'ou on devrait soustraire par la quantite recue)
+                qte_total = product_id.qty_available - qte_recu
                 ancien_strd_price = product_id.standard_price
-                pump = ((qte_recu*prix_unit)+(qte_total*ancien_strd_price))/(qte_recu+qte_total)
+                pump = ((qte_recu * prix_unit) + (qte_total * ancien_strd_price)) / (qte_recu + qte_total)
                 product_id.standard_price = pump
             return
         else:
@@ -550,7 +511,7 @@ class StockPicking(models.Model):
     @api.onchange('location_dest_id')
     def onchange_location_dest_id(self):
         for pick in self:
-            if pick.mouvement_type in ('bs','be','bci'):
+            if pick.mouvement_type in ('bs', 'be', 'bci'):
                 after_vals = {}
 #                 if pick.location_dest_id.is_kiosk :
 #                     pick.is_received = True
@@ -578,13 +539,14 @@ class StockQuant(models.Model):
         if not entire_pack:
             vals.update({'package_id': dest_package_id})
         self.write(vals)
-    
+
+
 class StockMove(models.Model):
     _inherit = 'stock.move'
      
     qte_prevu = fields.Float(compute='_compute_qte_prevu', string='Quantité disponible')
     product_uom_qty = fields.Float('Quantity', default=0.0, required=True, states={'done': [('readonly', True)]})
-    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", related='picking_id.date_arrivee_reelle', store=True) 
+    date_arrivee_reelle = fields.Datetime(string="Date d'arrivée réelle des matériels", related='picking_id.date_arrivee_reelle', store=True)
        
     @api.depends('product_id')
     def _compute_qte_prevu(self):
@@ -598,17 +560,17 @@ class StockMove(models.Model):
                 total_reserved = 0.0
                 liste_picking_ids = []
                 
-                stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
-                line_ids = line.env['purchase.order.line'].search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
-                                                                   ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
+                stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id', '=', line.product_id.id), ('location_id', '=', location_src_id.id)])
+                line_ids = line.env['purchase.order.line'].search([('order_id.is_breq_stock', '=', True), ('order_id.state', '!=', 'cancel'), \
+                                                                   ('product_id', '=', line.product_id.id), ('location_id', '=', location_src_id.id), \
                                                                    ])
-                #recuperer tous les articles reserves dans bci
-                bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
-                                                                       ('picking_id.state','not in', ('draft','done','cancel')), \
-                                                                       ('product_id','=', line.product_id.id)
-                                                                       ])  
-                total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)                                                
-                total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel'))
+                # Recuperer tous les articles reserves dans bci
+                bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type', '=', 'bci'), \
+                                                                       ('picking_id.state', 'not in', ('draft', 'done', 'cancel')), \
+                                                                       ('product_id', '=', line.product_id.id)
+                                                                       ])
+                total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
+                total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done', 'cancel'))
                 for quant in stock_quant_ids:
                     total_qty_available += quant.qty
                 line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
@@ -619,14 +581,14 @@ class StockMove(models.Model):
     def onchange_product_uom_qty(self):
         for line in self:
             if line.picking_id.mouvement_type == 'bci':
-                if line.product_uom_qty > 0.0 and line.product_id:  
-                    product_seuil_id = self.env['product.product'].search([('id','=',line.product_id.id)])
+                if line.product_uom_qty > 0.0 and line.product_id:
+                    product_seuil_id = self.env['product.product'].search([('id', '=', line.product_id.id)])
                     product_seuil = product_seuil_id.security_seuil
                     qte_restant = line.qte_prevu - line.product_uom_qty
                     uom_qty = line.product_uom_qty
                     prevu = line.qte_prevu
                     if line.qte_prevu < line.product_uom_qty:
-        #                 self.product_qty = self.qte_prevu
+                        # self.product_qty = self.qte_prevu
                         return {
                                 'warning': {
                                             'title': 'Avertissement!', 'message': 'La quantité demandée réduite au disponible dans le magasin: '+str(self.qte_prevu)
@@ -644,25 +606,29 @@ class StockMove(models.Model):
                                         'product_uom_qty': line.product_uom_qty,
                                         }
                                 }
-    
+
+
 class PackOperationLine(models.Model):
     _inherit = 'stock.pack.operation'
     
     price_unit = fields.Float(string='PU')
     price_subtotal = fields.Float(string='PSub')
-      
+
+
 class StockImmediateTransferHeri(models.Model):
-    _name = 'stock.immediate.transfer.heri' 
-    _inherit = 'stock.immediate.transfer' 
+    _name = 'stock.immediate.transfer.heri'
+    _inherit = 'stock.immediate.transfer'
     
     current_product = fields.Text('')
-       
+
+
 class ReturnPickingLineHeri(models.TransientModel):
-    _inherit= "stock.return.picking.line"
+    _inherit = "stock.return.picking.line"
     _rec_name = 'product_id'
 
-    quantity = fields.Float("Quantité",required=True, readonly=False)
-    
+    quantity = fields.Float("Quantité", required=True, readonly=False)
+
+
 class ReturnPickingHeri(models.TransientModel):
     _inherit = 'stock.return.picking'
     _description = 'Return Picking Heri'
@@ -696,10 +662,10 @@ class ReturnPickingHeri(models.TransientModel):
         # create new picking for returned products
         
         picking_type_id = picking.picking_type_id.id
-        res = re.findall("\d+", picking.name)
-        longeur_res = len(res)
-        res_final = res[longeur_res-1]
-        br_name = "BR" + "".join(res_final)
+        # res = re.findall("\d+", picking.name)
+        # longeur_res = len(res)
+        # res_final = res[longeur_res - 1]
+        br_name = self.env['ir.sequence'].next_by_code('bon.retour')
         new_picking = picking.copy({
             'move_lines': [],
             'picking_type_id': picking_type_id,
@@ -741,10 +707,10 @@ class ReturnPickingHeri(models.TransientModel):
                     'procure_method': 'make_to_stock',
                     'move_dest_id': move_dest_id,
                 })
-            if  return_line.move_id.product_uom_qty < new_qty:
-                raise UserError(u'La quantité à retourner ne doit pas être au dessus de la quantité de l\' article dans le bon de sortie')
+            if return_line.move_id.product_uom_qty < new_qty:
+                raise UserError(u'La quantité à retourner ne doit pas être supérieure à celle du bon de sortie')
         if not returned_lines:
-            raise UserError("Please specify at least one non-zero quantity.")           
+            raise UserError("Please specify at least one non-zero quantity.")
         
         new_picking.action_aviser()
         return new_picking.id, picking_type_id
@@ -764,7 +730,7 @@ class ReturnPickingHeri(models.TransientModel):
             'search_default_late': False,
             'search_default_available': False,
         })
-        res = self.env.ref('stock_heri.view_picking_form_advanced2', False)
+        res = self.env.ref('stock.view_picking_form', False)
         return {
             'name': 'Returned Picking',
             'view_type': 'form',
@@ -773,35 +739,36 @@ class ReturnPickingHeri(models.TransientModel):
             'res_id': new_picking_id,
             'type': 'ir.actions.act_window',
             'context': ctx,
-            'views' : [(res and res.id or False, 'form')]
+            'views': [(res and res.id or False, 'form')]
         }
-        
+
+
 class StockPickingtypeHeri(models.Model):
     _inherit = "stock.picking.type"
     
     def get_action_bon_de_cession_interne(self):
-        for kanban in self :
-            if kanban.code in ('incoming','outgoing'):
+        for kanban in self:
+            if kanban.code in ('incoming', 'outgoing'):
                 action = self.env.ref('stock_heri.action_picking_tree_late_heri')
-            elif kanban.code == 'internal' :
+            elif kanban.code == 'internal':
                 action = self.env.ref('stock_heri.action_picking_tree_late_heri_bs')
         result = action.read()[0]
         return result
         
     def get_stock_picking_action_picking_type_tous(self):
-        for kanban in self :
-            if kanban.code in ('incoming','outgoing'):
+        for kanban in self:
+            if kanban.code in ('incoming', 'outgoing'):
                 action = self.env.ref('stock_heri.stock_picking_action_picking_type_heri')
-            elif kanban.code == 'internal' :
+            elif kanban.code == 'internal':
                 action = self.env.ref('stock_heri.stock_picking_action_picking_type_heri_bci')
         result = action.read()[0]
         return result
     
     def get_action_picking_tree_ready_heri(self):
-        for kanban in self :
-            if kanban.code in ('incoming','outgoing'):
+        for kanban in self:
+            if kanban.code in ('incoming', 'outgoing'):
                 action = self.env.ref('stock_heri.action_picking_tree_ready_heri_bs_be')
-            elif kanban.code == 'internal' :
+            elif kanban.code == 'internal':
                 action = self.env.ref('stock_heri.action_picking_tree_ready_heri_bci')
         result = action.read()[0]
         return result

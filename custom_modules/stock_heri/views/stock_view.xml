@@ -32,15 +32,9 @@
 				<field name="location_id" position="replace">
 				    <field name="location_id" string="Magasin d'origine"  groups="stock.group_stock_multi_locations" attrs="{'invisible': [('picking_type_code', '=', 'outgoing')]}"/>
 				</field>
-				<!-- <button name="do_print_picking" position="attributes">
-				    <attribute name="invisible">1</attribute>
-				</button> -->
 				<button name="%(stock.action_report_delivery)d" position="attributes">
 				    <attribute name="invisible">1</attribute>
 				</button>
-				<!-- <button name="%(stock.act_stock_return_picking)d" position="attributes">
-				    <attribute name="invisible">1</attribute>
-				</button> -->
 				<button name="action_cancel" position="attributes">
 				    <attribute name="invisible">1</attribute>
 				</button>
@@ -88,27 +82,32 @@
             <field name="inherit_id" ref="view_picking_form_advanced"/>
             <field name="arch" type="xml">
             	<field name="state" position="replace">
-				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_logistique,attente_magasinier,done" />
+				    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,partially_available,assigned,done" />
 				</field>
+				
 				<xpath expr="//field[@name='picking_type_id']" position="attributes">
 				    <attribute name="domain">[('code','=','internal')]</attribute>
 				</xpath> 
+			    
 			    <xpath expr="//button[@name='do_stock_transfer']" position="attributes">
 					<attribute name="groups">purchase_heri.group_magasinier_heri</attribute>
-					<attribute name="attrs">{'invisible': [('state','not in',('attente_magasinier'))]}</attribute>
+					<attribute name="attrs">{'invisible': [('state','not in',('partially_available','assigned'))]}</attribute>
 				</xpath>
+				
 				<xpath expr="//button[@name='action_cancel']" position="attributes">
-					<attribute name="attrs">{'invisible': [('state','in',('done','attente_logistique'))]}</attribute>
-					<attribute name="groups">purchase_heri.group_logistique_heri</attribute>
+					<attribute name="attrs">{'invisible': [('state','not in',('assigned','confirmed','partially_available','draft','waiting'))]}</attribute>
+					<!-- <attribute name="groups">purchase_heri.group_logistique_heri,purchase_heri.group_magasinier_heri</attribute> -->
 				</xpath>
+				
 				<xpath expr="//header" position="inside">
 				    <button name="action_aviser_logistique" string="Envoyer au logistique" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('draft')),('mouvement_type','not in',('bci'))]}" type="object"/>
-				    <button name="action_aviser_magasinier" string="Validation magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('attente_logistique')), ('mouvement_type','not in',('bci'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
+				    <button name="action_aviser_magasinier" string="Envoyer au magasinier" class="oe_highlight" attrs="{'invisible': ['|',('state','not in',('confirmed')), ('mouvement_type','not in',('bci'))]}" groups="purchase_heri.group_logistique_heri" type="object"/>
 				</xpath>
 				
 				<field name="location_dest_id" position="attributes">
                     <attribute name="domain">[('is_kiosk','=',False)]</attribute>
 				</field>
+				
 				<field name="location_id" position="attributes">
 				    <attribute name="domain">[('is_kiosk','=',False)]</attribute>
 				</field>
@@ -345,10 +344,12 @@
 		    		<attribute name="states"></attribute>
 		    		<attribute name="attrs">{'invisible': [('mouvement_type','in',('bs','be','bci','br'))]}</attribute>
 	    		</xpath>
+	    		
 	    		<xpath expr="//button[@name='do_print_picking']" position="attributes">
 		    		<attribute name="states"></attribute>
 		    		<attribute name="attrs">{'invisible': [('mouvement_type','in',('bs','be','bci','br'))]}</attribute>
 	    		</xpath>
+	    		
 	    		<xpath expr="//div[@name='button_box']/button[@name='action_see_move_scrap']" position="after">
                         <button 
                         	name="action_bret_lie"
@@ -361,16 +362,26 @@
                             <field name="picking_ids_bret" invisible="1"/>
                       	</button>
  				</xpath>
+ 				
  				<xpath expr="//page[1]" position="attributes">
  				 	<attribute name="states"></attribute>
                 	<attribute name="attrs">{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting','attente_hierarchie'))]}</attribute> 
                 </xpath>
+	    		
 	    		<button name="action_cancel" position="after">	
 					<button name="action_valider_magasinier" 
-					string="Valider" 
+					string="Validation du magasinier"
 					type="object" 
 					class="oe_highlight"
-					attrs="{'invisible': ['|',('state', 'not in', ('attente_magasinier')),'|',('mouvement_type', 'not in', ('br'))]}"
+					attrs="{'invisible': ['|',('state', 'not in', ('partially_available','assigned')),'|',('mouvement_type', 'not in', ('br'))]}"
+					groups="purchase_heri.group_magasinier_heri"
+					/>
+					
+					<button name="action_cancel" 
+					string="Annuler"
+					type="object" 
+					class="oe_highlight"
+					attrs="{'invisible': ['|',('state', 'not in', ('partially_available','assigned')),'|',('mouvement_type', 'not in', ('br'))]}"
 					groups="purchase_heri.group_magasinier_heri"
 					/>
 					
@@ -390,7 +401,7 @@
 					/>
 					
 					<button name="approuver_br" 
-					string="Accorder" 
+					string="Accord du supérieur hiérachique"
 					type="object" 
 					class="oe_highlight"
 					attrs="{'invisible': ['|',('state', 'not in', ('attente_hierarchie','confirmed')),'|',('is_manager', '=', False),('mouvement_type', 'not in', ('br'))]}"
@@ -424,7 +435,7 @@
 					<button name="force_assign" type="object" string="Force Disponible" attrs="{'invisible': ['|',('state', 'in', ('draft','partially_available','assigned','done')),('mouvement_type', 'in', ('br'))]}" class="oe_highlight"/>
 				</button>
 				<button name="action_assign" position="replace">
-					<button name="action_assign" type="object" string="reserver" attrs="{'invisible': ['|',('state', 'in', ('draft','partially_available','assigned','done')),('mouvement_type', 'in', ('br'))]}" class="oe_highlight"/>
+					<button name="action_assign" type="object" string="Reserver" attrs="{'invisible': ['|',('state', 'in', ('draft','partially_available','assigned','done')),('mouvement_type', 'in', ('br'))]}" class="oe_highlight"/>
 				</button>
 			
 			</field>
@@ -439,9 +450,9 @@
                 <xpath expr="//form" position="attributes">
                     <attribute name="create">0</attribute>
                 </xpath>
-                <field name="state" position="replace">
+                <!-- <field name="state" position="replace">
 				    <field name="state" widget="statusbar" statusbar_visible="draft,attente_hierarchie,attente_magasinier,done" />
-				</field>
+				</field> -->
 			</field>
         </record> 
         
@@ -549,7 +560,7 @@
 			</field>
 		</record>
 		
-		<!-- Sequences for bon de cessio interne --> 
+		<!-- Sequences for bon de cession interne --> 
         <record id="seq_bon_cession_interne" model="ir.sequence">
             <field name="name">Bon cession interne</field>
             <field name="code">bon.cession.interne</field>
