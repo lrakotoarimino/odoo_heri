@@ -370,9 +370,9 @@ class AccountInvoice(models.Model):
             for l in line_ids:
                 if l.product_id not in product_list:
                     product_list.append(l.product_id)
-                    qty_dict[l.product_id] = l.theoretical_qty
+                    qty_dict[l.product_id] = l.product_qty
                 else:
-                    qty_dict[l.product_id] += l.theoretical_qty
+                    qty_dict[l.product_id] += l.product_qty
             
             product_list = []
             for line in line_ids:
@@ -380,14 +380,6 @@ class AccountInvoice(models.Model):
                     continue
                 else:
                     product_list.append(line.product_id)
-                    
-                    #===============================================================
-                    # if line.state == 'confirm':
-                    #     qty = line.theoretical_qty
-                    # elif line.state == 'done':
-                    #     qty = line.product_qty
-                    #===============================================================
-                    
                     qty = qty_dict[line.product_id]
                     product = line.product_id
                     name = product.partner_ref

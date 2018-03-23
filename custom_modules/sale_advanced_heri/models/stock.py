@@ -16,7 +16,13 @@ class StockInventory(models.Model):
                     'filter': 'none'}
             inventory_id = Inventory.create(vals)
             inventory_id.prepare_inventory()
-            # inventory_id.action_done()
+            for line in inventory_id.line_ids:
+                if line.theoretical_qty < 0.0:
+                    line.product_qty = 0.0
+                else:
+                    line.product_qty = line.theoretical_qty
+
+            inventory_id.action_done()
             
 
 class StockLocation(models.Model):
