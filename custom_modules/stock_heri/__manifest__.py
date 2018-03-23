@@ -8,7 +8,7 @@
     'website': 'https://www.ingenosya.mg',
     'depends': ['purchase_heri'],
     'data': [
-            'views/stock_view_correction.xml',
+            'views/stock_view.xml',
             'views/budget_request_stock_view.xml',
             #'views/stock_kanban_view.xml',
             'views/stock_location_view.xml',

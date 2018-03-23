@@ -364,34 +364,53 @@ class AccountInvoice(models.Model):
             # raise UserError(_('Error!/nNo inventory created for this kiosk'))
             vals = {}
             line_ids = inventory.line_ids.filtered(lambda l: l.product_id.fee_type == 'variable')
+            
+            product_list = []
+            qty_dict = {}
+            for l in line_ids:
+                if l.product_id not in product_list:
+                    product_list.append(l.product_id)
+                    qty_dict[l.product_id] = l.theoretical_qty
+                else:
+                    qty_dict[l.product_id] += l.theoretical_qty
+            
+            product_list = []
             for line in line_ids:
-                if line.state == 'confirm':
-                    qty = line.theoretical_qty
-                elif line.state == 'done':
-                    qty = line.product_qty
-                
-                product = line.product_id
-                name = product.partner_ref
-                if line.product_id.description_sale:
-                    name += '\n' + product.description_sale
-                price = line.product_id.rental_price
-                
-                account_id = False
-                account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
-                if account:
-                    account_id = account.id
-                
-                vals = {'date': line.inventory_id.date,
-                        'product_id': product.id,
-                        'name': name,
-                        'account_id': account_id,
-                        'uom_id': line.product_uom_id.id,
-                        'quantity': qty,
-                        'number_days': number_days,
-                        'price_unit': price,
-                        'invoice_id': self.id,
-                        }
-                AccountInvoiceLine.create(vals)
+                if line.product_id in product_list:
+                    continue
+                else:
+                    product_list.append(line.product_id)
+                    
+                    #===============================================================
+                    # if line.state == 'confirm':
+                    #     qty = line.theoretical_qty
+                    # elif line.state == 'done':
+                    #     qty = line.product_qty
+                    #===============================================================
+                    
+                    qty = qty_dict[line.product_id]
+                    product = line.product_id
+                    name = product.partner_ref
+                    if line.product_id.description_sale:
+                        name += '\n' + product.description_sale
+                    price = line.product_id.rental_price
+                    
+                    account_id = False
+                    account = AccountInvoiceLine.get_invoice_line_account(invoice_type, product, fpos, company)
+                    if account:
+                        account_id = account.id
+                    
+                    vals = {'date': line.inventory_id.date,
+                            'product_id': product.id,
+                            'name': name,
+                            'account_id': account_id,
+                            'uom_id': line.product_uom_id.id,
+                            'quantity': qty,
+                            'number_days': number_days,
+                            'price_unit': price,
+                            'invoice_id': self.id,
+                            }
+                    AccountInvoiceLine.create(vals)
             
         # Fee rental fix
         product_fix_id = self.env['product.product'].browse(self.env.ref('sale_advanced_heri.product_product_0').id)
