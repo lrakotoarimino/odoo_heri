@@ -6,13 +6,30 @@ from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare
 import re
 
-#Bugget Expense Report
+# mapping invoice type to journal type
+TYPE2JOURNAL = {
+    'out_invoice': 'sale',
+    'in_invoice': 'purchase',
+    'out_refund': 'sale',
+    'in_refund': 'purchase',
+}
+
+
+# Bugget Expense Report
 class Bex(models.Model):
-    _name = 'budget.expense.report' 
+    _name = 'budget.expense.report'
     _inherit = ['mail.thread']
     _order = "date desc, id desc"
     _description = "Budget Expense Report"
     
+    @api.multi
+    def _compute_invoice_ids(self):
+        for bex in self:
+            invoice_ids = self.env['account.invoice'].search([('purchase_id', '=', self.breq_id.id)])
+            if invoice_ids:
+                bex.invoice_ids = invoice_ids
+                bex.invoice_ids_count = len(invoice_ids)
+
     @api.depends('taux_change', 'amount_untaxed_bex')
     def _compute_amount_ht_ariary(self):
         for order in self:
@@ -22,6 +39,9 @@ class Bex(models.Model):
     
     be_lie_count = fields.Integer(compute='_compute_be_lie')
     be_ids = fields.One2many('stock.picking', string="be_ids", compute='_compute_be_lie')
+    
+    invoice_ids_count = fields.Integer(compute='_compute_invoice_ids')
+    invoice_ids = fields.One2many('account.invoice', string="Invoices", compute='_compute_invoice_ids')
     
     def calculer_prix_revient(self):
         if self.taux_change == 0.0:
@@ -33,19 +53,19 @@ class Bex(models.Model):
         
         if self.purchase_type == 'purchase_import':
             
-            breq_transport = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','transport')])
-            breq_assurance = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','assurance')])
-            breq_additionnel = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','additionel')])
-            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.breq_id.id), ('service_type','=','douane')], limit=1)
+            breq_transport = purchase_obj.search(['&', ('parents_ids', '=', self.breq_id.id), ('service_type', '=', 'transport')])
+            breq_assurance = purchase_obj.search(['&', ('parents_ids', '=', self.breq_id.id), ('service_type', '=', 'assurance')])
+            breq_additionnel = purchase_obj.search(['&', ('parents_ids', '=', self.breq_id.id), ('service_type', '=', 'additionel')])
+            breq_droit_douane = purchase_obj.search(['&', ('parents_ids', '=', self.breq_id.id), ('service_type', '=', 'douane')], limit=1)
             
-            bex_transport = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
-            bex_assurance = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
-            bex_additionnel = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
-            bex_droit_douane = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_droit_douane]))])
+            bex_transport = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_transport]))])
+            bex_assurance = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_assurance]))])
+            bex_additionnel = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_additionnel]))])
+            bex_droit_douane = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_droit_douane]))])
 
             total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
             cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
-            fob_total = sum(line.qty_done*line.price_unit for line in self.bex_lines)
+            fob_total = sum(line.qty_done * line.price_unit for line in self.bex_lines)
             caf_total = (fob_total + total_assurance_fret) * self.taux_change
             
             for line in self.bex_lines:
@@ -54,23 +74,23 @@ class Bex(models.Model):
                 elif line.qty_done <= 0.0:
                     raise UserError(u'La quantité des articles devrait être un nombre positif non nulle')
                 else:
-                    bex_line_id = bex_line_obj.search([('bex_id','=', bex_droit_douane.id),('purchase_line_id.purchase_line_id','=', line.purchase_line_id.id)], limit=1)
+                    bex_line_id = bex_line_obj.search([('bex_id', '=', bex_droit_douane.id), ('purchase_line_id.purchase_line_id', '=', line.purchase_line_id.id)], limit=1)
                     droit_douane = bex_line_id.montant_realise
-                    line.prix_unitaire = (((caf_total + cLocTotal) * ((line.qty_done*line.price_unit) / fob_total)) + droit_douane) / (line.qty_done)
+                    line.prix_unitaire = (((caf_total + cLocTotal) * ((line.qty_done * line.price_unit) / fob_total)) + droit_douane) / (line.qty_done)
     
     @api.multi
     def _compute_be_lie(self):
         for bex in self:
-            be_ids = self.env['stock.picking'].search([('bex_id','=',bex.id)])
+            be_ids = self.env['stock.picking'].search([('bex_id', '=', bex.id)])
             if be_ids:
                 bex.be_ids = be_ids
-                bex.be_lie_count = len(be_ids) 
+                bex.be_lie_count = len(be_ids)
     
     def get_number(self, chaine, prefixe):
-        if not chaine or chaine=='':
+        if not chaine or chaine == '':
             raise UserError(u"Caractère en paramètre vide pour la fonction get_number()")
         liste_entier = re.findall("\d+", chaine)
-        res = prefixe+''+str(liste_entier[len(liste_entier)-1])
+        res = prefixe + '' + str(liste_entier[len(liste_entier) - 1])
         return res
                 
     def _name_change(self):
@@ -78,7 +98,7 @@ class Bex(models.Model):
             if bex.origin:
                 res = re.findall("\d+", bex.origin)
                 longeur_res = len(res)
-                res_final = res[longeur_res-1]
+                res_final = res[longeur_res - 1]
                 bex.name = "BEX" + "".join(res_final)
     
     @api.multi
@@ -97,8 +117,21 @@ class Bex(models.Model):
             result['views'] = [(res and res.id or False, 'form')]
             result['res_id'] = pick_ids and pick_ids[0] or False
         return result
-            
-    @api.depends('remise','bex_lines','bex_lines.qty_done','bex_lines.taxes_id','bex_lines.prix_unitaire')
+    
+    @api.multi
+    def action_view_invoices(self):
+        action = self.env.ref('account.action_invoice_tree2')
+        result = action.read()[0]
+
+        invoice_ids = self.mapped('invoice_ids')
+        if len(invoice_ids) > 1:
+            result['domain'] = [('id', 'in', invoice_ids.ids)]
+        elif len(invoice_ids) == 1:
+            result['views'] = [(self.env.ref('account.invoice_supplier_form').id, 'form')]
+            result['res_id'] = invoice_ids.id
+        return result
+        
+    @api.depends('remise', 'bex_lines', 'bex_lines.qty_done', 'bex_lines.taxes_id', 'bex_lines.prix_unitaire')
     def _amount_all(self):
         for bex in self:
             amount_untaxed_bex = 0.0
@@ -107,50 +140,111 @@ class Bex(models.Model):
             if bex.remise:
                 remise = bex.remise
                 
-            for line in bex.bex_lines :
+            for line in bex.bex_lines:
                 amount_untaxed_bex += line.montant_realise
                 amount_taxed_bex += line.montant_realise_taxe
                 
-            amount_untaxed_bex = amount_untaxed_bex*(1-(remise/100))
-            amount_taxed_bex = amount_taxed_bex*(1-(remise/100))
+            amount_untaxed_bex = amount_untaxed_bex * (1 - (remise / 100))
+            amount_taxed_bex = amount_taxed_bex * (1 - (remise / 100))
             
             bex.update({
                 'amount_untaxed_bex': amount_untaxed_bex,
-                'amount_tax_bex': amount_taxed_bex-amount_untaxed_bex,
+                'amount_tax_bex': amount_taxed_bex - amount_untaxed_bex,
                 'amount_total_bex': amount_taxed_bex,
                 })
             
     @api.depends('amount_total_en_ar')
     def _amount_en_ar(self):
-        for res in self :
-            res.amount_total_en_ar = res.amount_untaxed_en_ar - res.amount_tax_en_ar      
+        for res in self:
+            res.amount_total_en_ar = res.amount_untaxed_en_ar - res.amount_tax_en_ar
     
     def attente_hierarchie(self):
         self.state = 'attente_hierarchie'
         self.change_state_date = fields.Datetime.now()
+        
     def annuler_attente_hierarchie(self):
         self.state = 'draft'
         self.change_state_date = fields.Datetime.now()
+        
     def hierarchie_ok(self):
         self.state = 'hierarchie_ok'
         self.change_state_date = fields.Datetime.now()
+        
     def annuler_hierarchie_ok(self):
         self.state = 'attente_hierarchie'
         self.change_state_date = fields.Datetime.now()
+
     def annuler_comptabiliser(self):
         self.state = 'hierarchie_ok'
         self.change_state_date = fields.Datetime.now()
             
     def comptabiliser(self):
-#         if self.breq_id and self.breq_id.purchase_type == 'purchase_import' and self.state == 'hierarchie_ok' and self.amount_untaxed_en_ar == 0.0:
-#             raise UserError("Merci de remplir le Montant Hors Taxes en Ar!")
+        # if self.breq_id and self.breq_id.purchase_type == 'purchase_import' and self.state == 'hierarchie_ok' and self.amount_untaxed_en_ar == 0.0:
+            # raise UserError("Merci de remplir le Montant Hors Taxes en Ar!")
+
         if self.breq_id and self.breq_id.purchase_type != 'purchase_not_stored':
-            self.create_be() 
+            self.create_be()
+        self.create_invoice()
         self.state = 'comptabilise'
+    
+    def _prepare_invoice_line_from_bex_line(self, invoice, line):
+        invoice_line = self.env['account.invoice.line']
+        journal_id = invoice.journal_id
+        
+        data = {
+            'invoice_id': invoice.id,
+            'purchase_line_id': line.purchase_line_id.id,
+            'name': line.bex_id.name + ': ' + line.purchase_line_id.name,
+            'origin': line.breq_id.name + ', ' + line.bex_id.name,
+            'uom_id': line.purchase_line_id.product_uom.id,
+            'product_id': line.product_id.id,
+            'account_id': invoice_line.with_context({'journal_id': journal_id.id, 'type': 'in_invoice'})._default_account(),
+            'price_unit': self.currency_id.compute(line.prix_unitaire, invoice.currency_id, round=False),
+            'quantity': line.qty_done,
+            'discount': line.purchase_line_id.discount,
+            'account_analytic_id': line.purchase_line_id.account_analytic_id.id,
+            'analytic_tag_ids': line.purchase_line_id.analytic_tag_ids.ids,
+            #'invoice_line_tax_ids': line.purchase_line_id.taxes_id.ids
+        }
+        
+        return data
+    
+    def create_invoice(self):
+        self.ensure_one()
+        Invoice = self.env['account.invoice']
+        Invoice_lines = self.env['account.invoice.line']
+        inv_types = ['in_invoice']
+        domain = [
+            ('type', 'in', filter(None, map(TYPE2JOURNAL.get, inv_types))),
+            ('company_id', '=', self.env.user.company_id.id),
+        ]
+        journal_id = self.env['account.journal'].search(domain, limit=1)
+        
+        invoice_data = {
+                    'partner_id': self.partner_id.id,
+                    'type': 'in_invoice',
+                    'currency_id': self.currency_id.id,
+                    'purchase_id': self.breq_id.id,
+                    'origin': self.name,
+                    'journal_id': journal_id.id
+                    }
+        invoice = Invoice.create(invoice_data)
+        for line in self.bex_lines:
+            vals = self._prepare_invoice_line_from_bex_line(invoice, line)
+            invoice_line = Invoice_lines.create(vals)
+            taxes = line.purchase_line_id.taxes_id
+            invoice_line_tax_ids = self.breq_id.fiscal_position_id.map_tax(taxes)
+            invoice_line.invoice_line_tax_ids = invoice_line_tax_ids
+        invoice._onchange_invoice_line_ids()
+        
+            #invoice_line._set_additional_fields(invoice)
+            #invoice_line._compute_price()
+        #invoice._compute_amount()
+            
     @api.one
     def _get_is_manager(self):
         self.is_manager = False
-        current_employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)]).id
+        current_employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)]).id
         manager_id = self.employee_id.coach_id.id
         if current_employee_id == manager_id:
             self.is_manager = True
@@ -158,24 +252,24 @@ class Bex(models.Model):
     @api.one
     def _get_is_creator(self):
         self.is_creator = False
-        current_employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)], limit=1).id
+        current_employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1).id
         employee_id = self.employee_id.id
         if current_employee_id == employee_id:
             self.is_creator = True
             
     def _currency_en_ar(self):
-        for bex in self :
-            bex.currency_en_ar = bex.env.ref('base.MGA').id      
+        for bex in self:
+            bex.currency_en_ar = bex.env.ref('base.MGA').id
         
     name = fields.Char(compute="_name_change", readonly=True)
     breq_id = fields.Many2one('purchase.order', string=u"Budget Request lié", readonly=True)
     state = fields.Selection([
         ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
-        ('attente_hierarchie','Avis supérieur hierarchique'),
-        ('hierarchie_ok','Validation supérieur hierarchique'), 
-        ('comptabilise','Comptabilisé')], string='Statut', track_visibility='onchange',
+        ('attente_hierarchie', 'Avis supérieur hierarchique'),
+        ('hierarchie_ok', 'Validation supérieur hierarchique'), 
+        ('comptabilise', 'Comptabilisé')], string='Statut', track_visibility='onchange',
         help="Etat", default='draft')
-    partner_id = fields.Many2one('res.partner',related='breq_id.partner_id', readonly=True)
+    partner_id = fields.Many2one('res.partner', related='breq_id.partner_id', readonly=True)
     
     location_id = fields.Many2one('stock.location', "Source Location Zone", readonly=True)
     location_dest_id = fields.Many2one('stock.location', "Source Location Zone", readonly=True)
@@ -189,7 +283,7 @@ class Bex(models.Model):
     manager_id = fields.Many2one('hr.employee', related='breq_id.manager_id', readonly=True)
     is_manager = fields.Boolean(compute="_get_is_manager", string='Est un manager')
     currency_id = fields.Many2one('res.currency', related='breq_id.currency_id', string='Devise', readonly=True)
-    currency_en_ar = fields.Many2one('res.currency',compute="_currency_en_ar", readonly=True)
+    currency_en_ar = fields.Many2one('res.currency', compute="_currency_en_ar", readonly=True)
     is_creator = fields.Boolean(compute="_get_is_creator", string='Est le demandeur')
     date = fields.Datetime('Date', default=fields.Datetime.now, readonly=True)
     origin = fields.Char('Document d\'origine', readonly=True)
@@ -205,15 +299,15 @@ class Bex(models.Model):
     amount_tax_bex = fields.Float(compute='_amount_all', string='Taxes', readonly=True, store=True)
     amount_total_bex = fields.Float(compute='_amount_all', string='Total', readonly=True, store=True)
     
-    #Budget request
+    # Budget request
     amount_untaxed_breq = fields.Float('Montant HT', readonly=True)
     amount_tax_breq = fields.Float('Taxes', readonly=True)
     amount_total_breq = fields.Float('Total', readonly=True)
     
-    #Budget expenses Montant en Ariary
+    # Budget expenses Montant en Ariary
     amount_untaxed_en_ar = fields.Float('Montant HT')
     amount_tax_en_ar = fields.Float('Taxes')
-    amount_total_en_ar = fields.Float(compute='_amount_en_ar',string='Total')
+    amount_total_en_ar = fields.Float(compute='_amount_en_ar', string='Total')
     
     observation = fields.Text("Obsevations")
     solde_rembourser = fields.Monetary('Solde à rembourser/payer')
@@ -230,10 +324,10 @@ class Bex(models.Model):
     company_id = fields.Many2one('res.company', 'Company', readonly=True)
     group_id = fields.Many2one('procurement.group', 'Procurement Group', readonly=True)
     
-    taux_change = fields.Float(string='Taux de change')
+    taux_change = fields.Float(string='Taux de change', default=1.0)
     
     
-    #Fonction dans achat
+    # Fonction dans achat
     @api.model
     def _prepare_picking(self):
         if not self.group_id:
@@ -253,7 +347,7 @@ class Bex(models.Model):
             'location_id': self.partner_id.property_stock_supplier.id,
             'company_id': self.company_id.id,
             'mouvement_type': 'be',
-            'name': self.get_number(self.name,'BE'),
+            'name': self.get_number(self.name, 'BE'),
         }
         
     @api.multi
@@ -269,17 +363,18 @@ class Bex(models.Model):
                 values={'self': picking, 'origin': bex},
                 subtype_id=self.env.ref('mail.mt_note').id)
         return True
-    
+
+
 class BexLine(models.Model):
     _name = "bex.line"
     
     name = fields.Char('Désignation')
     bex_id = fields.Many2one('budget.expense.report', 'Reference Bex')
     product_id = fields.Many2one('product.product', 'Article')
-    product_qty = fields.Float('Quantité BReq',readonly=True)
+    product_qty = fields.Float('Quantité BReq', readonly=True)
     qty_done = fields.Float('Quantité reçue')
     prix_unitaire = fields.Float('PU', readonly=True)
-    montant_br = fields.Float('Montant BReq HT',readonly=True)
+    montant_br = fields.Float('Montant BReq HT', readonly=True)
     montant_realise = fields.Float(compute='_compute_amount', string='Montant Bex HT', readonly=True, store=True)
     montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant Bex TTC', readonly=True, store=True)
     taxes_id = fields.Many2many('account.tax', string='Taxes', domain=['|', ('active', '=', False), ('active', '=', True)])
@@ -335,7 +430,7 @@ class BexLine(models.Model):
                 'procurement_id': False,
                 'origin': line.bex_id.name,
                 'route_ids': line.bex_id.breq_id.picking_type_id.warehouse_id and [(6, 0, [x.id for x in line.bex_id.breq_id.picking_type_id.warehouse_id.route_ids])] or [],
-                'warehouse_id':line.bex_id.breq_id.picking_type_id.warehouse_id.id,
+                'warehouse_id': line.bex_id.breq_id.picking_type_id.warehouse_id.id,
             }
             done += moves.create(template)
         return done

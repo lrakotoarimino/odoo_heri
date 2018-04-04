@@ -1,6 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     
+    <record id="invoice_supplier_form_inherit" model="ir.ui.view">
+        <field name="name">	account.invoice.supplier.form.inherit</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_supplier_form"/>
+        <field name="arch" type="xml">
+            
+            <field name="uom_id" position="after">
+			    <field name="number_days" invisible="1"/>
+			</field>
+			
+			<button name="%(account.action_account_invoice_payment)d" position="attributes">
+        	    <attribute name="states">open,partially_paid</attribute>
+        	</button>
+        	
+        	<button name="%(account.action_account_invoice_refund)d" position="attributes">
+        	    <attribute name="attrs">{'invisible': ['|',('type', 'in', ['in_refund','out_refund']),('state','not in',('open','paid','partially_paid'))]}</attribute>
+        	</button>
+            
+        </field>
+    </record>
+    
 	<record id="invoice_form" model="ir.ui.view">
 		<field name="name">account.invoice.form</field>
         <field name="model">account.invoice</field>

@@ -6,7 +6,7 @@
     'sequence': 0,
     'description': """Module de gestion des achats pour Heri""",
     'website': 'https://www.ingenosya.mg',
-    'depends': ['base','purchase','purchase_discount','stock', 'hr',],
+    'depends': ['base', 'purchase', 'purchase_discount', 'stock', 'hr', 'account'],
     'data': [
                 #views
                 'views/bex_view.xml',

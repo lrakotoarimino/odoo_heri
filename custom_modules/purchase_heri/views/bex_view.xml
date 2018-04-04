@@ -35,6 +35,13 @@
                             <field name="be_lie_count" widget="statinfo" string="Bon d'entrée" help="Bon d'entrée lié au Budget Expense"/>
                             <field name="be_ids" invisible="1"/>
                         </button>
+                        <button type="object"
+                            name="action_view_invoices"
+                            class="oe_stat_button"
+                            icon="fa-dollar" attrs="{'invisible':['|',('state', 'not in', ('comptabilise')),('invoice_ids','=',[])]}">
+                            <field name="invoice_ids_count" widget="statinfo" string="Factures"/>
+                            <field name="invoice_ids" invisible="1"/>
+                        </button>
                    	</div>
                    	<label string="Budget Expensive Report Achat"/>
                     <h1 class="hidden-xs">
