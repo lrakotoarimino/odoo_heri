@@ -36,10 +36,12 @@
 				
 				<field name="location_id" position="attributes">
 				    <attribute name="string">Magasin d'origine</attribute>
+				    <attribute name="attrs"></attribute>
 				</field>
 				
 				<field name="location_dest_id" position="attributes">
 				    <attribute name="string">Magasin de destination</attribute>
+				    <attribute name="attrs"></attribute>
                 </field>
                 
 				<xpath expr="//button[@name='%(stock.act_stock_return_picking)d']" position="attributes">

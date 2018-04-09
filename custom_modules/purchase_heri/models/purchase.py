@@ -75,7 +75,7 @@ class PurchaseHeri(models.Model):
         self.partner_ref = self.parent_id.partner_ref
         self.nature = self.parent_id.nature
         self.currency_id = self.parent_id.currency_id
-        self.taux_change = self.parent_id.taux_change
+        self.taux_change = self.parent_id and self.parent_id.taux_change or 1.0
         self.objet = self.parent_id.objet
         self.section = self.parent_id.section
         for line in self.parent_id.order_line:
@@ -310,7 +310,7 @@ class PurchaseHeri(models.Model):
     breq_fille_count = fields.Integer(compute='_compute_breq_fille')
     purchase_ids_transport = fields.One2many('purchase.order', string="purchase_ids_transport", compute='_compute_br_transport_lie')
     br_transport_lie_count = fields.Integer(compute='_compute_br_transport_lie')
-    taux_change = fields.Float(string='Taux de change')
+    taux_change = fields.Float(string='Taux de change', default=1.0)
     
     purchase_ids_douane = fields.One2many('purchase.order', string="purchase_ids_douane", compute='_compute_br_douane_lie')
     br_douane_lie_count = fields.Integer(compute='_compute_br_douane_lie')
@@ -833,16 +833,20 @@ class PurchaseOrderLine(models.Model):
                 'breq_id': line.order_id.id,
                 'purchase_line_id': line.id,
                 'price_unit': line.pu_discounted,
-                'bex_id' :  bex.id,
-                'product_qty' : line.product_qty,
-                'prix_unitaire' : line.price_unit,
-                'montant_br' : line.price_subtotal,
+                'bex_id': bex.id,
+                'product_qty': line.product_qty,
+                'prix_unitaire': line.pu_discounted,
+                'montant_br': line.price_subtotal,
                 'purchase_type': line.order_id.purchase_type,
             }
             if line.order_id.purchase_type == 'purchase_import':
                 vals['prix_unitaire'] = 0.0
             
             bex_lines = bex_line.create(vals)
+            
+            taxes = line.taxes_id
+            invoice_line_tax_ids = line.order_id.fiscal_position_id.map_tax(taxes)
+            bex_lines.taxes_id = invoice_line_tax_ids
         return True
     
     @api.multi

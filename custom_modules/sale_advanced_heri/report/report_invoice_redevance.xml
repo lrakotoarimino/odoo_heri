@@ -68,10 +68,10 @@
                 		</div>
             			
                         <div class='col-xs-6 pull-right mt64'>
-                            <p t-if="o.invoice_type == 'rental'" class="text-center" style="font-size:31px;"><b>FACTURE REDEVANCE</b></p>
-                            <p t-if="o.invoice_type == 'sale'" class="text-center" style="font-size:31px;"><b>FACTURE VENTE</b></p>
-                            <p t-if="o.invoice_type == 'loss'" class="text-center" style="font-size:31px;"><b>FACTURE PERTE</b></p>
-                            <p t-if="o.invoice_type == 'refund'" class="text-center" style="font-size:31px;"><b>FACTURE D'AVOIR</b></p>
+                            <p t-if="o.invoice_type == 'rental'" class="text-center" style="font-size:31px;"><b><span t-if="o.state in ('draft','proforma2')">PROFORMA </span>FACTURE REDEVANCE</b></p>
+                            <p t-if="o.invoice_type == 'sale'" class="text-center" style="font-size:31px;"><b><span t-if="o.state in ('draft','proforma2')">PROFORMA </span>FACTURE VENTE</b></p>
+                            <p t-if="o.invoice_type == 'loss'" class="text-center" style="font-size:31px;"><b><span t-if="o.state in ('draft','proforma2')">PROFORMA </span>FACTURE PERTE</b></p>
+                            <p t-if="o.invoice_type == 'refund'" class="text-center" style="font-size:31px;"><b><span t-if="o.state in ('draft','proforma2')">PROFORMA </span>FACTURE D'AVOIR</b></p>
                             
                             <div class="row">
                                 <div class="col-xs-5 text-right">MOIS DE:</div>

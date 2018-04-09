@@ -201,7 +201,7 @@ class Bex(models.Model):
             'account_id': invoice_line.with_context({'journal_id': journal_id.id, 'type': 'in_invoice'})._default_account(),
             'price_unit': self.currency_id.compute(line.prix_unitaire, invoice.currency_id, round=False),
             'quantity': line.qty_done,
-            'discount': line.purchase_line_id.discount,
+            'discount': 0.0,
             'account_analytic_id': line.purchase_line_id.account_analytic_id.id,
             'analytic_tag_ids': line.purchase_line_id.analytic_tag_ids.ids,
             #'invoice_line_tax_ids': line.purchase_line_id.taxes_id.ids
@@ -369,11 +369,11 @@ class BexLine(models.Model):
     _name = "bex.line"
     
     name = fields.Char('Désignation')
-    bex_id = fields.Many2one('budget.expense.report', 'Reference Bex')
+    bex_id = fields.Many2one('budget.expense.report', u'Référence Bex')
     product_id = fields.Many2one('product.product', 'Article')
-    product_qty = fields.Float('Quantité BReq', readonly=True)
-    qty_done = fields.Float('Quantité reçue')
-    prix_unitaire = fields.Float('PU', readonly=True)
+    product_qty = fields.Float('Qté BReq', readonly=True)
+    qty_done = fields.Float('Qté Reçue')
+    prix_unitaire = fields.Float('PU Bex')
     montant_br = fields.Float('Montant BReq HT', readonly=True)
     montant_realise = fields.Float(compute='_compute_amount', string='Montant Bex HT', readonly=True, store=True)
     montant_realise_taxe = fields.Float(compute='_compute_amount', string='Montant Bex TTC', readonly=True, store=True)
@@ -394,13 +394,15 @@ class BexLine(models.Model):
     def _compute_amount(self):
         for line in self:
             if line.qty_done > line.product_qty or line.qty_done < 0.0:
-                raise UserError(u'La quantité reçue doit être inférieur ou égale à la quantité du BReq')
+                raise UserError(u'La quantité reçue doit être inférieur ou égale à la quantité du BReq et positive')
             
-            taxes = line.taxes_id.compute_all(line.prix_unitaire, line.bex_id.currency_id, line.qty_done, product=line.product_id, partner=False)
-            line.update({
-                 'montant_realise': taxes['total_excluded'],
-                 'montant_realise_taxe': taxes['total_included'],
-            })
+#             taxes = line.taxes_id.compute_all(line.prix_unitaire, line.bex_id.currency_id, line.qty_done, product=line.product_id, partner=False)
+#             line.update({
+#                  'montant_realise': taxes['total_excluded'],
+#                  'montant_realise_taxe': taxes['total_included'],
+#             })
+            
+            line.montant_realise = line.qty_done * line.prix_unitaire
             
     @api.multi
     def _create_stock_moves(self, picking):

@@ -83,23 +83,23 @@
                     </group>
                     <notebook>
 						<page string="Lignes Budget Expense Report">
-					        <field name="bex_lines">
+					        <field name="bex_lines" attrs="{'readonly': [('state', '!=', 'draft')]}">
 		                    	<tree editable="bottom">
 		                    	    <field name="purchase_type" invisible="1" />
 		                    	    <field name="product_id"/>
 		                    	    <field name="product_qty"/>
-		                    	    <field name="qty_done" string="Qté Reçue"/>
+		                    	    <field name="qty_done"/>
 		                    	    <field name="price_unit" readonly="1"/>
-		                    	    <field name="prix_unitaire" readonly="1"/>
+		                    	    <field name="prix_unitaire" attrs="{'readonly': [('purchase_type', '=', 'purchase_import')]}"/>
 						    		<field name="montant_br" />
+						    		<field name="montant_realise" />
 						    		<field 
 						    		    name="taxes_id" 
 						    		    attrs="{'readonly': [('purchase_type', '!=', 'purchase_import')]}"
 						    		    widget="many2many_tags" 
 						    		    domain="[('type_tax_use','=','purchase')]" 
 						    		    context="{'default_type_tax_use': 'purchase'}" invisible="1" />
-						    		<field name="montant_realise" />
-						    		<field name="montant_realise_taxe" />
+						    		 <field name="montant_realise_taxe" invisible="1" />
 			                    </tree>
 		                	</field>
 					    </page>
@@ -177,7 +177,7 @@
         <record id="action_bex_report" model="ir.actions.act_window">
             <field name="name">Budget Expenses Report</field>
             <field name="res_model">budget.expense.report</field>
-            <field name="view_id" ref="budget_expenses_tree"/>
+            <!-- <field name="view_id" ref="budget_expenses_tree"/> -->
             <field name="domain">[('state','in',('draft','attente_hierarchie','hierarchie_ok','comptabilise'))]</field>
             <field name="context">{'default_state':'draft','state':'draft'}</field>
             <field name="view_type">form</field>
