@@ -32,9 +32,11 @@ class Bex(models.Model):
 
     @api.depends('taux_change', 'amount_untaxed_bex')
     def _compute_amount_ht_ariary(self):
-        for order in self:
-            order.amount_total_ariary = order.taux_change * order.amount_untaxed_bex
-            
+        for bex in self:
+            total_ht_ar = bex.taux_change * bex.amount_untaxed_bex
+            bex.amount_total_ariary = total_ht_ar
+            bex.amount_total_bex = total_ht_ar
+
     amount_total_ariary = fields.Float(string='Montant HT (Ar)', compute='_compute_amount_ht_ariary')
     
     be_lie_count = fields.Integer(compute='_compute_be_lie')
@@ -142,15 +144,15 @@ class Bex(models.Model):
                 
             for line in bex.bex_lines:
                 amount_untaxed_bex += line.montant_realise
-                amount_taxed_bex += line.montant_realise_taxe
+                # amount_taxed_bex += line.montant_realise_taxe
                 
             amount_untaxed_bex = amount_untaxed_bex * (1 - (remise / 100))
-            amount_taxed_bex = amount_taxed_bex * (1 - (remise / 100))
+            # amount_taxed_bex = amount_taxed_bex * (1 - (remise / 100))
             
             bex.update({
                 'amount_untaxed_bex': amount_untaxed_bex,
-                'amount_tax_bex': amount_taxed_bex - amount_untaxed_bex,
-                'amount_total_bex': amount_taxed_bex,
+                # 'amount_tax_bex': amount_taxed_bex - amount_untaxed_bex,
+                # 'amount_total_bex': bex.amount_total_ariary,
                 })
             
     @api.depends('amount_total_en_ar')
@@ -190,9 +192,6 @@ class Bex(models.Model):
     def _prepare_invoice_line_from_bex_line(self, invoice, line):
         invoice_line = self.env['account.invoice.line']
         journal_id = invoice.journal_id
-        price_unit = line.prix_unitaire
-        if self.purchase_type == 'purchase_import':
-            price_unit = line.price_unit
             
         data = {
             'invoice_id': invoice.id,
@@ -202,7 +201,7 @@ class Bex(models.Model):
             'uom_id': line.purchase_line_id.product_uom.id,
             'product_id': line.product_id.id,
             'account_id': invoice_line.with_context({'journal_id': journal_id.id, 'type': 'in_invoice'})._default_account(),
-            'price_unit': self.currency_id.compute(price_unit, invoice.currency_id, round=False),
+            'price_unit': line.pu_bex_ar,
             'quantity': line.qty_done,
             'discount': 0.0,
             'account_analytic_id': line.purchase_line_id.account_analytic_id.id,
@@ -223,10 +222,11 @@ class Bex(models.Model):
         ]
         journal_id = self.env['account.journal'].search(domain, limit=1)
         
+        currency_id = self.env.ref('base.MGA')
         invoice_data = {
                     'partner_id': self.partner_id.id,
                     'type': 'in_invoice',
-                    'currency_id': self.currency_id.id,
+                    'currency_id': currency_id.id,
                     'purchase_id': self.breq_id.id,
                     'origin': self.name,
                     'journal_id': journal_id.id
@@ -240,10 +240,6 @@ class Bex(models.Model):
             invoice_line.invoice_line_tax_ids = invoice_line_tax_ids
         invoice._onchange_invoice_line_ids()
         
-            #invoice_line._set_additional_fields(invoice)
-            #invoice_line._compute_price()
-        #invoice._compute_amount()
-            
     @api.one
     def _get_is_manager(self):
         self.is_manager = False
@@ -300,7 +296,7 @@ class Bex(models.Model):
     
     amount_untaxed_bex = fields.Float(compute='_amount_all', string='Montant HT', readonly=True, store=True)
     amount_tax_bex = fields.Float(compute='_amount_all', string='Taxes', readonly=True, store=True)
-    amount_total_bex = fields.Float(compute='_amount_all', string='Total', readonly=True, store=True)
+    amount_total_bex = fields.Float(compute='_compute_amount_ht_ariary', string='Total (Ar)', readonly=True, store=True)
     
     # Budget request
     amount_untaxed_breq = fields.Float('Montant HT', readonly=True)
@@ -393,7 +389,10 @@ class BexLine(models.Model):
     purchase_line_id = fields.Many2one('purchase.order.line', string='ID ligne de commande')
     product_uom = fields.Many2one('product.uom', string='Unité de mesure')
     
-    @api.depends('qty_done', 'prix_unitaire', 'taxes_id')
+    pu_bex_ar = fields.Float(compute='_compute_amount', string='PU bex (Ar)', readonly=True)
+    montant_realise_ar = fields.Float(compute='_compute_amount', string='Montant Bex HT (Ar)', readonly=True)
+    
+    @api.depends('qty_done', 'prix_unitaire', 'taxes_id', 'bex_id.taux_change')
     def _compute_amount(self):
         for line in self:
             if line.qty_done > line.product_qty or line.qty_done < 0.0:
@@ -404,9 +403,13 @@ class BexLine(models.Model):
 #                  'montant_realise': taxes['total_excluded'],
 #                  'montant_realise_taxe': taxes['total_included'],
 #             })
-            
-            line.montant_realise = line.qty_done * line.prix_unitaire
-            
+            price_unit = line.prix_unitaire
+            if line.purchase_type == 'purchase_import':
+                price_unit = line.price_unit
+            line.montant_realise = line.qty_done * price_unit
+            line.pu_bex_ar = price_unit * line.bex_id.taux_change
+            line.montant_realise_ar = line.qty_done * line.pu_bex_ar
+
     @api.multi
     def _create_stock_moves(self, picking):
         moves = self.env['stock.move']

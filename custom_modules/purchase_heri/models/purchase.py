@@ -837,7 +837,7 @@ class PurchaseOrderLine(models.Model):
                 'bex_id': bex.id,
                 'product_qty': line.product_qty,
                 'prix_unitaire': line.pu_discounted,
-                'montant_br': line.price_subtotal,
+                'montant_br': line.pu_discounted * line.product_qty,
                 'purchase_type': line.order_id.purchase_type,
             }
             if line.order_id.purchase_type == 'purchase_import':

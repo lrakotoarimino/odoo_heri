@@ -63,7 +63,8 @@
 							<field name="manager_id" invisible="1"/>
 							<field name="is_manager" invisible="1"/>
 							<field name="currency_id" readonly="1"/>
-							<field name="taux_change" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
+							<field name="taux_change" widget="monetary" options="{'currency_field': 'currency_en_ar'}" 
+							    attrs="{'readonly': [('state', '!=', 'draft')]}"/>
 							<field name="is_creator" invisible="1"/>
                         </group>
                         <group>
@@ -91,8 +92,10 @@
 		                    	    <field name="qty_done"/>
 		                    	    <field name="price_unit" readonly="1"/>
 		                    	    <field name="prix_unitaire" attrs="{'readonly': [('purchase_type', '=', 'purchase_import')]}"/>
-						    		<field name="montant_br" />
-						    		<field name="montant_realise" />
+						    		<field name="pu_bex_ar"/>
+						    		<field name="montant_br"/>
+						    		<field name="montant_realise"/>
+						    		<field name="montant_realise_ar"/>
 						    		<field 
 						    		    name="taxes_id" 
 						    		    attrs="{'readonly': [('purchase_type', '!=', 'purchase_import')]}"
