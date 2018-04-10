@@ -703,7 +703,8 @@ class PurchaseHeri(models.Model):
     def _compute_date_planned(self):
         for order in self:
             order.date_planned = order.date_prevu
- 
+
+
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
 

@@ -7,7 +7,7 @@
             <field name="model">budget.expense.report</field>
             <field eval="12" name="priority"/>
             <field name="arch" type="xml">
-                <form string="Budget Expensive Report Achat">
+                <form string="Budget Expensive Report Achat" create="0">
                 <header>
                     <button name="calculer_prix_revient" string="Calculer les prix de revient" type="object" class="oe_highlight"
 			    	    attrs="{'invisible': ['|',('state', 'not in', ('draft')),'|', ('is_creator', '=', False), ('purchase_type', '!=', 'purchase_import')]}"/>
@@ -154,7 +154,7 @@
             <field name="name">budget.expenses.tree</field>
             <field name="model">budget.expense.report</field>
             <field name="arch" type="xml">
-                <tree  string="Budget Expenses Report list">
+                <tree string="Budget Expenses Report list" create="0">
                     <field name="name" string="Nom"/>
                     <field name="employee_id"/>
                     <field name="department_id"/>
@@ -177,7 +177,6 @@
         <record id="action_bex_report" model="ir.actions.act_window">
             <field name="name">Budget Expenses Report</field>
             <field name="res_model">budget.expense.report</field>
-            <!-- <field name="view_id" ref="budget_expenses_tree"/> -->
             <field name="domain">[('state','in',('draft','attente_hierarchie','hierarchie_ok','comptabilise'))]</field>
             <field name="context">{'default_state':'draft','state':'draft'}</field>
             <field name="view_type">form</field>
@@ -202,33 +201,8 @@
         </record>
         <!-- Fin Budget Expenses Report action -->
         
-   		<!-- Bex avec inherit name différent-->
-		<!-- <record id="action_heri_1" model="ir.actions.act_window">
-            <field name="name">heri picking test</field>
-            <field name="res_model">budget.expense.report</field>
-            <field name="view_type">form</field>
-            <field name="view_mode">tree,form</field>
-            <field name="view_id" ref="budget_expenses_tree"/>
-        </record>
-        
-		<record id="action_heri_tree_1" model="ir.actions.act_window.view">
-            <field eval="1" name="sequence"/>
-            <field name="view_mode">tree</field>
-            <field name="view_id" ref="budget_expenses_tree"/>
-            <field name="act_window_id" ref="action_heri_1"/>
-        </record>
-
-        <record id="action_heri_form_1" model="ir.actions.act_window.view">
-            <field eval="2" name="sequence"/>
-            <field name="view_mode">form</field>
-            <field name="view_id" ref="view_picking_bex_form"/>
-            <field name="act_window_id" ref="action_heri_1"/>
-        </record> -->
-        <!-- Fin Bex avec inherit name différent-->
-        
         <!-- Menus -->
         <menuitem id="menu_bex" parent="purchase.menu_procurement_management" action="action_bex_report" name="Budget Expenses Report" sequence="4"/>
-        <!-- <menuitem id="menu_heri1" parent="stock.menu_stock_config_settings" action="action_heri_1" name="Bex avec inherit name différent" sequence="2"/> -->
-		<!-- Fin Menus -->
+        <!-- Fin Menus -->
 	</data>
 </odoo>

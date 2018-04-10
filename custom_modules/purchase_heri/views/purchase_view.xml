@@ -115,9 +115,11 @@
                 <button name="action_view_picking" position="replace">
                     <button name="action_view_picking" invisible="1"/>
                 </button>
-            <!--     <button name="button_cancel" position="attributes">
+            	
+            	<button name="button_cancel" position="attributes">
                     <attribute name="invisible">1</attribute>
-                </button> -->
+                </button>
+				
 				<xpath expr="//field[@name='date_order']" position="after">
 					<field name="date_prevu"/>
 				    <field name="change_state_date" invisible="1"/>

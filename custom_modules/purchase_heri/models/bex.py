@@ -72,7 +72,7 @@ class Bex(models.Model):
                 if fob_total == 0.0:
                     raise UserError(u'FOB total ne devrait pas être nulle')
                 elif line.qty_done <= 0.0:
-                    raise UserError(u'La quantité des articles devrait être un nombre positif non nulle')
+                    raise UserError(u'La quantité des articles devrait être un nombre positif et non nul')
                 else:
                     bex_line_id = bex_line_obj.search([('bex_id', '=', bex_droit_douane.id), ('purchase_line_id.purchase_line_id', '=', line.purchase_line_id.id)], limit=1)
                     droit_douane = bex_line_id.montant_realise
@@ -190,7 +190,10 @@ class Bex(models.Model):
     def _prepare_invoice_line_from_bex_line(self, invoice, line):
         invoice_line = self.env['account.invoice.line']
         journal_id = invoice.journal_id
-        
+        price_unit = line.prix_unitaire
+        if self.purchase_type == 'purchase_import':
+            price_unit = line.price_unit
+            
         data = {
             'invoice_id': invoice.id,
             'purchase_line_id': line.purchase_line_id.id,
@@ -199,7 +202,7 @@ class Bex(models.Model):
             'uom_id': line.purchase_line_id.product_uom.id,
             'product_id': line.product_id.id,
             'account_id': invoice_line.with_context({'journal_id': journal_id.id, 'type': 'in_invoice'})._default_account(),
-            'price_unit': self.currency_id.compute(line.prix_unitaire, invoice.currency_id, round=False),
+            'price_unit': self.currency_id.compute(price_unit, invoice.currency_id, round=False),
             'quantity': line.qty_done,
             'discount': 0.0,
             'account_analytic_id': line.purchase_line_id.account_analytic_id.id,
