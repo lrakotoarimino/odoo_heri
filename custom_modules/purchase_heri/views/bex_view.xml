@@ -77,7 +77,7 @@
 							<field name="cumul" string="CUMULE REAL + ENGAG." widget="monetary" options="{'currency_field': 'currency_id'}" />
 							<field name="solde_rembourser" widget="monetary" string="SOLDE DE BUDGET" options="{'currency_field': 'currency_id'}" />
 							<field name="journal_id" widget="selection" />
-							<field name="remise" />
+							<field name="remise" invisible="1"/>
 							<field name="observation" />
 							<field name="currency_en_ar" invisible="1"/>
                         </group>
@@ -131,7 +131,7 @@
 		                   <div class="oe_subtotal_footer_separator oe_inline">
 		                       <label for="amount_total_bex"/>
 		                   </div>
-		                   <field name="amount_total_bex" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+		                   <field name="amount_total_bex" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_en_ar'}"/>
 		                </group>
 				        <group class="oe_subtotal_footer oe_right" string="BReq">	        	    	
 		                   <field name="amount_untaxed_breq" widget="monetary" options="{'currency_field': 'currency_id'}"/>
