@@ -8,6 +8,15 @@
 		<field name="arch" type="xml">
 		    <xpath expr="//field[@name='usage']" position="before">
 				<field name="billing_table_id" attrs="{'invisible': [('is_kiosk','!=',True)],'required':[('is_kiosk','=',True)]}" />
+				<field options="{'reload_on_button': True}" name="contractor_ids" context="{'default_kiosk_id': id}" attrs="{'invisible': [('is_kiosk','!=',True)]}">
+			   		<tree editable="bottom" decoration-success="status==True" delete="0">
+			   		    <field name="partner_id" domain="[('customer','=',True)]"/>
+			   			<field name="status"/>
+			   			<field name="date_start"/>
+			   			<field name="date_end"/>
+			   			<field name="kiosk_id" invisible="1"/>
+			   		</tree>
+			   	</field>
 			</xpath>
 		</field>
 	</record>

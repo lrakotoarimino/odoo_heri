@@ -197,17 +197,22 @@ class AccountInvoice(models.Model):
             self.partner_id = False
             return
           
-        partner_id = self.env['res.partner'].search([('kiosk_id', '=', self.kiosk_id.id)], limit=1)
-        if partner_id:
-            self.partner_id = partner_id.id
-        else:
-            self.partner_id = False
-      
+        contractor = self.env['contractor.line'].search([('kiosk_id', '=', self.kiosk_id.id), ('status', '=', True)], limit=1)
+        if contractor and contractor.partner_id:
+            self.partner_id = contractor.partner_id.id
+
     @api.onchange('partner_id', 'company_id')
     def _onchange_partner_id(self):
         res = super(AccountInvoice, self)._onchange_partner_id()
-        if self.partner_id and self.partner_id.kiosk_id:
-            self.kiosk_id = self.partner_id.kiosk_id.id
+        
+        if not self.partner_id:
+            self.kiosk_id = False
+            return
+
+        contractor = self.env['contractor.line'].search([('partner_id', '=', self.partner_id.id), ('status', '=', True)], limit=1)
+        if contractor and contractor.kiosk_id:
+            self.kiosk_id = contractor.kiosk_id.id
+
         return res
     
     @api.onchange('date_start', 'date_end')
