@@ -13,14 +13,17 @@ READONLY_STATES = {
         'done': [('readonly', True)],
         'cancel': [('readonly', True)],
     }
-#Region
+
+
+# Region
 class ResRegion(models.Model):
     _name = "res.region"
     
     name = fields.Char(u'Région')
     frais_base = fields.Float("Frais de base")
-    
-#Budget Request Achat
+
+ 
+# Budget Request Achat
 class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
     _description = "Budget Request"
@@ -29,7 +32,7 @@ class PurchaseHeri(models.Model):
     def _default_picking_type2(self):
         if self.env.context.get('default_is_breq_stock'):
             return False
-        return super(PurchaseHeri,self)._default_picking_type()
+        return super(PurchaseHeri, self)._default_picking_type()
     
     picking_type_id = fields.Many2one('stock.picking.type', 'Deliver To', states=READONLY_STATES, required=True, default=_default_picking_type2,\
         help="This will determine picking type of incoming shipment")
@@ -95,27 +98,27 @@ class PurchaseHeri(models.Model):
     def create(self, values):
         order = super(PurchaseHeri,self).create(values)
         if not values.get('is_breq_id_sale',False):
-            #S'il ne provient pas d'un BCI dans la facturation des materiels en mauvais etat
+            # S'il ne provient pas d'un BCI dans la facturation des materiels en mauvais etat
             if not values.get('order_line',False) and not values.get('is_from_bci',False):
                 raise UserError('Veuillez renseigner les lignes de la commande.')
         return order 
     
-    #Redefinir pour ne pas initialiser le champ livré à
+    # Redefinir pour ne pas initialiser le champ livré à
     @api.model
     def _default_picking_type(self):
         return False
     
     @api.model
     def _prepare_picking(self):
-        res = super(PurchaseHeri,self)._prepare_picking()
+        res = super(PurchaseHeri, self)._prepare_picking()
         
-        #Modifier type de preparation
-        if self.is_breq_stock :
+        # Modifier type de preparation
+        if self.is_breq_stock:
             if not self.picking_type_id.default_location_dest_id:
                 raise UserError("Le type de préparation du champ 'Livré à' %s n'a pas d'Emplacement de destination par défaut. Merci de configurer" % (self.picking_type_id.name))
 
             res['picking_type_id'] = self.picking_type_id.id
-            #res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
+            # res['location_dest_id'] = self.env.ref('purchase_heri.stock_location_virtual_heri').id
             res['location_dest_id'] = self.picking_type_id.default_location_dest_id.id
             res['location_id'] = self.location_id.id
             res['move_type'] = 'direct'
@@ -126,7 +129,8 @@ class PurchaseHeri(models.Model):
             res['mouvement_type'] = self.mouvement_type
         
         return res
-    #creation bon de sortie (budget request stock)
+    
+    # creation bon de sortie (budget request stock)
     @api.multi
     def _create_picking2(self):
         picking_obj = self.env['stock.picking']
@@ -163,7 +167,7 @@ class PurchaseHeri(models.Model):
     
     def action_cancel(self):
         picking_obj = self.env['stock.picking']
-        picking_id = picking_obj.search([('breq_id','=',self.id)],limit=1)
+        picking_id = picking_obj.search([('breq_id', '=', self.id)], limit=1)
         picking_id.mapped('move_lines').action_cancel()
     
     # creation budget expense report (budget request achat)
@@ -195,7 +199,7 @@ class PurchaseHeri(models.Model):
 #                     'currency_id': order.currency_id.id,
 #                     'employee_id': order.employee_id.id,
 #                     'manager_id': order.manager_id.id,
-                    'journal_id':order.journal_id.id,
+                    'journal_id': order.journal_id.id,
                     'amount_untaxed_breq': order.amount_untaxed,
                     'amount_tax_breq': order.amount_tax,
                     'amount_total_breq': order.amount_total,
@@ -206,7 +210,7 @@ class PurchaseHeri(models.Model):
                     'location_id': order.partner_id.property_stock_supplier.id,
                     'location_dest_id': order._get_destination_location(),
                     'picking_type_id': order.picking_type_id.id,
-                    'group_id': order.group_id.id, 
+                    'group_id': order.group_id.id,  
                     'move_type': 'direct',
                     }
             bex = bex_obj.create(vals)
@@ -214,34 +218,33 @@ class PurchaseHeri(models.Model):
             
         return True
     
-
     def get_department_id(self):
         employee_obj = self.env['hr.employee']
-        #on cherche l'id de l'employe en cours dans la base hr_employee
-        employee_id = employee_obj.search([('user_id','=',self.env.uid)])
-        #si employee_id n'est pas vide
+        # on cherche l'id de l'employe en cours dans la base hr_employee
+        employee_id = employee_obj.search([('user_id', '=', self.env.uid)])
+        # si employee_id n'est pas vide
         if employee_id:
-            #get id du departement
+            # get id du departement
             return employee_id[0].department_id.id
         return False
     
     def get_employee_id(self):
-        employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)])
+        employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)])
         if employee_id:
             return employee_id[0].id
         return False
         
     def get_manager_id(self):
-        employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)])
+        employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)])
         if employee_id:
             return employee_id[0].parent_id.id
         return False
     
-    @api.depends('state','statut_bex')
+    @api.depends('state', 'statut_bex')
     def _concate_state(self):
         for res in self:
             etat_bex = ""
-            bx=""
+            bx = ""
             if res.statut_bex:
                 etat_bex = res.statut_bex
                 bx += dict(res.env['budget.expense.report'].fields_get(allfields=['state'])['state']['selection'])[etat_bex]
@@ -258,22 +261,17 @@ class PurchaseHeri(models.Model):
     justificatif = fields.Text("Justificatif Non prévu/Dépassement")
     state = fields.Selection([
         ('nouveau', 'Nouveau'),
-        ('confirmation_dg', 'En attente validation DG'),
+        # start state budget request stock
         ('a_approuver', 'Avis supérieur hiérarchique'),
-        ('aviser_finance', 'Etablissement OV'),
-        ('ov_to_bank', 'OV envoyé à la banque'),
-        ('br_lie', 'Attente pièce jointe'),
-        ('calcul_pr', 'Prix de revient calculé'),
-        ('non_prevue', 'En vérification compta'),
-        ('attente_validation', 'En attente validation DG'),
-        ('wait_mode', 'En attente paiement finance'),
-        ('mode_de_paiment_valide', 'Mode de paiement Validé'),
-        ('purchase', 'BEX'),
-        ('refuse', 'Refusé'),
-        ('done', 'Terminé'),
         ('bs', 'Bon de sortie'),
-        ('cancel', 'Annulé'),
-        ], string='Etat BReq', readonly=True, default='nouveau', track_visibility='onchange')
+        # end state budget request stock
+        ('waiting_dg', 'En attente validation DG'),
+        ('waiting_manager', 'Avis supérieur hiérarchique'),
+        ('validated', u'Validé'),
+        ('purchase', 'BEX'),
+        ('done', 'Locked'),
+        ('cancel', 'Cancelled'),
+        ], string='State', readonly=True, default='nouveau', track_visibility='onchange')
     
     purchase_type = fields.Selection([
         ('purchase_stored', 'Achats locaux stockés'),
@@ -285,21 +283,21 @@ class PurchaseHeri(models.Model):
         ('transport', 'Transport'),
         ('assurance', 'Assurance'),
         ('douane', 'Droit de douane'),
-        ('additionel','Additionel'),
-        ('fille','Fille'),
+        ('additionel', 'Additionel'),
+        ('fille', 'Fille'),
     ], string='Type de service')
     
     purchase_import_type = fields.Selection([
         ('purchase_import_stored', 'Achats à l\'import stockés'),
         ('purchase_import_not_stored', 'Achats à l\'import non stockés')
-    ], string='Type d\'achat',track_visibility='onchange')
+    ], string='Type d\'achat', track_visibility='onchange')
     
-    import_type = fields.Many2one('purchase.import.type',string="Type Import")
+    import_type = fields.Many2one('purchase.import.type', string="Type Import")
         
     department_id = fields.Many2one('hr.department', string='Département émetteur', default=get_department_id, readonly=True)
     objet = fields.Text("Objet de la demande")
     employee_id = fields.Many2one('hr.employee', string='Demandeur', default=get_employee_id, readonly=True)
-    manager_id = fields.Many2one('hr.employee', string='Responsable d\'approbation',default=get_manager_id, readonly=True)
+    manager_id = fields.Many2one('hr.employee', string='Responsable d\'approbation', default=get_manager_id, readonly=True)
     description = fields.Char("Description")
     region_id = fields.Many2one('res.region', string='Région')
     is_manager = fields.Boolean(compute="_get_is_manager", string='Est un manager')
@@ -318,21 +316,21 @@ class PurchaseHeri(models.Model):
     purchase_ids_assurance = fields.One2many('purchase.order', string="purchase_ids_assurance", compute='_compute_br_assurance_lie')
     br_assurance_lie_count = fields.Integer(compute='_compute_br_assurance_lie')
     
-    parent_id = fields.Many2one('purchase.order',readonly=True, string='BReq mère')
-    parents_ids = fields.Many2one('purchase.order',readonly=True, string='BReq d\'origine')
+    parent_id = fields.Many2one('purchase.order', readonly=True, string='BReq mère')
+    parents_ids = fields.Many2one('purchase.order', readonly=True, string='BReq d\'origine')
     date_prevu = fields.Datetime(string="Date prévue livraison", default=fields.Datetime.now())
     modalite_paiement = fields.Float(string='Modalité de paiement')
-    location_id = fields.Many2one('stock.location', string='Magasin Origine') 
+    location_id = fields.Many2one('stock.location', string='Magasin Origine')
      
     section = fields.Char("Section analytique d’imputation")
     nature = fields.Char("Nature analytique")
     budgetise = fields.Float("Budgetisé")
     cumul = fields.Float("Cumul Real. + Engag.")
     solde = fields.Float("Solde de budget")
-    statut_budget = fields.Selection(compute="_get_statut_budget", string="Statut", 
-                         selection=[('prevu','PREVU'),
-                                    ('non_prevu','NON PREVU'),
-                                    ('depasse','DEPASSEMENT')], store=True, default='prevu')
+    statut_budget = fields.Selection(compute="_get_statut_budget", string="Statut",
+                         selection=[('prevu', 'PREVU'),
+                                    ('non_prevu', 'NON PREVU'),
+                                    ('depasse', 'DEPASSEMENT')], store=True, default='prevu')
     
     journal_id = fields.Many2one('account.journal', string='Mode de paiement', domain=[('type', 'in', ('bank', 'cash'))])
     is_creator = fields.Boolean(compute="_get_is_creator", string='Est le demandeur')
@@ -340,9 +338,9 @@ class PurchaseHeri(models.Model):
     statut_bex = fields.Selection(compute="_get_statut_bex", string='Etat BEX',
                       selection=[
                              ('draft', 'Nouveau'), ('cancel', 'Cancelled'),
-                             ('attente_hierarchie','Avis supérieur hierarchique'),
-                             ('hierarchie_ok','Validation supérieur hierarchique'), 
-                             ('comptabilise','Comptabilisé')])
+                             ('attente_hierarchie', 'Avis supérieur hierarchique'),
+                             ('hierarchie_ok', 'Validation supérieur hierarchique'), 
+                             ('comptabilise', 'Comptabilisé')])
     mouvement_type = fields.Selection([
         ('bs', 'bon de sortie'),
         ('be', u'bon d entrée'),
@@ -356,7 +354,7 @@ class PurchaseHeri(models.Model):
     picking_ids_bs = fields.One2many('stock.picking', string="purchase_ids", compute='_compute_bs_lie')
     picking_bci_id = fields.Many2one('stock.picking', string="purchase_ids")
     bs_lie_count = fields.Integer(compute='_compute_bs_lie')
-    all_bex_validated = fields.Boolean('Tout bex est Comptabilisé',compute='_compute_all_validated')   
+    all_bex_validated = fields.Boolean('Tout bex est Comptabilisé', compute='_compute_all_validated')   
     bs_id = fields.Many2one('stock.picking', string="Bon de sortie lié", compute='_compute_bs_lie')
     
     @api.model
@@ -368,13 +366,12 @@ class PurchaseHeri(models.Model):
     @api.depends('statut_bex')
     def _compute_all_validated(self):
         for order in self:
-            current_brq_id = self.env['purchase.order'].search([('parents_ids','=',order.id),('service_type','=','transport')])
-            if current_brq_id and all([x.statut_bex == 'comptabilise' for x in current_brq_id]) :
+            current_brq_id = self.env['purchase.order'].search([('parents_ids', '=', order.id), ('service_type', '=', 'transport')])
+            if current_brq_id and all([x.statut_bex == 'comptabilise' for x in current_brq_id]):
                 order.all_bex_validated = True
-            else :
+            else:
                 order.all_bex_validated = False
                 
-        
     @api.onchange('location_id')
     def onchange_location_id(self):
         if not self.is_breq_stock:
@@ -396,7 +393,7 @@ class PurchaseHeri(models.Model):
             
     @api.onchange('budgetise', 'cumul')
     def onchange_budget_cumul(self):
-        self.solde = self.budgetise-self.cumul       
+        self.solde = self.budgetise-self.cumul
     
     @api.onchange('partner_id', 'company_id')
     def onchange_partner_id(self):
@@ -404,20 +401,20 @@ class PurchaseHeri(models.Model):
             self.fiscal_position_id = False
             self.payment_term_id = False
             
-            #Redefintion
+            # Redefintion
             if self.purchase_type == 'purchase_import':
                 self.currency_id = self.env.ref('base.EUR').id
-            else: 
+            else:
                 self.currency_id = self.env.ref('base.MGA').id
-            #Fin redefinition
+            # Fin redefinition
         else:
             self.fiscal_position_id = self.env['account.fiscal.position'].with_context(company_id=self.company_id.id).get_fiscal_position(self.partner_id.id)
             self.payment_term_id = self.partner_id.property_supplier_payment_term_id.id
             
-            #Redefintion
+            # Redefintion
             if self.partner_id.property_purchase_currency_id:
-                self.currency_id =  self.partner_id.property_purchase_currency_id.id
-            #Fin redefinition
+                self.currency_id = self.partner_id.property_purchase_currency_id.id
+            # Fin redefinition
         return {}
       
     @api.multi
@@ -431,7 +428,7 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_bs_lie(self):
         for order in self:
-            bs_child_purchase = self.env['stock.picking'].search([('breq_id','=',order.id),('mouvement_type','=','bs')],limit=1)
+            bs_child_purchase = self.env['stock.picking'].search([('breq_id', '=', order.id), ('mouvement_type', '=', 'bs')], limit=1)
             if bs_child_purchase:
                 order.picking_ids_bs = bs_child_purchase
                 order.bs_lie_count = len(bs_child_purchase)
@@ -440,7 +437,7 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_bex_lie(self):
         for bx in self:
-            bex_child_purchase = self.env['budget.expense.report'].search([('breq_id','=',bx.id)])
+            bex_child_purchase = self.env['budget.expense.report'].search([('breq_id', '=', bx.id)])
             if bex_child_purchase:
                 bx.bex_id = bex_child_purchase
                 bx.bex_lie_count = len(bex_child_purchase)
@@ -453,14 +450,14 @@ class PurchaseHeri(models.Model):
         
     @api.one
     def _get_statut_bex(self):
-        bex_lie = self.env['budget.expense.report'].search([('breq_id','=',self.id)], limit=1)
+        bex_lie = self.env['budget.expense.report'].search([('breq_id', '=', self.id)], limit=1)
         if bex_lie:
             self.statut_bex = bex_lie.state
             
     @api.one
     def _get_is_creator(self):
         self.is_creator = False
-        current_employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)], limit=1).id
+        current_employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1).id
         employee_id = self.employee_id.id
         if current_employee_id == employee_id:
             self.is_creator = True
@@ -468,7 +465,7 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_br_lie(self):
         for br in self:
-            purchase_child = self.env['purchase.order'].search([('parents_ids','=',br.id),('service_type','=','additionel')])
+            purchase_child = self.env['purchase.order'].search([('parents_ids', '=', br.id), ('service_type', '=', 'additionel')])
             if purchase_child:
                 br.purchase_ids = purchase_child
                 br.br_lie_count = len(purchase_child)
@@ -476,7 +473,7 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_breq_fille(self):
         for breq in self:
-            purchase_child = self.env['purchase.order'].search([('parent_id','=',breq.id),('service_type','=','fille')])
+            purchase_child = self.env['purchase.order'].search([('parent_id', '=', breq.id), ('service_type', '=', 'fille')])
             if purchase_child:
                 breq.purchase_fille_ids = purchase_child
                 breq.breq_fille_count = len(purchase_child)
@@ -484,7 +481,7 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_br_transport_lie(self):
         for br_transport in self:
-            purchase_child_transport = self.env['purchase.order'].search([('parents_ids','=',br_transport.id),('service_type','=','transport')])
+            purchase_child_transport = self.env['purchase.order'].search([('parents_ids', '=', br_transport.id), ('service_type', '=', 'transport')])
             if purchase_child_transport:
                 br_transport.purchase_ids_transport = purchase_child_transport
                 br_transport.br_transport_lie_count = len(purchase_child_transport)
@@ -492,7 +489,7 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_br_douane_lie(self):
         for br_transport in self:
-            purchase_child_douane = self.env['purchase.order'].search([('parents_ids','=',br_transport.id),('service_type','=','douane')])
+            purchase_child_douane = self.env['purchase.order'].search([('parents_ids', '=', br_transport.id), ('service_type', '=', 'douane')])
             if purchase_child_douane:
                 br_transport.purchase_ids_douane = purchase_child_douane
                 br_transport.br_douane_lie_count = len(purchase_child_douane)
@@ -500,7 +497,7 @@ class PurchaseHeri(models.Model):
     @api.multi
     def _compute_br_assurance_lie(self):
         for br_transport in self:
-            purchase_child_assurance = self.env['purchase.order'].search([('parents_ids','=',br_transport.id),('service_type','=','assurance')])
+            purchase_child_assurance = self.env['purchase.order'].search([('parents_ids', '=', br_transport.id), ('service_type', '=', 'assurance')])
             if purchase_child_assurance:
                 br_transport.purchase_ids_assurance = purchase_child_assurance
                 br_transport.br_assurance_lie_count = len(purchase_child_assurance)
@@ -535,7 +532,7 @@ class PurchaseHeri(models.Model):
         result = action.read()[0]
         return result
     
-    @api.depends('solde','budgetise','order_line')
+    @api.depends('solde', 'budgetise', 'order_line')
     def _get_statut_budget(self):
         for breq in self:
             if self.purchase_type != 'purchase_import':
@@ -546,7 +543,7 @@ class PurchaseHeri(models.Model):
                         breq.statut_budget = 'prevu'
                 if breq.budgetise == 0.0 and breq.solde < 0.0:
                     breq.statut_budget = 'non_prevu'
-                if breq.budgetise > 0.0 and breq.solde <= 0.0 :
+                if breq.budgetise > 0.0 and breq.solde <= 0.0:
                     breq.statut_budget = 'depasse'
                 if breq.budgetise == 0.0 and breq.solde == 0.0:
                     breq.statut_budget = 'non_prevu'
@@ -556,38 +553,33 @@ class PurchaseHeri(models.Model):
     @api.one
     def _get_is_manager(self):
         self.is_manager = False
-        current_employee_id = self.env['hr.employee'].search([('user_id','=',self.env.uid)]).id
+        current_employee_id = self.env['hr.employee'].search([('user_id', '=', self.env.uid)]).id
         manager_id = self.employee_id.parent_id.id
         if current_employee_id == manager_id:
             self.is_manager = True
             
-    def action_a_approuver(self):
-        self.write({'state':'a_approuver', 'change_state_date': fields.Datetime.now()})
-    def action_refus_superieur(self):
-        self.write({'state':'nouveau', 'change_state_date': fields.Datetime.now()})
-        self.action_cancel()
-    def action_refus_dg_import(self):
-        self.write({'state':'nouveau', 'change_state_date': fields.Datetime.now()})
-    def action_non_prevu(self):
-        self.write({'state':'non_prevue', 'change_state_date': fields.Datetime.now()})
-    def action_refus_finance(self):
-        self.write({'state':'refuse', 'change_state_date': fields.Datetime.now()})
-    def action_attente_validation(self):
-        self.write({'state':'attente_validation', 'change_state_date': fields.Datetime.now()})
-    def action_attente_validation_import(self):
-        self.write({'state':'confirmation_dg', 'change_state_date': fields.Datetime.now()})
-    def action_refus_dg(self):
-        self.write({'state':'refuse', 'change_state_date': fields.Datetime.now()})
-    def action_wait_mode(self):
-        self.write({'state': 'wait_mode', 'change_state_date': fields.Datetime.now()})
-    def action_confirmed(self):
+    # start function workflow
+    # start local purchase
+    def action_attente_validation_superieur(self):
+        self.write({'state': 'waiting_manager', 'change_state_date': fields.Datetime.now()})
+    # end local purchase
+    
+    # start import purchase
+    def action_nouveau(self):
+        self.write({'state': 'nouveau', 'change_state_date': fields.Datetime.now()})
+
+    def action_attente_validation_dg(self):
+        self.write({'state': 'waiting_dg', 'change_state_date': fields.Datetime.now()})
+        
+    def action_validation(self):
+        self.write({'state': 'validated', 'change_state_date': fields.Datetime.now()})
+    
+    def action_creation_bex(self):
         self.write({'state': 'purchase', 'change_state_date': fields.Datetime.now()})
         self._create_bex()
-    def action_annuler(self):
-        self.write({'state': 'cancel', 'change_state_date': fields.Datetime.now()})
-    def action_paiement_valider(self):
-        self.write({'state': 'mode_de_paiment_valide', 'change_state_date': fields.Datetime.now()})
-        
+    # end import purchase
+    # start function workflow
+    
     def action_compute_prix_revient(self):
         if self.taux_change == 0.0:
             raise UserError(u'Le taux de change doit être non nul')
@@ -598,19 +590,19 @@ class PurchaseHeri(models.Model):
         
         if self.purchase_type == 'purchase_import':
             
-            breq_transport = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','transport')])
-            breq_assurance = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','assurance')])
-            breq_additionnel = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','additionel')])
-            breq_droit_douane = purchase_obj.search(['&', ('parents_ids','=',self.id), ('service_type','=','douane')],limit=1)
+            breq_transport = purchase_obj.search(['&', ('parents_ids', '=', self.id), ('service_type', '=', 'transport')])
+            breq_assurance = purchase_obj.search(['&', ('parents_ids', '=', self.id), ('service_type', '=', 'assurance')])
+            breq_additionnel = purchase_obj.search(['&', ('parents_ids', '=', self.id), ('service_type', '=', 'additionel')])
+            breq_droit_douane = purchase_obj.search(['&', ('parents_ids', '=', self.id), ('service_type', '=', 'douane')], limit=1)
                   
-            bex_transport = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_transport]))])
-            bex_assurance = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_assurance]))])
-            bex_additionnel = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_additionnel]))])
-            bex_droit_douane = bex_obj.search([('breq_id','in',tuple([breq.id for breq in breq_droit_douane]))])
+            bex_transport = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_transport]))])
+            bex_assurance = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_assurance]))])
+            bex_additionnel = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_additionnel]))])
+            bex_droit_douane = bex_obj.search([('breq_id', 'in', tuple([breq.id for breq in breq_droit_douane]))])
 
             total_assurance_fret = sum(x.amount_untaxed_bex for x in bex_transport) + sum(x.amount_untaxed_bex for x in bex_assurance)
             cLocTotal = sum(x.amount_untaxed_bex for x in bex_additionnel)
-            fob_total = sum(line.product_qty*line.pu_discounted for line in self.order_line)
+            fob_total = sum(line.product_qty * line.pu_discounted for line in self.order_line)
             caf_total = (fob_total + total_assurance_fret) * self.taux_change
             
             for line in self.order_line:
@@ -619,29 +611,29 @@ class PurchaseHeri(models.Model):
                 elif line.product_qty <= 0.0:
                     raise UserError(u'La quantité des articles devrait être un nombre positif non nulle')
                 else:
-                    bex_line_id = bex_line_obj.search([('bex_id','=', bex_droit_douane.id),('purchase_line_id.purchase_line_id','=', line.id)], limit=1)
+                    bex_line_id = bex_line_obj.search([('bex_id', '=', bex_droit_douane.id), ('purchase_line_id.purchase_line_id', '=', line.id)], limit=1)
                     droit_douane = bex_line_id.montant_realise
                     line.cout_revient = (((caf_total + cLocTotal) * ((line.price_subtotal) / fob_total)) + droit_douane) / (line.product_qty)
                     
     def choisir_mode_paiement(self):
-                #Generation popup mode de paiement
-        ir_model_data = self.env['ir.model.data']        
-        try:            
-            template_id = ir_model_data.get_object_reference('purchase_heri', 'action_mode_paiement')[1]        
-        except ValueError:            
+        # Generation popup mode de paiement
+        ir_model_data = self.env['ir.model.data']
+        try:
+            template_id = ir_model_data.get_object_reference('purchase_heri', 'action_mode_paiement')[1]
+        except ValueError:
             template_id = False
         
-        try:            
-            compose_form_id = ir_model_data.get_object_reference('purchase_heri', 'view_mode_paiement_form')[1]        
-        except ValueError:            
-            compose_form_id = False        
+        try:
+            compose_form_id = ir_model_data.get_object_reference('purchase_heri', 'view_mode_paiement_form')[1]
+        except ValueError:
+            compose_form_id = False
             
-        ctx = dict()        
-        ctx.update({         
-            'default_mode_paiement': self.journal_id.id,   
+        ctx = dict()
+        ctx.update({
+            'default_mode_paiement': self.journal_id.id,
             'default_model': 'mode.paiement',
-            'default_use_template': bool(template_id),            
-            'default_template_id': template_id,      
+            'default_use_template': bool(template_id),
+            'default_template_id': template_id,
             'default_breq_id': self.id,
         })
         
@@ -658,26 +650,18 @@ class PurchaseHeri(models.Model):
         'target': 'new',
         }
     
-    #Achat import state
-    def action_aviser_finance(self):
-        self.write({'state':'aviser_finance', 'change_state_date': fields.Datetime.now()})
-    def action_send_to_bank(self):
-        self.write({'state':'ov_to_bank', 'change_state_date': fields.Datetime.now()})
-    def action_br_lie_draft(self):
-        self.write({'state':'br_lie', 'change_state_date': fields.Datetime.now()})
-    
-    #Fonction pour budget request stock
+    # Fonction pour budget request stock
     @api.multi
     def creer_bs(self):
         for order in self:
             order._create_picking()
             if order.to_invoice:
                 order.action_invoice_create()
-            order.write({'state':'bs', 'change_state_date': fields.Datetime.now()})
+            order.write({'state': 'bs', 'change_state_date': fields.Datetime.now()})
 
     def envoyer_a_approuver(self):
-        self.write({'state':'a_approuver', 'change_state_date': fields.Datetime.now()})
-        #self._create_picking2()
+        self.write({'state': 'a_approuver', 'change_state_date': fields.Datetime.now()})
+        # self._create_picking2()
     
     def verification_stock(self):
         if not self.is_breq_stock:
@@ -688,16 +672,17 @@ class PurchaseHeri(models.Model):
         for line in self.order_line:
             if line.product_id not in product_list:
                 product_list.append(line.product_id)
-            if dict.get(line.product_id,False):
+            if dict.get(line.product_id, False):
                 dict[line.product_id] += line.product_qty
-            else: dict[line.product_id] = line.product_qty     
+            else:
+                dict[line.product_id] = line.product_qty
         for product in product_list:
             total_qty = 0.0
-            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id','=',product.id), ('location_id','=',location_id.id)])
+            stock_quant_ids = self.env['stock.quant'].search(['&', ('product_id', '=', product.id), ('location_id', '=', location_id.id)])
             for quant in stock_quant_ids:
                 total_qty += quant.qty
             if total_qty < dict[product]:
-                raise UserError(u'La quantité en stock de l\'article '+ product.name +' est insuffisante pour cette demande.')
+                raise UserError(u'La quantité en stock de l\'article ' + product.name + ' est insuffisante pour cette demande.')
  
     @api.depends('date_prevu')
     def _compute_date_planned(self):
@@ -718,7 +703,7 @@ class PurchaseOrderLine(models.Model):
     pu_discounted = fields.Float(compute="_compute_pu_discounted", string='Prix unitaire remisé', store=True)
     currency_en_ar = fields.Many2one('res.currency', related='order_id.currency_en_ar', readonly=True)
     
-    @api.depends('price_unit','discount')
+    @api.depends('price_unit', 'discount')
     def _compute_pu_discounted(self):
         for line in self:
             line.pu_discounted = line.price_unit * (1 - line.discount / 100)
@@ -733,24 +718,24 @@ class PurchaseOrderLine(models.Model):
         for line in self:
             if line.order_id.is_breq_stock and not line.location_id:
                 raise UserError("La zone d'emplacement source ne doit pas être vide dans un Budget Request Stock")
-            #line.qte_prevu = line.product_id.virtual_available
+            # line.qte_prevu = line.product_id.virtual_available
             
             location_src_id = line.location_id
             total_qty_available = 0.0
             total_reserved = 0.0
             liste_picking_ids = []
             
-            stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id','=',line.product_id.id), ('location_id','=', location_src_id.id)])
-            line_ids = line.search([('order_id.is_breq_stock','=', True), ('order_id.state','!=', 'cancel'), \
-                                                               ('product_id','=', line.product_id.id), ('location_id','=', location_src_id.id), \
+            stock_quant_ids = line.env['stock.quant'].search(['&', ('product_id', '=', line.product_id.id), ('location_id', '=', location_src_id.id)])
+            line_ids = line.search([('order_id.is_breq_stock', '=', True), ('order_id.state', '!=', 'cancel'), \
+                                                               ('product_id', '=', line.product_id.id), ('location_id', '=', location_src_id.id), \
                                                                ])
-            #recuperer tous les articles reserves dans bci
-            bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type','=', 'bci'), \
-                                                                   ('picking_id.state','not in', ('draft','done','cancel')), \
-                                                                   ('product_id','=', line.product_id.id)
-                                                                   ])  
+            # recuperer tous les articles reserves dans bci
+            bci_ids = line.env['stock.move'].search([('picking_id.mouvement_type', '=', 'bci'), \
+                                                                   ('picking_id.state', 'not in', ('draft', 'done', 'cancel')), \
+                                                                   ('product_id', '=', line.product_id.id)
+                                                                   ])
             total_bci_reserved = sum(x.product_uom_qty for x in bci_ids)
-            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done','cancel'))
+            total_reserved = sum(x.product_qty for x in line_ids if x.order_id.bs_id.state not in ('done', 'cancel'))
             for quant in stock_quant_ids:
                 total_qty_available += quant.qty
             line.qte_prevu = total_qty_available - total_reserved - total_bci_reserved
@@ -762,25 +747,24 @@ class PurchaseOrderLine(models.Model):
             self.price_unit = self.product_id.standard_price
             ref = ""
             desc = ""
-            if self.product_id.ref_fournisseur not in ('', False) :
-                ref = "["+self.product_id.ref_fournisseur+"]"
-            if self.product_id.desc_fournisseur not in ('', False) :
+            if self.product_id.ref_fournisseur not in ('', False):
+                ref = "[" + self.product_id.ref_fournisseur + "]"
+            if self.product_id.desc_fournisseur not in ('', False):
                 desc = self.product_id.desc_fournisseur
-            self.designation_frns = ref+" "+ str(desc)
+            self.designation_frns = ref + " " + str(desc)
         return res
     
     @api.onchange('product_qty')
     def onchange_product_qty(self):
-        if self.order_id.is_breq_stock: 
-            product_seuil_id = self.env['product.product'].search([('id','=',self.product_id.id)])
+        if self.order_id.is_breq_stock:
+            product_seuil_id = self.env['product.product'].search([('id', '=', self.product_id.id)])
             product_seuil = product_seuil_id.security_seuil
             qte_restant = self.qte_prevu - self.product_qty
 
             if self.qte_prevu < self.product_qty:
-#                 self.product_qty = self.qte_prevu
                 return {
                         'warning': {
-                                    'title': 'Avertissement!', 'message': 'La quantité demandée réduite au disponible dans le magasin: '+str(self.qte_prevu)
+                                    'title': 'Avertissement!', 'message': 'La quantité demandée réduite au disponible dans le magasin: ' + str(self.qte_prevu)
                                 },
                         'value': {
                                 'product_qty': self.qte_prevu,
@@ -789,7 +773,7 @@ class PurchaseOrderLine(models.Model):
             elif self.qte_prevu > self.product_qty and qte_restant < product_seuil:
                 return {
                         'warning': {
-                                    'title': 'Avertissement - Seuil de sécurité!', 'message': 'Le seuil de securité pour cet article est "'+str(product_seuil)+'". Ce seuil est atteint pour cette demande. La quantité restante serait "'+str(qte_restant)+'" qui est en-dessous de seuil de sécurité.'
+                                    'title': 'Avertissement - Seuil de sécurité!', 'message': 'Le seuil de securité pour cet article est "' + str(product_seuil) + '". Ce seuil est atteint pour cette demande. La quantité restante serait "' + str(qte_restant) + '" qui est en-dessous de seuil de sécurité.'
                                 },
                         'value': {
                                 'product_qty': self.product_qty,
@@ -800,11 +784,11 @@ class PurchaseOrderLine(models.Model):
             qty_breq_fille = 0.0
             allowed_qty = 0.0
             
-            #Quantité total de l'article en cours dans BREq Mère
-            order_line = self.env['purchase.order.line'].search([('order_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
+            # Quantité total de l'article en cours dans BREq Mère
+            order_line = self.env['purchase.order.line'].search([('order_id', '=', self.order_id.parent_id.id), ('product_id', '=', self.product_id.id)])
             if order_line:
                 total_qty = sum(x.product_qty for x in order_line)
-                breq_fille_line = self.env['purchase.order.line'].search([('order_id.parent_id','=',self.order_id.parent_id.id), ('product_id','=',self.product_id.id)])
+                breq_fille_line = self.env['purchase.order.line'].search([('order_id.parent_id', '=', self.order_id.parent_id.id), ('product_id', '=', self.product_id.id)])
                 if breq_fille_line:
                     qty_breq_fille = sum(x.product_qty for x in breq_fille_line)
                 allowed_qty = total_qty - qty_breq_fille
@@ -884,7 +868,7 @@ class PurchaseOrderLine(models.Model):
                 'procurement_id': False,
                 'origin': line.order_id.name,
                 'route_ids': line.order_id.picking_type_id.warehouse_id and [(6, 0, [x.id for x in line.order_id.picking_type_id.warehouse_id.route_ids])] or [],
-                'warehouse_id':line.order_id.picking_type_id.warehouse_id.id,
+                'warehouse_id': line.order_id.picking_type_id.warehouse_id.id,
             }
             
             diff_quantity = line.product_qty - qty
@@ -897,7 +881,7 @@ class PurchaseOrderLine(models.Model):
                     tmp = template.copy()
                     tmp.update({
                         'product_uom_qty': min(procurement_qty, diff_quantity),
-                        'move_dest_id': procurement.move_dest_id.id,  #move destination is same as procurement destination
+                        'move_dest_id': procurement.move_dest_id.id,  # move destination is same as procurement destination
                         'procurement_id': procurement.id,
                         'propagate': procurement.rule_id.propagate,
                     })
@@ -907,8 +891,9 @@ class PurchaseOrderLine(models.Model):
                 template['product_uom_qty'] = diff_quantity
                 done += moves.create(template)
         return done
-    
+
+
 class PurchaseImportType(models.Model):
     _name = 'purchase.import.type'
     
-    name = fields.Char(string="Type",required=True)
+    name = fields.Char(string="Type", required=True)

@@ -17,7 +17,7 @@
                        attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False),'|',('is_breq_id_sale', '=', True), ('is_creator', '=', False)]}"
                     />
                	 	<button 
-                       string="Accorder"
+                       string="Accorder et générer le bon de sortie"
                        type="object" 
                        name="creer_bs"
                        class="oe_highlight" 

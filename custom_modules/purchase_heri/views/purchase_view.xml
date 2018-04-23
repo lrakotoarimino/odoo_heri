@@ -33,6 +33,8 @@
 			<field name="model">purchase.order</field>
 			<field name="inherit_id" ref="purchase.purchase_order_form"/>
 			<field name="arch" type="xml">
+			    
+			    <!-- début modifications -->
 			    <!-- <xpath expr="//button[@name='action_view_picking'][2]" position="replace">
                     <button name="action_view_picking" invisible="1"/>
                 </xpath> -->
@@ -98,7 +100,7 @@
 					<field 
 					    name="state" 
 					    widget="statusbar" 
-					    statusbar_visible="nouveau,a_approuver,non_prevue,attente_validation,wait_mode,mode_de_paiment_valide,purchase"/>
+					    statusbar_visible="nouveau,waiting_manager,validated,purchase"/>
 					    <field name="is_creator" invisible="1" />
 				</xpath>
 				<xpath expr="//div[@name='button_box']//button[@name='action_view_picking']" position="after">
@@ -185,14 +187,6 @@
 					<attribute name="invisible">1</attribute>
 				</xpath>
 				
-				<!-- <xpath expr="//field[@name='date_planned'][3]" position="replace">
-					<field name="date_planned" invisible="1"/>
-				</xpath> -->
-								
-				<!-- <xpath expr="//label[5]" position="attributes">
-					<attribute name="for">none</attribute>
-				</xpath> -->
-				
 				<field name="partner_id" position="after">
 				    <field name="is_breq_stock" invisible="1"/>
 					<field name="purchase_type" attrs="{'invisible': [('parents_ids','=', False)], 'required': [('is_breq_stock', '=', False)],'readonly':[('service_type','!=','additionel')]}"/>
@@ -210,77 +204,50 @@
 					<field name="description" invisible="1"/>
 					<field name="is_manager" invisible="1"/>
 				</field>
+				<!-- fin modifications -->
 				
+				<!-- bouton workfllow -->
 				<xpath expr="//field[@name='state']" position="before">
 					<button 
-			      	    string="Avis supérieur hierarchique" 
-			      	    name="action_a_approuver"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), ('is_creator', '=', False)]}"
-			      	 />
-					
-					<button name="button_cancel" attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), ('is_creator', '=', False)]}" string="Cancel" type="object" />
-					
-					<button 
-			      	    string="Accorder" 
-			      	    name="action_accorder"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), ('is_manager', '=', False)]}"
-			      	 />
-					<button 
-			      	    string="A revoir" 
-			      	    name="refus_superieur"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')), ('is_manager', '=', False)]}"
-			      	 />
-					<button 
-			      	    string="Accorder" 
-			      	    name="validation_finance"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('non_prevue'))]}"
-			      	    groups="purchase_heri.group_finance_heri"
-			      	 />
-					<button 
-			      	    string="A revoir" 
-			      	    name="refus_finance"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('non_prevue'))]}"
-			      	    groups="purchase_heri.group_finance_heri"
-			      	 />
-					<button 
-			      	    string="Accorder" 
-			      	    name="validation_dg"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_validation'))]}"
-			      	    groups="purchase_heri.group_dg_heri"
-			      	 />
-					<button 
-			      	    string="A revoir" 
-			      	    name="refus_dg"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('attente_validation'))]}"
-			      	    groups="purchase_heri.group_dg_heri"
-			      	 />
-					<button 
-			      	    string="Choisir le mode de paiement" 
-			      	    name="choisir_mode_paiement"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('wait_mode'))]}"
-			      	    groups="purchase_heri.group_finance_heri"
-			      	    type="object"
-			      	 />
-			      	 <button 
-			      	    string="Créer BEX" 
-			      	    name="valider_mode"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('mode_de_paiment_valide')),('is_creator', '=',False)]}"
-			      	 />
-			      	 <!-- bouton pour le workflow achat import -->
+                        string="Envoyer au supérieur hiérarchique" 
+                        name="action_attente_validation_superieur"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', '!=', 'nouveau'), ('is_creator', '=', False)]}"
+                     />
+                    <button
+                        string="Cancel"
+                        type="object"
+                        name="button_cancel" 
+                        attrs="{'invisible': ['|',('state', '!=', 'nouveau'), ('is_creator', '=', False)]}"/>
+                    <button
+                        string="Validation du supérieur hiérachique"
+                        name="action_validation_superieur"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', '!=', 'waiting_manager'), ('is_manager', '=', False)]}"
+                     />
+                    <button 
+                        string="A revoir" 
+                        name="action_refus_superieur"
+                        class="oe_highlight"
+                        attrs="{'invisible': ['|',('state', '!=', 'waiting_manager'), ('is_manager', '=', False)]}"
+                     />
+                    <button
+                        string="Créer le budget expense report" 
+                        name="action_creation_bex"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', '!=', 'validated'), ('is_creator', '=', False)]}"
+                     />
+                    <button 
+                        string="Remettre à nouveau" 
+                        name="action_remettre_nouveau"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', '!=', 'validated'), ('is_creator', '=', False)]}"
+                     />
 			      	 
-			      	 <!-- End bouton pour le workflow achat import -->
 				</xpath>
+				<!-- bouton workfllow -->
 				
-				<!-- Masquer le bouton button_confirm en dehors de l'etat puchase -->
+				<!-- Masquer le bouton button_confirm -->
 				<button name="button_confirm" position="replace">
 			      	<button 
 			      	    string="Confirm Order" 
@@ -301,15 +268,7 @@
 			<field name="mode">primary</field>
 			<field name="inherit_id" ref="purchase_heri.budget_request_form_view"/>
 			<field name="arch" type="xml">
-		    	<!-- <field name="product_id" positiion="replace">
-		    	    <field 
-                         name="product_id" 
-                         attrs="{'readonly': [('state', 'in', ('purchase', 'to approve','done', 'cancel'))]}" 
-                         context="{'partner_id':parent.partner_id, 'quantity':product_qty,'uom':product_uom, 'company_id': parent.company_id}"
-                         string="Désignation HERi" 
-                         domain="[('type', 'in', ('service'))]"/>
-		    	</field> -->
-				<xpath expr="//field[@name='product_id']" position="attributes">
+		    	<xpath expr="//field[@name='product_id']" position="attributes">
 					<attribute name="domain">[('type','=','service')]</attribute>
 				</xpath>
 				<xpath expr="//field[@name='product_id']" position="before">
@@ -354,92 +313,54 @@
             <field name="arch" type="xml">
                 <form string="Achat Import">
                 <header>
+                    
                     <button 
                         string="Envoyer à la direction générale" 
-                        name="action_a_approuver2"
+                        name="action_attente_validation_dg"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), '|',('purchase_type', 'not in', ('purchase_import')), '|',('is_creator','=',False), ('breq_fille_count','>',0)]}"
+                        attrs="{'invisible': ['|',('state', '!=', 'nouveau'), '|',('purchase_type', 'not in', ('purchase_import')), '|',('is_creator','=',False), ('breq_fille_count','>',0)]}"
                      />
-                    
-                    <button name="button_cancel" attrs="{'invisible': ['|',('state', 'not in', ('nouveau')), ('is_creator', '=', False)]}" string="Cancel" type="object" />
-                    
                     <button
-                        string="Valider" 
+                        string="Cancel"
+                        type="object"
+                        name="button_cancel" 
+                        attrs="{'invisible': ['|',('state', '!=', 'nouveau'), ('is_creator', '=', False)]}"/>
+                    <button
+                        string="Valider par la direction générale" 
                         groups="purchase_heri.group_dg_heri"
-                        name="action_aviser_finance"
+                        name="action_validation"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('confirmation_dg')),('purchase_type', 'not in', ('purchase_import'))]}"
+                        attrs="{'invisible': ['|',('state', '!=', 'waiting_dg'),('purchase_type', 'not in', ('purchase_import'))]}"
                      />
                     <button 
                         string="A revoir" 
                         groups="purchase_heri.group_dg_heri"
-                        name="action_refus_import_dg"
+                        name="action_refus_dg"
                         class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('confirmation_dg')), ('purchase_type', 'not in', ('purchase_import'))]}"
+                        attrs="{'invisible': ['|',('state', '!=', 'waiting_dg'), ('purchase_type', 'not in', ('purchase_import'))]}"
+                     />
+                    <button
+                        string="Créer le budget expense report" 
+                        name="action_creation_bex"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', '!=', 'validated'), '|', ('is_creator', '=', False), ('purchase_type', 'not in', ('purchase_import'))]}"
+                     />
+                    <button 
+                        string="Remettre à nouveau" 
+                        name="action_remettre_nouveau"
+                        class="oe_highlight" 
+                        attrs="{'invisible': ['|',('state', '!=', 'validated'), '|', ('is_creator', '=', False), ('purchase_type', 'not in', ('purchase_import'))]}"
                      />
                      <button 
-                        string="Envoyer OV à la banque" 
-                        groups="purchase_heri.group_finance_heri"
-                        name="action_send_to_bank"
-                        class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('aviser_finance')), ('purchase_type', 'not in', ('purchase_import'))]}"
-                     />
-                     <button 
-			      	    string="Choisir le mode de paiement" 
-			      	    name="choisir_mode_paiement"
-			      	    class="oe_highlight" 
-			      	    attrs="{'invisible': ['|',('state', 'not in', ('aviser_finance'))]}"
-			      	    groups="purchase_heri.group_finance_heri"
-			      	    type="object"
-			      	    invisible="1"
-			      	 />
- 					<button 
-                        string="A revoir" 
-                        groups="purchase_heri.group_finance_heri"
-                        name="action_cancel_finance"
-                        class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('aviser_finance')), ('purchase_type', 'not in', ('purchase_import'))]}"
-                     />
-                     <button 
-                        string="Calculer prix de revient estimatif" 
+                        string="Calculer le prix de revient estimatif" 
                         name="action_compute_prix_revient"
-                        class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', '!=', 'ov_to_bank'),'|',('all_bex_validated', '!=',True),'|',('purchase_type', '!=', 'purchase_import'),('is_creator', '=',False)]}"
+                        attrs="{'invisible': ['|',('state','not in',('nouveau','waiting_dg','validated')),'|',('all_bex_validated','!=',True),('purchase_type','!=','purchase_import')]}"
                      	type="object"
-                     />   
-                     <button 
-                        string="A revoir" 
-                        groups="purchase_heri.group_finance_heri"
-                        name="action_cancel_bank"
-                        class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('ov_to_bank')), ('purchase_type', 'not in', ('purchase_import'))]}"
-                     /> 
-                     <button 
-                        string="Valider prix de revient" 
-                        name="action_br_lie"
-                        class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', '!=', 'ov_to_bank'),'|',('all_bex_validated', '!=',True),'|',('purchase_type', '!=', 'purchase_import'),('is_creator', '=',False)]}"
+                     	icon="fa-usd"
                      />
-                     <button 
-                        string="Créer BEX" 
-                        name="action_br_mere_ok"
-                        class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('br_lie')),'|',('purchase_type', 'not in', ('purchase_import')),('is_creator', '=',False)]}"
-                     />      
-                     <button 
-                        string="A revoir" 
-                        name="action_cancel_pr"
-                        class="oe_highlight" 
-                        attrs="{'invisible': ['|',('state', 'not in', ('br_lie')),'|', ('purchase_type', 'not in', ('purchase_import')),('is_creator','=',False)]}"
-                     /> 
-                     <button type="object"
-                            name="action_view_br_lie"
-                            class="oe_highlight" 
-                            string ="Budget Request Additionnel"
-                            invisible="1">
-                            <field name='purchase_ids' invisible="1"/>
-                    </button>
-                    <field name="state" widget="statusbar" statusbar_visible="nouveau,confirmation_dg,aviser_finance,ov_to_bank,br_lie,purchase" readonly="1"/>
+                     
+                     <field name="state" widget="statusbar" statusbar_visible="nouveau,waiting_dg,validated,purchase" readonly="1"/>
+                
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
