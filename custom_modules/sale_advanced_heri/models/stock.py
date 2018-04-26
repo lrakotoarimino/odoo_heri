@@ -32,7 +32,7 @@ class ContractorLine(models.Model):
     
     partner_id = fields.Many2one('res.partner', string='Partner', required=True)
     status = fields.Boolean(string='Active')
-    date_start = fields.Datetime('Date start')
+    date_start = fields.Datetime('Date start', default=fields.Datetime.now)
     date_end = fields.Datetime('Date end')
     kiosk_id = fields.Many2one('stock.location', string='Kiosk')
     
