@@ -37,6 +37,11 @@
                        class="oe_highlight" 
                        attrs="{'invisible': ['|',('state', 'not in', ('nouveau','bs','cancel')),'|',('is_breq_stock', '=', False),'|',('is_breq_id_sale', '=', True), ('is_creator', '=', False)]}"
                     />
+                    <button 
+                        string="Imprimer" 
+                        name="action_print"
+                     	type="object"
+                     />
                     <field name="state" widget="statusbar" statusbar_visible="nouveau,a_approuver,bs" readonly="1"/>
                 </header>
                 <sheet>
@@ -84,7 +89,7 @@
                             <field name="date_order" readonly="1"/>
                             <field name="date_prevu"/>
                             <field name="change_state_date" invisible="1"/>
-                            <field 
+                            <!-- <field 
 						        name="budgetise" 
 						        string="BUDGETISE" 
 						        widget="monetary" 
@@ -102,14 +107,14 @@
 							    widget="monetary" 
 							    options="{'currency_field': 'currency_id'}"
 							    style="color:blue;"/><br/><br/>
-                             <field name="statut_budget" string="STATUT BUDGET"/>
+                             <field name="statut_budget" string="STATUT BUDGET"/> -->
                             <field name="journal_id" widget="selection" invisible="1"/>
                             <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                            <field 
+                            <!-- <field 
                                 name="justificatif" 
                                 attrs="{'required': [('statut_budget', 'in', ('non_prevu', 'depasse'))]}"
-                                placeholder="Veuillez renseigner ce champ si le BReq est « Non prévu » ou « Dépasse »" />
+                                placeholder="Veuillez renseigner ce champ si le BReq est « Non prévu » ou « Dépasse »" /> -->
                         </group>
                     </group>
                     <notebook>

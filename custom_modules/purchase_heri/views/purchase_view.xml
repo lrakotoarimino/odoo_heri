@@ -243,6 +243,11 @@
                         class="oe_highlight" 
                         attrs="{'invisible': ['|',('state', '!=', 'validated'), ('is_creator', '=', False)]}"
                      />
+                    <button 
+                        string="Imprimer" 
+                        name="action_print"
+                     	type="object"
+                     />
 			      	 
 				</xpath>
 				<!-- bouton workfllow -->
@@ -357,6 +362,11 @@
                         attrs="{'invisible': ['|',('state','not in',('nouveau','waiting_dg','validated')),'|',('all_bex_validated','!=',True),('purchase_type','!=','purchase_import')]}"
                      	type="object"
                      	icon="fa-usd"
+                     />
+                     <button 
+                        string="Imprimer" 
+                        name="action_print"
+                     	type="object"
                      />
                      
                      <field name="state" widget="statusbar" statusbar_visible="nouveau,waiting_dg,validated,purchase" readonly="1"/>

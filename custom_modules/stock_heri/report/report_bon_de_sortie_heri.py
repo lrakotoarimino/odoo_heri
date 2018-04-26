@@ -2,6 +2,7 @@
 
 from odoo import api, models
 
+
 class report_bon_de_sortie_template(models.AbstractModel):
     _name = 'report.stock_heri.report_bon_de_sortie_template'
    

@@ -19,6 +19,9 @@
                 #security
                 'security/security.xml',
                 'security/ir.model.access.csv',
+                #report
+                'report/purchase_reports.xml',
+                'report/purchase_order_templates.xml',
              ],
     'demo': [],
     'test': [],

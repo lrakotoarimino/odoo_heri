@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<record id="view_stock_config_settings_inherit" model="ir.ui.view">
+		<field name="name">stock settings inherit</field>
+		<field name="model">stock.config.settings</field>
+		<field name="inherit_id" ref="stock.view_stock_config_settings" />
+		<field name="arch" type="xml">
+		    <group name="traceability" position="before">
+		        <group name="set_inventory" string="Inventory">
+		            <p style="color:red"><i>Warning! This button validates all inventories not validated.</i></p><br/>
+	        		<button string="Validate all inventories" type="object" name="validate_all_inventories" class="oe_highlight" icon="fa-edit"/>
+	        	</group>
+	        </group>
+		</field>
+	</record>    
+</odoo>

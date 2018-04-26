@@ -28,6 +28,11 @@ class PurchaseHeri(models.Model):
     _inherit = "purchase.order"
     _description = "Budget Request"
     
+    @api.multi
+    def action_print(self):
+        self.ensure_one()
+        return self.env['report'].get_action(self, 'purchase.report_purchaseorder')
+    
     @api.model
     def _default_picking_type2(self):
         if self.env.context.get('default_is_breq_stock'):
@@ -752,6 +757,8 @@ class PurchaseOrderLine(models.Model):
             if self.product_id.desc_fournisseur not in ('', False):
                 desc = self.product_id.desc_fournisseur
             self.designation_frns = ref + " " + str(desc)
+        if self.product_id and self.order_id and self.order_id.is_breq_stock:
+            self.price_unit = self.product_id.lst_price
         return res
     
     @api.onchange('product_qty')
