@@ -11,6 +11,11 @@ class StockInventory(models.Model):
         Location = self.env['stock.location']
         Inventory = self.env['stock.inventory']
         kiosk_ids = Location.search([('is_kiosk', '=', True)])
+        inventory_to_cancel = Inventory.search([('state', '=', 'confirm')])
+        if inventory_to_cancel:
+            # set all inventories in state confirm to draft
+            inventory_to_cancel.action_cancel_draft()
+
         for kiosk_id in kiosk_ids:
             vals = {'name': _('Inventory %s %s') % (kiosk_id.name, fields.Datetime.now()),
                     'location_id': kiosk_id.id,

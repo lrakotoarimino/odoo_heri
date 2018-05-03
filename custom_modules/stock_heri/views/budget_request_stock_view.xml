@@ -80,7 +80,8 @@
                             <field name="description" invisible="1"/>
                             <field name="is_manager" invisible="1"/>
                             <field name="partner_ref"/>
-                            <field name="location_id" attrs="{'invisible': [('is_breq_stock', '=', False)], 'required': [('is_breq_stock', '=', True)]}" domain="[('usage','!=','view')]"/>
+                            <!-- attrs="{'invisible': [('is_breq_stock', '=', False)], 'required': [('is_breq_stock', '=', True)]}" -->
+                            <field name="location_id"  required="1" domain="[('usage','!=','view')]"/>
                             <field name="currency_id" groups="base.group_multi_currency" readonly="1"/>
                             <field name="is_shipped" invisible="1"/>
                             <field name="picking_type_id" domain="[('code','=','incoming')]" options="{'no_create': True}"/>
