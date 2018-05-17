@@ -31,11 +31,11 @@
                        attrs="{'invisible': ['|',('state', 'not in', ('a_approuver')),'|',('is_breq_stock', '=', False), ('is_manager', '=', False)]}"
                     />
                     <button 
-                       string="Annuler"
+                       string="Cancel"
                        type="object" 
-                       name="action_annuler"
+                       name="button_cancel"
                        class="oe_highlight" 
-                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau','bs','cancel')),'|',('is_breq_stock', '=', False),'|',('is_breq_id_sale', '=', True), ('is_creator', '=', False)]}"
+                       attrs="{'invisible': ['|',('state', 'not in', ('nouveau')),'|',('is_breq_stock', '=', False), ('is_creator', '=', False)]}"
                     />
                     <button 
                         string="Imprimer" 
@@ -120,7 +120,7 @@
                     </group>
                     <notebook>
                         <page string="Products">
-                            <field name="order_line" attrs="{'readonly': [('state', 'in', ('done', 'cancel'))]}">
+                            <field name="order_line" attrs="{'readonly': [('state', 'in', ('done', 'cancel', 'a_approuver', 'bs'))]}">
                                  <tree string="Ligne d'articles" editable="bottom">
                                     <field name="state" invisible="1"/>
                                     <field name="sequence" widget="handle"/>

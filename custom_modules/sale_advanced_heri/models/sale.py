@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 
 class SaleOrder(models.Model):
@@ -18,7 +19,15 @@ class SaleOrder(models.Model):
     @api.multi
     def _prepare_invoice(self):
         invoice_data = super(SaleOrder, self)._prepare_invoice()
+        
+        # Redefinition
         invoice_data['invoice_type'] = 'sale'
+        journal_id = self.env['account.journal'].search([('code', '=', 'VTE')], limit=1)
+        if not journal_id:
+            raise UserError('Please define an accounting sale journal for this company.')
+        invoice_data['journal_id'] = journal_id.id
+        ##############
+        
         return invoice_data
 
 

@@ -668,6 +668,9 @@ class PurchaseHeri(models.Model):
         self.write({'state': 'a_approuver', 'change_state_date': fields.Datetime.now()})
         # self._create_picking2()
     
+    def action_refus_superieur(self):
+        self.write({'state': 'nouveau', 'change_state_date': fields.Datetime.now()})
+        
     def verification_stock(self):
         if not self.is_breq_stock:
             return
