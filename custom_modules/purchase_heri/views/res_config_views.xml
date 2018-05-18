@@ -2,7 +2,7 @@
 <odoo>
 	<data>
 		<!-- Budget request configuration form-->
-		<record model="ir.ui.view" id="view_purchase_configuration_inherit">
+		<!-- <record model="ir.ui.view" id="view_purchase_configuration_inherit">
 			<field name="name">budget.request.config.view</field>
 			<field name="model">purchase.config.settings</field>
 			<field name="inherit_id" ref="purchase.view_purchase_configuration"/>
@@ -12,7 +12,7 @@
                     <field name="seuil_non_prevu"/>
                 </field>
             </field>
-		</record>
+		</record> -->
 		<!-- Fin Budget request configuration form-->
 	</data>
 </odoo>
