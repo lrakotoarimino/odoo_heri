@@ -192,7 +192,9 @@ class Bex(models.Model):
     def _prepare_invoice_line_from_bex_line(self, invoice, line):
         invoice_line = self.env['account.invoice.line']
         journal_id = invoice.journal_id
-            
+        fpos = invoice.fiscal_position_id
+        company = invoice.company_id
+        
         data = {
             'invoice_id': invoice.id,
             'purchase_line_id': line.purchase_line_id.id,
@@ -200,7 +202,8 @@ class Bex(models.Model):
             'origin': line.breq_id.name + ', ' + line.bex_id.name,
             'uom_id': line.purchase_line_id.product_uom.id,
             'product_id': line.product_id.id,
-            'account_id': invoice_line.with_context({'journal_id': journal_id.id, 'type': 'in_invoice'})._default_account(),
+            #'account_id': invoice_line.with_context({'journal_id': journal_id.id, 'type': 'in_invoice'})._default_account(),
+            'account_id': invoice_line.get_invoice_line_account('in_invoice', line.product_id, fpos, company).id,
             'price_unit': line.pu_bex_ar,
             'quantity': line.qty_done,
             'discount': 0.0,
