@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+        <report 
+            string="Fiche de Paie malgache" 
+            id="action_report_paie" 
+            model="hr.payslip" 
+            report_type="qweb-pdf"
+            name="gestion_de_paie.report_paie" 
+            file="gestion_de_paie.report_paie"
+        />
+</odoo>

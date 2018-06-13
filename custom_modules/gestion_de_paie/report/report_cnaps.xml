@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+		<record id="cnaps_paysage" model="report.paperformat">
+		    <field name="name">format paysage</field>
+		    <field name="default" eval="True"/>
+		    <field name="format">A3</field>
+		    <field name="orientation">Landscape</field>
+		</record>
+        <report 
+            string="Etat CNAPS" 
+            id="action_report_cnaps" 
+            model="cnaps" 
+            report_type="qweb-pdf"
+            name="gestion_de_paie.report_cnaps" 
+            file="gestion_de_paie.report_cnaps"
+            paperformat="gestion_de_paie.cnaps_paysage"
+        />
+</odoo>

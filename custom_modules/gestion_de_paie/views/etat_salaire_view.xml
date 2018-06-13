@@ -1,0 +1,65 @@
+
+<odoo>
+	<data>
+	
+	<record id="hr_payroll_etat_salaire_tree_filter" model="ir.ui.view">
+		
+        <field name="name">hr.payroll.etat_salaire.tree.filter</field>
+        <field name="model">etat.salaire</field>
+        <field name="arch" type="xml">	
+			<search string="Recherche">
+				<field name="num_emp" string="Matricule"/>
+				<field name="num_cin" string="CIN"/>
+				<group expand="0" string="Group By...">
+                       <filter string="Début période" icon="terp-personal+" domain="[]" context="{'group_by':'date_from'}"/>
+                </group>
+			</search>
+       </field>
+    </record>
+    
+	<record id="hr_payroll_etat_salaire_tree" model="ir.ui.view">
+    	<field name="name">hr.payroll.etat_salaire.tree</field>
+        <field name="model">etat.salaire</field>
+        <field name="arch" type="xml">
+		<tree string="Etat de salaire">
+            <field name="num_emp"/>
+			<field name="name_related"/>
+			<field name="num_cin"/>
+			<field name="basic"/>
+			<field name="brut"/>
+			<field name="cnaps"/>
+			<field name="cnapsemp"/>
+			<field name="omsi"/>
+			<field name="omsiemp"/>
+			<field name="irsa"/>
+			<field name="net"/>
+			<field name="date_from"/>
+			<field name="date_to"/>
+         </tree>
+        </field>
+    </record>		
+	
+	<!-- ACTIONS -->
+	
+	<record id="open_payroll_etat_salaire" model="ir.actions.act_window">
+    	<field name="name">Etat salaire</field>
+        <field name="res_model">etat.salaire</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="hr_payroll_etat_salaire_tree"/>
+    </record>
+	
+	<!-- MENUS -->
+	
+    <menuitem id="menu_payroll_etat_globale"
+    	name="Etat Globale"
+        parent="hr_payroll.menu_hr_payroll_root"
+        sequence="17"/>
+        
+    <menuitem id="menu_payroll_etat_salaire"
+    	action="open_payroll_etat_salaire"
+        parent="menu_payroll_etat_globale"
+        sequence="18"/>
+    
+    </data>
+</odoo>

@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+    
+ 
+ <!-- Holidays Category -->
+        <record model="hr.holidays.status" id="holiday_status_heures_sup">
+          <field name="name">Heures Supplementaires</field>
+          <field name="limit">True</field>
+          <field name="color_name">lightblue</field>
+        </record>
+
+<!-- configuration de la companie par defaut -->
+        <record id="base.main_company" model="res.company">
+            <field name="seuil_irsa">250000</field>
+            <field name="taux_irsa">20</field>
+            <field name="abat_irsa">2000</field>
+            <field name="num_cnaps_patr"></field>
+            <field name="plafond_cnaps">1152024.00</field>
+            <field name="cotisation_cnaps_patr">13</field>
+            <field name="cotisation_cnaps_emp">1</field>
+            <field name="org_sante">OSTIE</field>
+            <field name="cotisation_sante_patr">5.0</field>
+            <field name="cotisation_sante_emp">1.0</field>
+            <field name="conge_mens">2.5</field>
+        </record>
+           
+<!-- HR SALARY RULE CATEGORIES-->
+    <record id="contrib_register_employees" model="hr.contribution.register">
+            <field name="name">Employees</field>
+            <field name="partner_id" eval="False"/>
+        </record>
+        <record id="hr_payroll.BASIC" model="hr.salary.rule.category">
+            <field name="name">BASIC</field>
+            <field name="code">BASIC</field>
+        </record>
+        <record id="hr_payroll.ALW" model="hr.salary.rule.category">
+            <field name="name">Allowance</field>
+            <field name="code">ALW</field>
+        </record>
+
+        <record id="hr_payroll.GROSS" model="hr.salary.rule.category">
+            <field name="name">GROSS</field>
+            <field name="code">GROSS</field>
+        </record>
+
+        <record id="hr_payroll.DED" model="hr.salary.rule.category">
+            <field name="name">Deduction</field>
+            <field name="code">DED</field>
+        </record>
+
+        <record id="hr_payroll.NET" model="hr.salary.rule.category">
+            <field name="name">Net</field>
+            <field name="code">NET</field>
+        </record>
+     <record id="CNAPS" model="hr.salary.rule.category">
+        <field name="name">CNAPS</field>
+        <field name="code">CNAPS</field>
+    </record>
+    <record id="CNAPS_PAT" model="hr.salary.rule.category">
+        <field name="name">CNAPS_PAT</field>
+        <field name="code">CNAPS_PAT</field>
+    </record>
+    <record id="OMSI" model="hr.salary.rule.category">
+        <field name="name">OMSI</field>
+        <field name="code">OMSI</field>
+    </record>
+    <record id="OMSI_PAT" model="hr.salary.rule.category">
+        <field name="name">OMSI_PAT</field>
+        <field name="code">OMSI_PAT</field>
+    </record>
+    <record id="CHARGE_PAT" model="hr.salary.rule.category">
+        <field name="name">CHARGE_PAT</field>
+        <field name="code">CHARGE_PAT</field>
+    </record>
+    <record id="TOTAL_DED" model="hr.salary.rule.category">
+        <field name="name">TOTAL_DED</field>
+        <field name="code">TOTAL_DED</field>
+    </record>
+    <record id="HOURS" model="hr.salary.rule.category">
+        <field name="name">HOURS</field>
+        <field name="code">HOURS</field>
+    </record>
+            
+      <!-- Contribution Register -->
+
+    <record id="hr_CNAPS_register" model="hr.contribution.register">
+        <field name="name">Caisse Nationale de Prévoyance Sociale</field>
+    </record>
+
+    <record id="hr_OMSI_register" model="hr.contribution.register">
+        <field name="name">Organisme Médical</field>
+    </record>
+
+    <!-- HR SALARY RULES-->
+    <record id="hr_payroll.hr_rule_basic" model="hr.salary.rule">
+            <field name="name">Salaire de Base</field>
+            <field name="sequence" eval="1"/>
+            <field name="code">BASIC</field>
+            <field name="category_id" ref="hr_payroll.BASIC"/>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = contract.wage</field>
+        </record>
+        <record id="hr_payroll.hr_rule_taxable" model="hr.salary.rule">
+            <field name="name">Salaire Brut</field>
+            <field name="sequence" eval="100"/>
+            <field name="code">GROSS</field>
+            <field name="category_id" ref="hr_payroll.GROSS"/>
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = categories.BASIC + categories.ALW</field>
+        </record>
+     <record id="hr_payroll.hr_rule_net" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.NET"/>
+        <field name="name">Salaire Net</field>
+        <field name="code">NET</field>
+        <field name="sequence">200</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = categories.BASIC + categories.ALW - categories.DED-CNAPS_EMP-OMSI_EMP</field>
+         <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le salaire Net qui est le salaire Brut - toutes les retenues</field>
+    </record>
+    <record id="hr_payroll_rules_CNAPS_EMP" model="hr.salary.rule">
+        <field name="category_id" ref="CNAPS"/>
+        <field name="name">CNAPS</field>
+        <field name="code">CNAPS_EMP</field>
+        <field name="sequence">105</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if categories.GROSS &lt; contract.employee_id.company_id.plafond_cnaps: result = categories.GROSS*contract.employee_id.company_id.cotisation_cnaps_emp/100
+else: result = contract.employee_id.company_id.plafond_cnaps/100</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="register_id" ref="hr_CNAPS_register"/>
+        <field name="note">C'est la valeur de CNAPS de chaque salarié , qui s'appuit sur la valeur du salaire "Brut" calculé.</field>
+    </record> 
+    <record id="hr_payroll_rules_CNAPS_PAT" model="hr.salary.rule">
+        <field name="category_id" ref="CNAPS_PAT"/>
+        <field name="name">CNAPS_PAT</field>
+        <field name="code">CNAPS_PAT</field>
+        <field name="sequence">105</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if categories.GROSS &lt; contract.employee_id.company_id.plafond_cnaps: result = categories.GROSS*contract.employee_id.company_id.cotisation_cnaps_patr/100
+else: result = contract.employee_id.company_id.plafond_cnaps*contract.employee_id.company_id.cotisation_cnaps_patr/100</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="register_id" ref="hr_CNAPS_register"/>
+        <field name="note">C'est la valeur de CNAPS de l'employeur , qui s'appuit sur la valeur du salaire "Brut" calculé.</field>
+    </record> 
+    <record id="hr_payroll_rules_OMSI_EMP" model="hr.salary.rule">
+        <field name="category_id" ref="OMSI"/>
+        <field name="name">OSTIE</field>
+        <field name="code">OMSI_EMP</field>
+        <field name="sequence" eval="106"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <!--  <field name="amount_python_compute">result=contract.employee_id.company_id.cotisation_sante_emp*contract.wage/100</field>
+        <field name="amount_python_compute">result = categories.GROSS*contract.employee_id.company_id.cotisation_sante_emp/100</field>-->
+        <field name="amount_python_compute">if categories.GROSS &lt; contract.employee_id.company_id.plafond_cnaps:result = categories.GROSS*contract.employee_id.company_id.cotisation_sante_emp/100
+else: result = contract.employee_id.company_id.plafond_cnaps/100</field>
+        <field name="register_id" ref="hr_OMSI_register"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est la valeur de la cotisation médical de chaque salarié qui se base sur la valeur de salaire "de Base". Elle doit être réglée chaque trimestre .</field>
+    </record>
+    <record id="hr_payroll_rules_OMSI_PAT" model="hr.salary.rule">
+        <field name="category_id" ref="OMSI_PAT"/>
+        <field name="name">OMSI_PAT</field>
+        <field name="code">OMSI_PAT</field>
+        <field name="sequence" eval="106"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result=contract.employee_id.company_id.cotisation_sante_patr*contract.wage/100</field>
+        <field name="register_id" ref="hr_OMSI_register"/>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est la valeur de la cotisation médical de chaque salarié qui se base sur la valeur de salaire "de Base". Elle doit être réglée chaque trimestre .</field>
+    </record>
+    <record id="hr_payroll_rules_CHARGE_PAT" model="hr.salary.rule">
+        <field name="category_id" ref="CHARGE_PAT"/>
+        <field name="name">CHARGE_PAT</field>
+        <field name="code">CHARGE_PAT</field>
+        <field name="sequence" eval="107"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result=CNAPS_PAT+OMSI_PAT</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le total des cotisations de l'employeur .</field>
+    </record>
+    <record id="hr_payroll_rules_DEDUCTION" model="hr.salary.rule">
+        <field name="category_id" ref="TOTAL_DED"/>
+        <field name="name">TOTAL_DED</field>
+        <field name="code">TOTAL_DED</field>
+        <field name="sequence" eval="150"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result=categories.DED+CNAPS_EMP+OMSI_EMP</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le total des déductions du salaire .</field>
+    </record>
+    
+    <record id="hr_payroll_rules_IRSA" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.DED"/>
+        <field name="name">IRSA</field>
+        <field name="code">IRSA</field>
+        <field name="sequence">110</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">Salimposable = categories.GROSS-categories.CNAPS-categories.OMSI
+irsa_brut = (Salimposable-contract.employee_id.company_id.seuil_irsa)*(contract.employee_id.company_id.taux_irsa/100.0)
+red_enfant = employee.children * 2000.0
+irsa_a_payer = irsa_brut - red_enfant
+if irsa_a_payer &lt; 2000.0 :
+    result = 2000.0
+else : result = irsa_a_payer</field>
+        
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est la valeur de l'IRSA de chaque salarié , qui s'appuit sur la valeur du salaire "Imposable" calculé.</field>
+    </record> 
+    <record id="hr_rule_basic_hor" model="hr.salary.rule">
+        <field name="name">Salaire de base horaire</field>
+        <field name="code">BASIC</field>
+        <field name="sequence">6</field>
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">percentage</field>
+        <field name="amount_percentage_base">contract.wage/HWORK</field>
+        <field name="quantity">HWORK</field>
+        <field name="amount_percentage">100</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">La règle du salaire de base horaire: le calcul de cette règle s’effectue sur cette valeur modifiable dans le bulletin de paie (en quantité), et sur 100% de la valeur défini dans le champ “Salaire” du contrat associé à ce bulletin de paie.</field>
+    </record>
+    <record id="hr_rule_basic_hwork" model="hr.salary.rule">
+        <field name="category_id" ref="HOURS"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_hor"/>
+        <field name="name">HWORK</field>
+        <field name="code">HWORK</field>
+        <field name="sequence">5</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if worked_days.WORK100 and worked_days.WORK100.number_of_hours : result = worked_days.WORK100.number_of_hours
+else : result=contract.horaire_hebdo*52/12</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est l'horaire de travail mensuel.</field>
+    </record> 
+    <record id="hr_rule_basic_HS1" model="hr.salary.rule">
+        <field name="name">Heure sup 1</field>
+        <field name="code">HS1</field>
+        <field name="sequence">11</field>
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">percentage</field>
+        <field name="amount_percentage_base">contract.wage/HWORK</field>
+        <field name="quantity">MHS1</field>
+        <field name="amount_percentage">130</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">Heure supplémentaire 1.</field>
+    </record>
+    <record id="hr_rule_basic_MHS1" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_HS1"/>
+        <field name="name">Montant HS1</field>
+        <field name="code">MHS1</field>
+        <field name="sequence">4</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if worked_days.HS1 and worked_days.HS1.number_of_hours : result = worked_days.HS1.number_of_hours
+else : result=0</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le nombre d'heure sup 1.</field>
+    </record> 
+    <record id="hr_rule_basic_HS2" model="hr.salary.rule">
+        <field name="name">Heure sup 2</field>
+        <field name="code">HS2</field>
+        <field name="sequence">13</field>
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">percentage</field>
+        <field name="amount_percentage_base">contract.wage/HWORK</field>
+        <field name="quantity">MHS2</field>
+        <field name="amount_percentage">150</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">Heure supplémentaire 1.</field>
+    </record>
+    <record id="hr_rule_basic_MHS2" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_HS2"/>
+        <field name="name">Montant HS2</field>
+        <field name="code">MHS2</field>
+        <field name="sequence">4</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if worked_days.HS2 and worked_days.HS2.number_of_hours : result = worked_days.HS2.number_of_hours
+else : result=0</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le nombre d'heure sup 2.</field>
+    </record> 
+    <record id="hr_rule_basic_HMNUIT" model="hr.salary.rule">
+        <field name="name">Heure majoré nuit</field>
+        <field name="code">HMNUIT</field>
+        <field name="sequence">14</field>
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">percentage</field>
+        <field name="amount_percentage_base">contract.wage/HWORK</field>
+        <field name="quantity">MHMNUIT</field>
+        <field name="amount_percentage">200</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est le montant de l'heure majoré nuit.</field>
+    </record>
+    <record id="hr_rule_basic_MHMNUIT" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_HMNUIT"/>
+        <field name="name">Montant HMNUIT</field>
+        <field name="code">MHMNUIT</field>
+        <field name="sequence">4</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if worked_days.HMNUIT and worked_days.HMNUIT.number_of_hours : result = worked_days.HMNUIT.number_of_hours
+else : result=0</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le nombre d'heure travaillé nuit.</field>
+    </record> 
+    <record id="hr_rule_basic_HMDIM" model="hr.salary.rule">
+        <field name="name">Heure majoré dimanche</field>
+        <field name="code">HMDIM</field>
+        <field name="sequence">15</field>
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">percentage</field>
+        <field name="amount_percentage_base">contract.wage/HWORK</field>
+        <field name="quantity">MHMDIM</field>
+        <field name="amount_percentage">200</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est le montant de l'heure majoré dimanche.</field>
+    </record>
+    <record id="hr_rule_basic_MHMDIM" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_HMDIM"/>
+        <field name="name">Montant HMDIM</field>
+        <field name="code">MHMDIM</field>
+        <field name="sequence">4</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if worked_days.HMDIM and worked_days.HMDIM.number_of_hours : result = worked_days.HMDIM.number_of_hours
+else : result=0</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le nombre d'heure travaillé en dimanche.</field>
+    </record> 
+    <record id="hr_rule_basic_HMJF" model="hr.salary.rule">
+        <field name="name">Heure majoré jour férié</field>
+        <field name="code">HMJF</field>
+        <field name="sequence">16</field>
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">percentage</field>
+        <field name="amount_percentage_base">contract.wage/HWORK</field>
+        <field name="quantity">MHMJF</field>
+        <field name="amount_percentage">100</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est le montant de l'heure majoré jour férié.</field>
+    </record>
+    <record id="hr_rule_basic_MHMJF" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_HMJF"/>
+        <field name="name">Montant HMJF</field>
+        <field name="code">MHMJF</field>
+        <field name="sequence">4</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if worked_days.HMJF and worked_days.HMJF.number_of_hours : result = worked_days.HMJF.number_of_hours
+else : result=0</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le nombre d'heure travaillé en jour férié.</field>
+    </record> 
+    <record id="hr_rule_basic_AVANCE15" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.DED"/>
+        <field name="name">Avance quinzaine</field>
+        <field name="code">AVANCE15</field>
+        <field name="sequence">117</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result=MAVANCE15</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est le Montant avance quinzaine.</field>
+    </record> 
+    <record id="hr_rule_basic_MAVANCE15" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.NET"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_AVANCE15"/>
+        <field name="name">Montant avance quinzaine</field>
+        <field name="code">MAVANCE15</field>
+        <field name="sequence">116</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if inputs.AVANCE15 and inputs.AVANCE15.amount : result = inputs.AVANCE15.amount 
+else : result = 0</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le Montant avance quinzaine.</field>
+    </record> 
+    <record id="hr_rule_basic_AVANCESP" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.DED"/>
+        <field name="name">Avance spécial</field>
+        <field name="code">AVANCESP</field>
+        <field name="sequence">119</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result=MAVANCESP</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est le Montant avance spécial.</field>
+    </record> 
+    <record id="hr_rule_basic_MAVANCESP" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.NET"/>
+        <field name="parent_rule_id" ref="hr_rule_basic_AVANCESP"/>
+        <field name="name">Montant avance spécial</field>
+        <field name="code">MAVANCESP</field>
+        <field name="sequence">118</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if inputs.AVANCESP and inputs.AVANCESP.amount : result = inputs.AVANCESP.amount
+else : result = 0</field>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="note">C'est le Montant avance spécial.</field>
+    </record> 
+    
+    <record id="hr_rule_basic_PRIME" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.BASIC"/>
+        <field name="name">PRIME + RAPPEL</field>
+        <field name="code">PRM</field>
+        <field name="sequence">17</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if inputs.PRM and inputs.PRM.amount : result = inputs.PRM.amount
+else : result = 0</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">C'est le Montant de la Prime.</field>
+    </record> 
+    
+    <record id="hr_rule_basic_AUTRES" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.DED"/>
+        <field name="name">Autres retenues</field>
+        <field name="code">AUTRES</field>
+        <field name="sequence">120</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">if inputs.AUTRES and inputs.AUTRES.amount : result = inputs.AUTRES.amount
+else : result = 0</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="note">Ce sont les Autres retenues.</field>
+    </record>
+    
+     <!-- Salary Structure -->
+     
+     <record id="hr_payroll_salary_structure_base" model="hr.payroll.structure">
+        <field name="code">Mg-Base-horaire</field>
+        <field name="name">Structure Malagasy</field>
+                <field name="company_id" ref="base.main_company"/>
+        <field name="parent_id" ref="hr_payroll.structure_base"/>
+        <field name="note">Cette rubrique représente la structure des employés Malagasy.</field>
+    </record>
+    
+       </data>
+</odoo>

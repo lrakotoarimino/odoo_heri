@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+	<template id="report_etat_salaire">
+	    <t t-call="report.html_container">
+            <t t-call="report.external_layout">
+                <div class="page">
+                	<style>
+			        .cadre1 {
+							font-size: x-large;
+							border:1px solid black;
+							padding: 1% 1% 1% 1%;
+							width: 250px;
+							text-align:center;
+					}
+					.cadre2 {
+							font-size: small;
+							border:1px solid black;
+							padding: 1% 1% 1% 1%;
+							width: 400px;
+							text-align:left;
+					}
+					.periode {
+					         text-align:center;
+					         font-size: xx-small;
+					}
+					td,th {padding-top:1%;padding-bottom:1%;padding-right:1%;padding-left:1%;border:1px solid;}
+					table {margin-left:1%;margin-right:1%;border:1px solid;align:center;font-family: Arial, "Arial Black",Arial, Verdana, sans-serif;}
+					th {text-align:center;font-weight:bold;}
+			    	.tableau{width: 98%;}
+			    	.droite{
+				 		text-align:right;
+				 	}
+			    	</style>
+                    
+		            <div class="row">
+		                <div>
+			                <!-- <div class="col-xs-6">
+							    <h2 class="cadre1">ETAT DE LA CNAPS du <span t-esc="get_date_start_filter()"/> au <span t-esc="get_date_end_filter()"/> </h2>
+						    </div> -->
+						</div>
+						
+	                    <table width="98%" border="1">
+						  <thead>
+						    <tr>
+						      <th rowspan="2">MATRICULE</th>
+						      <th rowspan="2">TRAVAILLEURS<br/>NOMS et PRENOMS</th>
+						      <th colspan="2">DATE</th>
+						      <th colspan="3">SALAIRE</th>
+						      <th rowspan="2">TEMPS<br/>PRESENCE</th>
+						      <th colspan="2">OMSI</th>
+						      <th colspan="2">CNAPS</th>
+						      <th rowspan="2">IRSA</th>
+						      <th rowspan="2">N° CIN /<br/>N° PASSEPORT</th>
+						    </tr>
+						    <tr>
+						      <th>ENTREE</th>
+						      <th>DEPART</th>
+						      <th>BASE</th>
+	      					  <th>BRUT</th>
+	      					  <th>NET</th>
+						      <th>EMPLOYEUR</th>
+						      <th>TRAVAILLEUR</th>
+						      <th>EMPLOYEUR</th>
+						      <th>TRAVAILLEUR</th>
+						    </tr>
+						  </thead>
+						  <tbody>
+						    <tr align="center" t-foreach="docs" t-as="line">
+						      <td><span t-field="line.employee_id.num_emp"/></td>
+						      <td><span t-field="line.employee_id.name"/></td>
+						      <td><span t-field="line.date_from"/></td>
+						      <td><span t-field="line.date_to"/></td>
+						      <td class="droite"><span t-field="line.basic"/></td>
+						      <td class="droite"><span t-field="line.brut"/></td>
+						      <td class="droite"><span t-field="line.net"/></td>
+						      <td></td>
+						      <td class="droite"><span t-field="line.omsiemp"/></td>
+						      <td class="droite"><span t-field="line.omsi"/></td>
+						      <td class="droite"><span t-field="line.cnapsemp"/></td>
+						      <td class="droite"><span t-field="line.cnaps"/></td>
+						      <td class="droite"><span t-field="line.irsa"/></td>
+						      <td><span t-field="line.num_cin"/></td>
+						    </tr>
+						  </tbody>
+						</table>
+				    </div>	
+                </div>
+            </t>
+        </t>
+	</template>
+	
+</odoo>

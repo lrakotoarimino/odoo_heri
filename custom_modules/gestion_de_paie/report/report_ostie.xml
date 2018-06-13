@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+		<record id="ostie_paysage" model="report.paperformat">
+		    <field name="name">format paysage</field>
+		    <field name="default" eval="True"/>
+		    <field name="format">A3</field>
+		    <field name="orientation">Landscape</field>
+		</record>
+        <report 
+            string="Etat OSTIE" 
+            id="action_report_ostie" 
+            model="ostie" 
+            report_type="qweb-pdf"
+            name="gestion_de_paie.report_ostie" 
+            file="gestion_de_paie.report_ostie"
+            paperformat="gestion_de_paie.ostie_paysage"
+        />
+</odoo>

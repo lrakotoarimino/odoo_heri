@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+    <data>
+		<record id="hr_payroll_cnaps_tree_filter" model="ir.ui.view">
+            <field name="name">hr.payroll.cnaps.tree.filter</field>
+            <field name="model">cnaps</field>
+            <field name="arch" type="xml">	
+				<search string="Recherche">
+					<field name="num_emp" string="Matricule"/>
+					<!-- <field name="num_cin" string="CIN"/> -->
+					<group expand="0" string="Group By...">
+                        <filter string="filtre par mois" icon="terp-personal+" domain="[]" context="{'group_by':'date_from'}"/>
+                        <filter string="nom" icon="terp-personal+" domain="[]" context="{'group_by':'name_related'}"/>
+                    </group>
+				</search>
+            </field>
+        </record>
+		<record id="hr_payroll_cnaps_tree" model="ir.ui.view">
+            <field name="name">hr.payroll.cnaps.tree</field>
+            <field name="model">cnaps</field>
+            <field name="arch" type="xml">
+			    <tree string="CNAPS" edit="false" create="false">
+                    <field name="num_emp"/>
+                    <field name="employee_id"/>
+                    <!-- <field name="num_cin"/> -->
+                    <field name="basic"/>
+                    <field name="brut"/>
+                    <field name="cnaps"/>
+                    <field name="cnapsemp"/>
+                    <field name="totalcnaps"/>
+                    <field name="net"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </tree>
+            </field>
+        </record>
+        
+        <record id="hr_payroll_cnaps_form" model="ir.ui.view">
+            <field name="name">hr.payroll.cnaps.form</field>
+            <field name="model">cnaps</field>
+            <field name="arch" type="xml">
+			    <form string="CNAPS" edit="false" create="false">
+			    	<sheet>
+			    		<group>
+		                    <field name="num_emp"/>
+		                    <field name="employee_id"/>
+		                    <!-- <field name="num_cin"/> -->
+		                    <field name="basic"/>
+		                    <field name="brut"/>
+		                    <field name="cnaps"/>
+		                    <field name="cnapsemp"/>
+		                    <field name="totalcnaps"/>
+		                    <field name="net"/>
+		                    <field name="date_from"/>
+		                    <field name="date_to"/>
+                    	</group>
+                    </sheet>
+                </form>
+            </field>
+        </record>			
+		
+		<!-- ACTIONS -->
+		
+		<record id="open_payroll_cnaps" model="ir.actions.act_window">
+            <field name="name">Etat CNAPS</field>
+            <field name="res_model">cnaps</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="hr_payroll_cnaps_tree"/>
+        </record>
+        
+        <!-- MENUS -->
+        
+        <menuitem id="menu_payroll_cnaps"
+            action="open_payroll_cnaps"
+            parent="menu_payroll_etat_globale"
+            sequence="19"/>
+
+    </data>
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+		<record id="etat_salaire_paysage" model="report.paperformat">
+		    <field name="name">Format paysage etat salaire</field>
+		    <field name="default" eval="True"/>
+		    <field name="format">A3</field>
+		    <field name="orientation">Landscape</field>
+		</record>
+        <report 
+            string="Etat salaire" 
+            id="action_report_etat_salaire" 
+            model="etat.salaire" 
+            report_type="qweb-pdf"
+            name="gestion_de_paie.report_etat_salaire" 
+            file="gestion_de_paie.report_etat_salaire"
+            paperformat="gestion_de_paie.etat_salaire_paysage"
+        />
+</odoo>
