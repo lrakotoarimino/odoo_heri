@@ -15,7 +15,7 @@
 		           <field name="indice"/>
 		        </field>
 				<field name="working_hours" position="after">
-				    <field name="horaire_hebdo" string="Horaire hebdomadaire" invisible="1"/>
+				    <field name="horaire_hebdo" string="Horaire hebdomadaire"/>
 					<field name="payment_mode"/>
 		  		</field>
             </field>

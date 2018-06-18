@@ -61,10 +61,11 @@ class HrPayslip(models.Model):
             return
         
         worked_days_data_list = [
-                 {'code': 'HS2', 'contract_id': self.contract_id.id, 'name': u'Heure supplémentaire 2'},
-                 {'code': 'HMNUIT', 'contract_id': self.contract_id.id, 'name': u'Heure majoré nuit'},
-                 {'code': 'HMDIM', 'contract_id': self.contract_id.id, 'name': u'Heure majoré dimanche'},
-                 {'code': 'HMJF', 'contract_id': self.contract_id.id, 'name': u'Heure majoré jour férié'}]
+                 {'sequence': 6, 'code': 'HS1', 'contract_id': self.contract_id.id, 'name': u'Heure supplémentaire 1'},
+                 {'sequence': 7, 'code': 'HS2', 'contract_id': self.contract_id.id, 'name': u'Heure supplémentaire 2'},
+                 {'sequence': 8, 'code': 'HMNUIT', 'contract_id': self.contract_id.id, 'name': u'Heure majoré nuit'},
+                 {'sequence': 9, 'code': 'HMDIM', 'contract_id': self.contract_id.id, 'name': u'Heure majoré dimanche'},
+                 {'sequence': 10, 'code': 'HMJF', 'contract_id': self.contract_id.id, 'name': u'Heure majoré jour férié'}]
                  
         worked_days_lines = self.worked_days_line_ids.browse([])
         for worked_days_data in worked_days_data_list:
